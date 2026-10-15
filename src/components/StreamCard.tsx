@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Hls from 'hls.js';
+import { Layers, Bookmark } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
 import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
@@ -274,6 +275,20 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           >
             {stream.title}
           </h3>
+
+          {/* Multiview button — centered under title */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onAddToMultiview(stream); }}
+            className={`mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+              isInMultiview
+                ? 'bg-blue-600 text-white border border-blue-500'
+                : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-blue-500/60 hover:text-blue-300 hover:bg-blue-600/20'
+            }`}
+            title={isInMultiview ? 'Remove from multiview' : 'Add to multiview'}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{isInMultiview ? 'In View' : 'Multiview'}</span>
+          </button>
         </div>
 
         {/* Bottom subtle kicker */}

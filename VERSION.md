@@ -12,7 +12,7 @@
 ### Streaming & Playback
 - **Bintv streams fixed** — rewrote proxy plugin to use native `fetch()` instead of Node `https` module (was getting 403 from Cloudflare bot protection)
 - All stream sources pulled from APIs: bintvjson (Live Events, Upcoming Events, 24/7 Channels), streamed.pk (matches/all), and IPTV (3 M3U playlists)
-- **Screenshots as thumbnails** — `getPlaceholderThumbnail()` generates deterministic gradient SVGs for streams without posters
+- **Screenshots as thumbnails** — uses image.thum.io API to capture live screenshots of embed pages for streams without posters
 - Fallback player service (VidFast, P-Stream, MoviesAPI)
 - VideoPlayer auto-advance on error; Sources/Mirrors buttons in PlayerView toolbar
 - MoviesDirectory uses its own inline iframe player with fallback mirror toolbar
@@ -20,13 +20,13 @@
 - Continuous loading bug fixed (stable IDs via `stableId()` helper)
 - Background video plays immediately (preload auto, aggressive buffer, low latency)
 - Brighter fonts and buttons across body — especially row titles, tabs, and buttons
-- Thumbnails bigger on home screen
+- **Home screen thumbnails 30% bigger** — StreamCarousel cards: w-44→w-56, sm:w-48→sm:w-64
 
 ### Music
 - **Music tab redesigned** — artistgrid.cx style grid with 3:4 aspect ratio cards
-- **Top 50 Artists** — loads via YouTube Music API, cached in localStorage (5-min TTL)
+- **Top 50 Artists fixed** — runs all queries in parallel with `Promise.allSettled` (was timing out sequentially)
 - **Full-length track playback** — yt-dlp backend (`/api/music/tracks/{artist}`) extracts direct audio URLs from YouTube
-- **Floating Music Player** — persists across all views, expands to full modal, plays full tracks (not just 30s previews)
+- **Floating Music Player** — persists across all views via sessionStorage, expands to full modal, plays full tracks (not just 30s previews)
 - **Track caching** — artist tracks cached in localStorage with 7-day TTL
 - Music search fixed — YouTube Music API parser handles `tabbedSearchResultsRenderer` structure
 - Music thumbnails display real working images from YouTube CDN
@@ -35,7 +35,8 @@
 - Profile button moved up under nav in sidebar (before Quick Jump)
 
 ### UI/UX
-- Sidebar scroll prevention — body overflow hidden when sidebar overlay open on mobile
+- **Sidebar scroll prevention** — body overflow hidden when sidebar overlay open on mobile
+- **Multiview button on stream cards** — always visible centered under title, blue when in multiview, ghost style when not
 - All directory tabs brightened and sized up
 - Toast notifications for user feedback
 - FloatingPipPlayer for video — persists when main player closes
