@@ -71,9 +71,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     url.includes('pages.dev') ||
     url.includes('embed.st') ||
     url.includes('/embed/') ||
+    url.includes('westream.su/embed') ||
     url.includes('adultembed.com') ||
     url.includes('eporner.com/embed') ||
     url.includes('pstream.cfd') ||
+    url.includes('/api/bintv-proxy') ||
     streamType === 'embed';
   const isHls =
     streamType === 'hls' ||

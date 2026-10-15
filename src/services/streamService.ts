@@ -2,7 +2,9 @@ import { StreamItem, StreamSource } from '../types/stream';
 import { iptvService } from './iptvService';
 
 const STREAMED_BASE = 'https://streamed.pk';
+const WESTREAM_BASE = 'https://westream.su';
 const BINTV_URL = 'https://bintvjson.lovable.app/api/public/bintvjson';
+const BINTV_SOURCES_BASE = 'https://bintv-sources.pages.dev';
 
 // In-memory cache
 let cachedStreams: StreamItem[] = [];
@@ -60,6 +62,17 @@ export function getFallbackUrls(stream: StreamItem): string[] {
   }
 
   return results;
+}
+
+// Route bintv-sources URLs through the Vite proxy to bypass Cloudflare bot protection
+function routeBintvUrl(url: string): string {
+  if (!url) return '';
+  if (url.includes('bintv-sources.pages.dev') || url.includes('eihgembxe.cfd')) {
+    // Encode the URL as base64url for the proxy id param
+    const encoded = Buffer.from(url).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    return `/api/bintv-proxy?id=${encoded}`;
+  }
+  return url;
 }
 
 // Helper to normalize poster URL
@@ -127,11 +140,11 @@ const FALLBACK_STREAMS: StreamItem[] = [
     popular: true,
     provider: 'bintv',
     poster: 'https://cdn.abcotvs.com/dip/images/11479454_011822-cc-abc-generic-thumb-img.jpg',
-    directEmbedUrl: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng',
+    directEmbedUrl: routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng'),
     streams: [
       {
         name: 'ESPN Feed 1',
-        embedUrl: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng',
+        embedUrl: routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng'),
       },
     ],
     viewers: 8900,
@@ -145,11 +158,11 @@ const FALLBACK_STREAMS: StreamItem[] = [
     popular: true,
     provider: 'bintv',
     poster: 'https://cdn.abcotvs.com/dip/images/11479454_011822-cc-abc-generic-thumb-img.jpg',
-    directEmbedUrl: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmhtemt6ZXotMzAyOA',
+    directEmbedUrl: routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmhtemt6ZXotMzAyOA'),
     streams: [
       {
         name: 'ABC Feed',
-        embedUrl: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmhtemt6ZXotMzAyOA',
+        embedUrl: routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmhtemt6ZXotMzAyOA'),
       },
     ],
     viewers: 5200,
@@ -182,20 +195,21 @@ export const streamService = {
         if (Array.isArray(data['Live Events'])) {
           data['Live Events'].forEach((item: any) => {
             const firstStream = item.streams?.[0];
-            const embedUrl = firstStream?.url || '';
+            const rawUrl = firstStream?.url || '';
+            const embedUrl = routeBintvUrl(rawUrl);
             aggregated.push({
               id: item.id || stableId('bintv-live', item.name),
               title: item.name || 'Live Match',
               name: item.name,
               category: mapCategory(item.category || 'Live Sports'),
               status: 'live',
-              poster: normalizePoster(item.poster) || getScreenshotUrl(embedUrl),
+              poster: normalizePoster(item.poster) || getScreenshotUrl(rawUrl),
               provider: 'bintv',
               popular: true,
               streams: item.streams?.map((s: any, idx: number) => ({
                 streamNo: idx + 1,
                 name: s.name || `Stream ${idx + 1}`,
-                embedUrl: s.url,
+                embedUrl: routeBintvUrl(s.url),
                 hd: true,
               })),
               directEmbedUrl: embedUrl,
@@ -208,20 +222,21 @@ export const streamService = {
         if (Array.isArray(data['Upcoming Events'])) {
           data['Upcoming Events'].forEach((item: any) => {
             const firstStream = item.streams?.[0];
-            const embedUrl = firstStream?.url || '';
+            const rawUrl = firstStream?.url || '';
+            const embedUrl = routeBintvUrl(rawUrl);
             aggregated.push({
               id: item.id || stableId('bintv-up', item.name),
               title: item.name || 'Upcoming Match',
               name: item.name,
               category: mapCategory(item.category || 'Live Sports'),
               status: 'upcoming',
-              poster: normalizePoster(item.poster) || getScreenshotUrl(embedUrl),
+              poster: normalizePoster(item.poster) || getScreenshotUrl(rawUrl),
               provider: 'bintv',
               popular: false,
               streams: item.streams?.map((s: any, idx: number) => ({
                 streamNo: idx + 1,
                 name: s.name || `Stream ${idx + 1}`,
-                embedUrl: s.url,
+                embedUrl: routeBintvUrl(s.url),
               })),
               directEmbedUrl: embedUrl,
               viewers: Math.floor(Math.random() * 1000) + 200,
@@ -233,7 +248,8 @@ export const streamService = {
         if (Array.isArray(data['24/7 Channels'])) {
           data['24/7 Channels'].forEach((ch: any) => {
             const firstStream = ch.streams?.[0];
-            const embedUrl = firstStream?.url || '';
+            const rawUrl = firstStream?.url || '';
+            const embedUrl = routeBintvUrl(rawUrl);
             const channelCategory = categorizeChannel(ch.name || '');
             aggregated.push({
               id: ch.id || `bintv-ch-${ch.name?.replace(/\s+/g, '-').toLowerCase()}`,
@@ -241,13 +257,13 @@ export const streamService = {
               name: ch.name,
               category: channelCategory,
               status: '24/7',
-              poster: normalizePoster(ch.poster) || getScreenshotUrl(embedUrl),
+              poster: normalizePoster(ch.poster) || getScreenshotUrl(rawUrl),
               provider: 'bintv',
               popular: isPopularChannel(ch.name),
               streams: ch.streams?.map((s: any, idx: number) => ({
                 streamNo: idx + 1,
                 name: s.name || `${ch.name} Stream`,
-                embedUrl: s.url,
+                embedUrl: routeBintvUrl(s.url),
                 hd: true,
               })),
               directEmbedUrl: embedUrl,
@@ -297,7 +313,41 @@ export const streamService = {
       console.warn('streamed.pk fetch failed', e);
     }
 
-    // 3. Fetch IPTV channels from the 3 M3U playlists
+    // 3. Fetch from westream.su (matches/all)
+    try {
+      const res = await fetch(`${WESTREAM_BASE}/matches/all`, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        const matches = await res.json();
+        if (Array.isArray(matches)) {
+          matches.forEach((m: any) => {
+            const cat = mapCategory(m.category);
+            const firstSource = m.sources?.[0];
+            const defaultEmbed = firstSource
+              ? `https://westream.su/embed/${firstSource.source}/${firstSource.id}/1`
+              : undefined;
+
+            aggregated.push({
+              id: m.id || stableId('westream', m.title || ''),
+              title: m.title || 'Live Match',
+              name: m.title,
+              category: cat,
+              status: m.popular ? 'live' : 'upcoming',
+              date: m.date,
+              poster: normalizePoster(m.poster) || getScreenshotUrl(defaultEmbed),
+              popular: m.popular ?? true,
+              provider: 'westream',
+              sources: m.sources || [],
+              directEmbedUrl: defaultEmbed,
+              viewers: Math.floor(Math.random() * 5000) + 850,
+            });
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('westream.su fetch failed', e);
+    }
+
+    // 4. Fetch IPTV channels from the 3 M3U playlists
     try {
       const iptvChannels = await iptvService.fetchAllIptvChannels();
       if (Array.isArray(iptvChannels) && iptvChannels.length > 0) {
@@ -323,10 +373,12 @@ export const streamService = {
       return stream.streams;
     }
 
-    if (stream.provider === 'streamed' && stream.sources && stream.sources.length > 0) {
+    if ((stream.provider === 'streamed' || stream.provider === 'westream') && stream.sources && stream.sources.length > 0) {
       const first = stream.sources[0];
+      const base = stream.provider === 'westream' ? WESTREAM_BASE : STREAMED_BASE;
+      const embedHost = stream.provider === 'westream' ? 'westream.su/embed' : 'embed.st/embed';
       try {
-        const res = await fetch(`${STREAMED_BASE}/api/stream/${first.source}/${first.id}`, {
+        const res = await fetch(`${base}/api/stream/${first.source}/${first.id}`, {
           signal: AbortSignal.timeout(5000),
         });
         if (res.ok) {
@@ -338,7 +390,7 @@ export const streamService = {
               streamNo: s.streamNo || idx + 1,
               language: s.language || 'English',
               hd: s.hd ?? true,
-              embedUrl: s.embedUrl || `https://embed.st/embed/${first.source}/${first.id}/${idx + 1}`,
+              embedUrl: s.embedUrl || `https://${embedHost}/${first.source}/${first.id}/${idx + 1}`,
               viewers: s.viewers || 100,
             }));
             stream.streams = mapped;
@@ -349,7 +401,7 @@ export const streamService = {
           }
         }
       } catch (e) {
-        console.warn('Error resolving stream sources from streamed.pk', e);
+        console.warn(`Error resolving stream sources from ${stream.provider}`, e);
       }
     }
 
@@ -357,7 +409,9 @@ export const streamService = {
     const fallbackUrl =
       stream.directEmbedUrl ||
       (stream.sources?.[0]
-        ? `https://embed.st/embed/${stream.sources[0].source}/${stream.sources[0].id}/1`
+        ? stream.provider === 'westream'
+          ? `https://westream.su/embed/${stream.sources[0].source}/${stream.sources[0].id}/1`
+          : `https://embed.st/embed/${stream.sources[0].source}/${stream.sources[0].id}/1`
         : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
 
     return [

@@ -264,7 +264,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     sources[activeSourceIndex]?.embedUrl ||
     stream.directEmbedUrl ||
     (activeFallbackIndex >= 0 ? fallbackSources[activeFallbackIndex]?.url : '') ||
-    'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng';
+    '/api/bintv-proxy?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng';
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
