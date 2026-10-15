@@ -107,10 +107,10 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
         {/* Stream Cards */}
         <div
           ref={rowRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-2"
+          className="flex gap-5 overflow-x-auto no-scrollbar scroll-smooth pb-2"
         >
           {streams.map((stream) => (
-            <div key={stream.id} className="flex-shrink-0 w-44 sm:w-48">
+            <div key={stream.id} className="flex-shrink-0 w-56 sm:w-64">
               <StreamCard
                 stream={stream}
                 onPlay={onPlayStream}

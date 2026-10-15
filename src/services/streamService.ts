@@ -78,48 +78,13 @@ function normalizePoster(rawUrl?: string): string {
 
 /**
  * Generate a screenshot URL for a stream when no poster exists.
- * Uses a screenshot service to capture the embed page, falling back to a
- * styled gradient placeholder with the stream name.
+ * Uses image.thum.io to capture a live screenshot of the stream page.
  */
-function getScreenshotUrl(embedUrl: string, streamName: string): string {
+function getScreenshotUrl(embedUrl: string | undefined): string {
   if (!embedUrl) return '';
-  // Use a screenshot API to capture the embed page
-  // Encode the embed URL as base64 for the proxy endpoint
-  const encoded = Buffer.from(embedUrl).toString('base64')
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return `/api/bintv-proxy?id=${encoded}`;
-}
-
-/**
- * Generate a clean gradient placeholder for streams without thumbnails.
- * Uses the stream name to create a deterministic, visually appealing card.
- */
-function getPlaceholderThumbnail(streamName: string): string {
-  let hash = 0;
-  for (let i = 0; i < streamName.length; i++) {
-    hash = streamName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h1 = Math.abs(hash % 360);
-  const h2 = (h1 + 40 + Math.abs(hash >> 8) % 60) % 360;
-  const initials = streamName
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .slice(0, 3)
-    .toUpperCase();
-  // Return an inline SVG data URL — no external requests needed
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225" viewBox="0 0 400 225">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:hsl(${h1},70%,25%)" />
-        <stop offset="100%" style="stop-color:hsl(${h2},60%,12%)" />
-      </linearGradient>
-    </defs>
-    <rect width="400" height="225" fill="url(#g)" />
-    <text x="200" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="48" font-weight="900" fill="white" opacity="0.9">${initials}</text>
-    <text x="200" y="150" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="white" opacity="0.6">${streamName.slice(0, 30)}</text>
-  </svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  // Use image.thum.io free screenshot API
+  const encoded = encodeURIComponent(embedUrl);
+  return `https://image.thum.io/get/maxage/7200/width/400/fail/${encoded}`;
 }
 
 // Fallback curated streams in case external APIs are temporarily unreachable
@@ -224,7 +189,7 @@ export const streamService = {
               name: item.name,
               category: mapCategory(item.category || 'Live Sports'),
               status: 'live',
-              poster: normalizePoster(item.poster) || getPlaceholderThumbnail(item.name || 'Live Match'),
+              poster: normalizePoster(item.poster) || getScreenshotUrl(embedUrl),
               provider: 'bintv',
               popular: true,
               streams: item.streams?.map((s: any, idx: number) => ({
@@ -250,7 +215,7 @@ export const streamService = {
               name: item.name,
               category: mapCategory(item.category || 'Live Sports'),
               status: 'upcoming',
-              poster: normalizePoster(item.poster) || getPlaceholderThumbnail(item.name || 'Upcoming Match'),
+              poster: normalizePoster(item.poster) || getScreenshotUrl(embedUrl),
               provider: 'bintv',
               popular: false,
               streams: item.streams?.map((s: any, idx: number) => ({
@@ -276,7 +241,7 @@ export const streamService = {
               name: ch.name,
               category: channelCategory,
               status: '24/7',
-              poster: normalizePoster(ch.poster) || getPlaceholderThumbnail(ch.name || 'Channel'),
+              poster: normalizePoster(ch.poster) || getScreenshotUrl(embedUrl),
               provider: 'bintv',
               popular: isPopularChannel(ch.name),
               streams: ch.streams?.map((s: any, idx: number) => ({
@@ -318,7 +283,7 @@ export const streamService = {
               category: cat,
               status: 'live',
               date: m.date,
-              poster: normalizePoster(m.poster),
+              poster: normalizePoster(m.poster) || getScreenshotUrl(defaultEmbed),
               popular: m.popular ?? true,
               provider: 'streamed',
               sources: m.sources || [],

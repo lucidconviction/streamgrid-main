@@ -143,7 +143,7 @@ const TOP_50_QUERIES = [
   'Miley Cyrus', 'Selena Gomez', 'The Kid LAROI', 'Ice Spice', 'Sabrina Carpenter',
   'Chappell Roan', 'Benson Boone', 'Shaboozey', 'Kodak Black', 'Lil Durk',
   'Gunna', 'Lil Baby', 'Megan Thee Stallion', 'Adele', 'Mariah Carey',
-  'Ariana Grande', 'Billie Eilish', 'Olivia Rodrigo', 'Taylor Swift', 'Drake',
+  'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish',
 ];
 
 export const fetchTop50Artists = async (): Promise<Artist[]> => {
@@ -154,25 +154,25 @@ export const fetchTop50Artists = async (): Promise<Artist[]> => {
   const allArtists: Artist[] = [];
   const seen = new Set<string>();
 
-  // Fetch from YouTube Music API in parallel batches
-  const batchSize = 5;
-  for (let i = 0; i < TOP_50_QUERIES.length && allArtists.length < 50; i += batchSize) {
-    const batch = TOP_50_QUERIES.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map(q => searchYouTubeMusic(q, 3))
-    );
+  // Fetch from YouTube Music API in parallel — all 50 queries at once
+  const results = await Promise.allSettled(
+    TOP_50_QUERIES.map(q => searchYouTubeMusic(q, 3))
+  );
 
-    for (const item of results.flat()) {
-      const key = item.title.toLowerCase();
-      if (!seen.has(key) && item.channelId) {
-        seen.add(key);
-        allArtists.push({
-          name: item.title,
-          thumbnail: getYouTubeChannelAvatar(item.channelId || '', item.thumbnail),
-          channelId: item.channelId,
-        });
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      for (const item of result.value) {
+        const key = item.title.toLowerCase();
+        if (!seen.has(key) && item.channelId) {
+          seen.add(key);
+          allArtists.push({
+            name: item.title,
+            thumbnail: getYouTubeChannelAvatar(item.channelId || '', item.thumbnail),
+            channelId: item.channelId,
+          });
+        }
+        if (allArtists.length >= 50) break;
       }
-      if (allArtists.length >= 50) break;
     }
   }
 
