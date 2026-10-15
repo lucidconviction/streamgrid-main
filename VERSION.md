@@ -11,7 +11,9 @@
 
 ### Streaming & Playback
 - **Bintv streams fixed** — rewrote proxy plugin to use native `fetch()` instead of Node `https` module (was getting 403 from Cloudflare bot protection)
-- All stream sources pulled from APIs: bintvjson (Live Events, Upcoming Events, 24/7 Channels), streamed.pk (matches/all), and IPTV (3 M3U playlists)
+- **Bintv URL routing** — all bintv streams now route through `/api/bintv-proxy` to bypass Cloudflare (ehgembxe.cfd returns 403 directly)
+- **Westream integration** — added westream.su as new live sports source (`/matches/all` endpoint, 200+ matches)
+- All stream sources pulled from APIs: bintvjson (Live Events, Upcoming Events, 24/7 Channels), streamed.pk (matches/all), westream.su (matches/all), and IPTV (3 M3M3U playlists)
 - **Screenshots as thumbnails** — uses image.thum.io API to capture live screenshots of embed pages for streams without posters
 - Fallback player service (VidFast, P-Stream, MoviesAPI)
 - VideoPlayer auto-advance on error; Sources/Mirrors buttons in PlayerView toolbar
