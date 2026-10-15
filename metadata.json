@@ -1,0 +1,6 @@
+{
+  "name": "StreamGrid - Multiview Media & Live Streaming Hub",
+  "description": "YouTube & Netflix hybrid streaming platform featuring multiview split-screen, 500+ live sports and 24/7 TV channels, switchable user profiles, watch history, and cinema playback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
