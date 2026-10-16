@@ -64,13 +64,21 @@ export function getFallbackUrls(stream: StreamItem): string[] {
   return results;
 }
 
+// Browser-safe base64url encoding (no Buffer dependency)
+function base64UrlEncode(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
 // Route bintv-sources URLs through the Vite proxy to bypass Cloudflare bot protection
 function routeBintvUrl(url: string): string {
   if (!url) return '';
   if (url.includes('bintv-sources.pages.dev') || url.includes('eihgembxe.cfd')) {
-    // Encode the URL as base64url for the proxy id param
-    const encoded = Buffer.from(url).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-    return `/api/bintv-proxy?id=${encoded}`;
+    return `/api/bintv-proxy?id=${base64UrlEncode(url)}`;
   }
   return url;
 }
