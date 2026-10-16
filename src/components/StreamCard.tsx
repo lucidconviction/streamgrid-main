@@ -292,7 +292,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onPlay(stream); }}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all shadow-md shadow-green-600/30 hover:shadow-green-500/40"
+              className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30 hover:shadow-blue-500/40"
               title="Play stream"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
