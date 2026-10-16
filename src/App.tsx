@@ -7,7 +7,7 @@ import {
   MultiviewLayout,
   MultiviewPreset,
 } from './types/stream';
-import { streamService } from './services/streamService';
+import { streamService, purgeExpiredScreenshots } from './services/streamService';
 import { storageService } from './services/storageService';
 import type { MusicTrack } from './services/musicService';
 import { Header } from './components/Header';
@@ -99,6 +99,10 @@ export default function App() {
     const curr = storageService.getActiveProfile();
     setActiveProfile(curr);
     loadProfileData(curr.id);
+    // Purge expired screenshot cache entries
+    purgeExpiredScreenshots();
+    const screenshotPurgeInterval = setInterval(purgeExpiredScreenshots, 10 * 60 * 1000); // every 10 min
+    return () => clearInterval(screenshotPurgeInterval);
   }, []);
 
   // Load profile specific data

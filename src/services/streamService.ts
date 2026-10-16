@@ -11,6 +11,59 @@ let cachedStreams: StreamItem[] = [];
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// ── Screenshot thumbnail cache (localStorage, 1 hour TTL) ────────────────────
+const SCREENSHOT_CACHE_KEY = 'rdnutz_screenshot_thumbs';
+const SCREENSHOT_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+interface ScreenshotCacheEntry {
+  url: string;
+  ts: number;
+}
+
+function getScreenshotCache(): Record<string, ScreenshotCacheEntry> {
+  try {
+    const raw = localStorage.getItem(SCREENSHOT_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setScreenshotCache(entries: Record<string, ScreenshotCacheEntry>) {
+  try {
+    localStorage.setItem(SCREENSHOT_CACHE_KEY, JSON.stringify(entries));
+  } catch {
+    // quota exceeded — ignore
+  }
+}
+
+function getCachedScreenshot(embedUrl: string): string {
+  if (!embedUrl || embedUrl.includes('/api/bintv-proxy') || !embedUrl.startsWith('http')) return '';
+  const cache = getScreenshotCache();
+  const entry = cache[embedUrl];
+  if (entry && Date.now() - entry.ts < SCREENSHOT_TTL_MS) {
+    return entry.url;
+  }
+  // Expired or missing — generate fresh and cache it
+  const url = `https://image.thum.io/get/maxage/7200/width/400/fail/${encodeURIComponent(embedUrl)}`;
+  cache[embedUrl] = { url, ts: Date.now() };
+  setScreenshotCache(cache);
+  return url;
+}
+
+/** Purge expired screenshot cache entries (call periodically) */
+export function purgeExpiredScreenshots() {
+  const cache = getScreenshotCache();
+  let changed = false;
+  for (const [key, entry] of Object.entries(cache)) {
+    if (Date.now() - entry.ts >= SCREENSHOT_TTL_MS) {
+      delete cache[key];
+      changed = true;
+    }
+  }
+  if (changed) setScreenshotCache(cache);
+}
+
 export const CATEGORIES = [
   'All',
   'Live Sports',
@@ -100,13 +153,12 @@ function normalizePoster(rawUrl?: string): string {
 /**
  * Generate a screenshot URL for a stream when no poster exists.
  * Uses image.thum.io to capture a live screenshot of the stream page.
+ * Results are cached in localStorage with a 1-hour TTL.
  * Returns empty string if URL cannot be screenshotted.
  */
 function getScreenshotUrl(embedUrl: string | undefined): string {
   if (!embedUrl) return '';
-  // Can't screenshot proxy URLs or non-HTTP URLs
-  if (embedUrl.includes('/api/bintv-proxy') || !embedUrl.startsWith('http')) return '';
-  return `https://image.thum.io/get/maxage/7200/width/400/fail/${encodeURIComponent(embedUrl)}`;
+  return getCachedScreenshot(embedUrl);
 }
 
 // Fallback curated streams in case external APIs are temporarily unreachable
