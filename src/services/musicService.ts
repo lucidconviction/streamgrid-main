@@ -130,20 +130,20 @@ export const searchYouTubeMusic = async (query: string, limit: number = 10): Pro
   }
 };
 
-// ── Top 50 Artists (YouTube Music API, cached in localStorage) ─────────────
+// ── Top 50 Artists of the Year (YouTube Music API, cached in localStorage) ──
 
-/** Known artist queries ordered by global popularity */
+/** Top 50 artists of the year — curated based on chart performance */
 const TOP_50_QUERIES = [
-  'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish', 'Ariana Grande',
-  'Travis Scott', 'Kendrick Lamar', 'Dua Lipa', 'Ed Sheeran', 'Bad Bunny',
-  'Post Malone', 'Olivia Rodrigo', 'Harry Styles', 'Beyoncé', 'Rihanna',
-  'Bruno Mars', 'Justin Bieber', 'Lady Gaga', 'Imagine Dragons', 'Coldplay',
-  'Kanye West', 'Playboi Carti', 'Lil Uzi Vert', 'Frank Ocean', 'Tyler The Creator',
-  'Doja Cat', 'Lana Del Rey', 'Juice WRLD', 'Eminem', 'SZA',
-  'Miley Cyrus', 'Selena Gomez', 'The Kid LAROI', 'Ice Spice', 'Sabrina Carpenter',
-  'Chappell Roan', 'Benson Boone', 'Shaboozey', 'Kodak Black', 'Lil Durk',
-  'Gunna', 'Lil Baby', 'Megan Thee Stallion', 'Adele', 'Mariah Carey',
-  'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish',
+  'Taylor Swift', 'Chappell Roan', 'Sabrina Carpenter', 'Billie Eilish', 'Kendrick Lamar',
+  'Post Malone', 'Ariana Grande', 'Drake', 'The Weeknd', 'Bad Bunny',
+  'Benson Boone', 'Shaboozey', 'Miley Cyrus', 'Dua Lipa', 'Travis Scott',
+  'Olivia Rodrigo', 'Ed Sheeran', 'Beyoncé', 'Lady Gaga', 'Rihanna',
+  'Bruno Mars', 'Justin Bieber', 'Imagine Dragons', 'Coldplay', 'Kanye West',
+  'Playboi Carti', 'Lil Uzi Vert', 'Frank Ocean', 'Tyler The Creator', 'Doja Cat',
+  'Lana Del Rey', 'Juice WRLD', 'Eminem', 'SZA', 'Ice Spice',
+  'Lil Durk', 'Gunna', 'Lil Baby', 'Megan Thee Stallion', 'Adele',
+  'Mariah Carey', 'Halsey', 'Lizzo', 'Tate McRae', 'Rema',
+  'Tyla', 'Chase Atlantic', '21 Savage', 'Future', 'Metro Boomin',
 ];
 
 export const fetchTop50Artists = async (): Promise<Artist[]> => {
