@@ -100,17 +100,13 @@ function normalizePoster(rawUrl?: string): string {
 /**
  * Generate a screenshot URL for a stream when no poster exists.
  * Uses image.thum.io to capture a live screenshot of the stream page.
- * Must use the ORIGINAL (non-proxied) URL — the screenshot API can't reach local proxy URLs.
+ * Returns empty string if URL cannot be screenshotted.
  */
 function getScreenshotUrl(embedUrl: string | undefined): string {
   if (!embedUrl) return '';
-  // Use the original URL (not the proxied one) for screenshot capture
-  const screenshotUrl = embedUrl.includes('/api/bintv-proxy')
-    ? '' // can't screenshot a local proxy URL
-    : embedUrl;
-  if (!screenshotUrl) return '';
-  const encoded = encodeURIComponent(screenshotUrl);
-  return `https://image.thum.io/get/maxage/7200/width/400/fail/${encoded}`;
+  // Can't screenshot proxy URLs or non-HTTP URLs
+  if (embedUrl.includes('/api/bintv-proxy') || !embedUrl.startsWith('http')) return '';
+  return `https://image.thum.io/get/maxage/7200/width/400/fail/${encodeURIComponent(embedUrl)}`;
 }
 
 // Fallback curated streams in case external APIs are temporarily unreachable
