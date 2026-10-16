@@ -1,5 +1,40 @@
 # RdNutz TV Streams — Version History
 
+## v1.1.0 — 2026-10-15
+
+### Screenshot Thumbnail Caching
+- **1-hour localStorage cache** for image.thum.io screenshot URLs (`rdnutz_screenshot_thumbs`)
+- Cached URLs persist across page reloads, refresh after 1-hour TTL expiry
+- `purgeExpiredScreenshots()` runs on mount + every 10 minutes to keep storage small
+- Streams without posters now get cached live screenshots instead of blank/gradient fallback
+
+### Nett Smutt Age Verification
+- **Blurry overlay** (`backdrop-blur-3xl`) shown when opening Nett Smutt tab
+- Adult content warning with explicit 18+ age verification (Yes/No buttons)
+- Verification persists in sessionStorage — only asks once per browser session
+- Denied users navigate away from the tab
+
+### Nett Smutt XXX Emblem
+- Replaced `Flame` icon with custom **XXX circle-cross emblem** throughout SmuttDirectory
+- Used in header logo, loading state, and empty state
+
+### Music: Top 50 Artists of the Year
+- Replaced duplicate-heavy list with 50 unique curated artists of the year
+- Includes: Taylor Swift, Chappell Roan, Sabrina Carpenter, Kendrick Lamar, Benson Boone, Shaboozey, Tyla, Rema, Chase Atlantic, Metro Boomin, etc.
+
+### Stream Card UI
+- **Multiview + Watch buttons made smaller** — half the previous size
+- **Play button added between them** — royal blue circle with white Play icon
+- Play button calls `onPlay()` → navigates to the player page for the stream
+- Layout: Multiview | Play | Watch
+
+### Bug Fixes
+- Screenshot API now correctly handles proxied bintv URLs (skips local proxy URLs)
+- Hero banner uses `bgVideoUrl` for autoplay when available (original stream URL, not proxied)
+- All bintv, streamed, and westream streams set `bgVideoUrl` from original embed URL
+
+---
+
 ## v1.0.0 — 2026-10-15
 
 ### Brand & Identity
