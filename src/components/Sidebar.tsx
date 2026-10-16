@@ -45,12 +45,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'sports', label: 'Live Sports', icon: Radio },
     { id: 'channels', label: '24/7 Channels', icon: Tv },
     { id: 'iptv', label: 'IPTV Playlists', icon: Layers },
-    { id: 'smutt', label: 'Nett Smutt', icon: Flame },
-    { id: 'music', label: 'Music', icon: Music },
     { id: 'movies', label: 'Movies & TV', icon: Play },
-    { id: 'multiview', label: 'Multiview Grid', icon: LayoutGrid, count: multiviewCount },
+    { id: 'music', label: 'Music', icon: Music },
     { id: 'history', label: 'Watch History', icon: History },
     { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+    { id: 'multiview', label: 'Multiview Grid', icon: LayoutGrid, count: multiviewCount },
+    { id: 'smutt', label: 'Nett Smutt', icon: Flame },
   ];
 
   const sportsShortcuts = [

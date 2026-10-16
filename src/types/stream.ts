@@ -25,6 +25,10 @@ export interface StreamItem {
   sources?: Array<{ source: string; id: string }>;
   streams?: StreamSource[];
   directEmbedUrl?: string;
+  /** Original unproxied URL for screenshot capture (not used for playback) */
+  screenshotUrl?: string;
+  /** Background video URL — original stream URL for autoplay hero/banner video */
+  bgVideoUrl?: string;
   viewers?: number;
   teams?: {
     home?: string;

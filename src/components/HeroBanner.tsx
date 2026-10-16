@@ -42,10 +42,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   // Determine stream URL and type once per featured stream
   const streamData = useMemo(() => {
     if (!featuredStream) return null;
-    const url = featuredStream.directEmbedUrl || featuredStream.streams?.[0]?.embedUrl || '';
+    // Use bgVideoUrl (original) for video autoplay, directEmbedUrl (proxied) for iframe display
+    const videoUrl = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || featuredStream.streams?.[0]?.embedUrl || '';
+    const url = videoUrl;
     const isHls = url.includes('.m3u8') || url.includes('.ts');
     const isDirectVideo = url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mkv');
-    const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd');
+    const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
     return { url, isHls, isDirectVideo, isEmbed };
   }, [featuredStream?.id]);
 

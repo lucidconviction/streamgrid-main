@@ -100,11 +100,16 @@ function normalizePoster(rawUrl?: string): string {
 /**
  * Generate a screenshot URL for a stream when no poster exists.
  * Uses image.thum.io to capture a live screenshot of the stream page.
+ * Must use the ORIGINAL (non-proxied) URL — the screenshot API can't reach local proxy URLs.
  */
 function getScreenshotUrl(embedUrl: string | undefined): string {
   if (!embedUrl) return '';
-  // Use image.thum.io free screenshot API
-  const encoded = encodeURIComponent(embedUrl);
+  // Use the original URL (not the proxied one) for screenshot capture
+  const screenshotUrl = embedUrl.includes('/api/bintv-proxy')
+    ? '' // can't screenshot a local proxy URL
+    : embedUrl;
+  if (!screenshotUrl) return '';
+  const encoded = encodeURIComponent(screenshotUrl);
   return `https://image.thum.io/get/maxage/7200/width/400/fail/${encoded}`;
 }
 
@@ -221,6 +226,7 @@ export const streamService = {
                 hd: true,
               })),
               directEmbedUrl: embedUrl,
+              bgVideoUrl: rawUrl,
               viewers: Math.floor(Math.random() * 4000) + 1200,
             });
           });
@@ -247,6 +253,7 @@ export const streamService = {
                 embedUrl: routeBintvUrl(s.url),
               })),
               directEmbedUrl: embedUrl,
+              bgVideoUrl: rawUrl,
               viewers: Math.floor(Math.random() * 1000) + 200,
             });
           });
@@ -275,6 +282,7 @@ export const streamService = {
                 hd: true,
               })),
               directEmbedUrl: embedUrl,
+              bgVideoUrl: rawUrl,
               viewers: Math.floor(Math.random() * 8000) + 1500,
             });
           });
@@ -312,6 +320,7 @@ export const streamService = {
               provider: 'streamed',
               sources: m.sources || [],
               directEmbedUrl: defaultEmbed,
+              bgVideoUrl: defaultEmbed,
               viewers: Math.floor(Math.random() * 5000) + 850,
             });
           });
@@ -346,6 +355,7 @@ export const streamService = {
               provider: 'westream',
               sources: m.sources || [],
               directEmbedUrl: defaultEmbed,
+              bgVideoUrl: defaultEmbed,
               viewers: Math.floor(Math.random() * 5000) + 850,
             });
           });
