@@ -772,11 +772,7 @@ export default function App() {
               />
 
               {/* Row 3: IPTV M3U Live Channels */}
-              {isLoadingIptv ? (
-                <div className="mb-8 rounded-xl bg-slate-800/50 border border-slate-700/50 p-6 text-center">
-                  <p className="text-slate-400">Loading IPTV channels...</p>
-                </div>
-              ) : iptvStreams.length > 0 ? (
+              {iptvStreams.length > 0 ? (
                 <StreamCarousel
                   title="IPTV Live M3U Channels (FAST, RDTV & Premium)"
                   subtitle="Samsung TV Plus, CloudFront HLS, US, UK, Canada & DAZN PPV feeds"

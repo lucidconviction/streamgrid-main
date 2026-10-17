@@ -26,26 +26,6 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
   onViewAll,
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
-  const [screenshotUrls, setScreenshotUrls] = useState<Map<string, string | null>>(new Map());
-
-  // Use remote screenshot service (image.thum.io) for streams without a poster
-  // This is fast and doesn't block the UI with HLS instance creation
-  useEffect(() => {
-    // Cap to 100 streams to avoid generating thousands of URLs
-    const cappedStreams = streams.slice(0, 100);
-    const streamsWithoutPoster = cappedStreams.filter((s) => s.directEmbedUrl && !s.poster);
-    if (streamsWithoutPoster.length === 0) return;
-
-    const newUrls = new Map(screenshotUrls);
-    streamsWithoutPoster.forEach((stream) => {
-      if (newUrls.has(stream.id)) return;
-      const url = stream.directEmbedUrl!.startsWith('http')
-        ? stream.directEmbedUrl!
-        : `${window.location.origin}${stream.directEmbedUrl!}`;
-      newUrls.set(stream.id, `https://image.thum.io/get/maxage/7200/width/320/fail/${encodeURIComponent(url)}`);
-    });
-    setScreenshotUrls(new Map(newUrls));
-  }, [streams]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {
@@ -109,7 +89,6 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
                 onToggleWatchlist={onToggleWatchlist}
                 isInWatchlist={watchlistIds.includes(stream.id)}
                 isInMultiview={multiviewStreamIds.includes(stream.id)}
-                screenshotUrl={screenshotUrls.get(stream.id) || null}
               />
             </div>
           ))}
