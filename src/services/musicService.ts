@@ -84,30 +84,44 @@ export const searchYouTubeMusic = async (query: string, limit: number = 10): Pro
     const data = await response.json();
 
     const results: YouTubeMusicResult[] = [];
+    const seen = new Set<string>();
     const sections = data?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents || [];
 
+    const extractArtist = (title: string, browseId: string, subtitle: string, thumbnail: string) => {
+      const key = title.toLowerCase();
+      if (!seen.has(key) && title) {
+        seen.add(key);
+        results.push({
+          id: browseId,
+          title,
+          channel: subtitle,
+          channelId: browseId.startsWith('UC') ? browseId : undefined,
+          thumbnail,
+        });
+      }
+    };
+
     for (const section of sections) {
-      // musicCardShelfRenderer — shelf title IS the artist (with browseId)
-      // Shelf contents are individual tracks, not artists
+      // musicCardShelfRenderer — top result (artist/radio/album)
       const cardShelf = section.musicCardShelfRenderer;
       if (cardShelf) {
         const titleRun = cardShelf.title?.runs?.[0];
         const artistName = titleRun?.text || '';
-        const browseId = titleRun?.navigationEndpoint?.browseEndpoint?.browseId || '';
+        const navEndpoint = titleRun?.navigationEndpoint || {};
+        const browseId = navEndpoint?.browseEndpoint?.browseId || '';
         const subtitle = cardShelf.subtitle?.runs?.[0]?.text || '';
         const thumbnail = cardShelf.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url || '';
+        // Only accept if it's an artist (has UC channel) or a radio (VLRD) with a channel
         if (artistName && browseId) {
-          results.push({
-            id: browseId,
-            title: artistName,
-            channel: subtitle,
-            channelId: browseId.startsWith('UC') ? browseId : undefined,
-            thumbnail,
-          });
+          // For radio stations, try to get channel from subtitle
+          const isRadio = browseId.startsWith('VLRD') || subtitle.toLowerCase().includes('radio');
+          if (!isRadio || browseId.startsWith('UC')) {
+            extractArtist(artistName, browseId, subtitle, thumbnail);
+          }
         }
         continue;
       }
-      // itemSectionRenderer — fallback for other result types
+      // itemSectionRenderer — list of results
       const itemContents = section.itemSectionRenderer?.contents || [];
       for (const content of itemContents.slice(0, limit)) {
         const item = content.musicResponsiveListItemRenderer;
@@ -117,14 +131,9 @@ export const searchYouTubeMusic = async (query: string, limit: number = 10): Pro
         const thumbnail = item.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url || '';
         const nav = item.navigationEndpoint?.browseEndpoint || item.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.browseEndpoint || {};
         const navigationId = nav.browseId || '';
-        if (title && navigationId) {
-          results.push({
-            id: navigationId,
-            title,
-            channel: subtitle,
-            channelId: navigationId.startsWith('UC') ? navigationId : undefined,
-            thumbnail,
-          });
+        // Only include artists (UC channels), not playlists (VLPL) or radio (VLRD)
+        if (title && navigationId && navigationId.startsWith('UC')) {
+          extractArtist(title, navigationId, subtitle, thumbnail);
         }
       }
     }

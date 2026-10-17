@@ -22,12 +22,17 @@ interface MusicDirectoryProps {
   onSetLoadingTracks?: (loading: boolean) => void;
 }
 
-const SPOTIFY_GREEN = '#1DB954';
-const SPOTIFY_DARK = '#121212';
-const SPOTIFY_SURFACE = '#181818';
-const SPOTIFY_HOVER = '#282828';
-const SPOTIFY_TEXT = '#B3B3B3';
-const SPOTIFY_WHITE = '#FFFFFF';
+const THEME = {
+  accent: '#3b82f6',
+  accentHover: '#2563eb',
+  bg: '#0a0f1c',
+  surface: '#121826',
+  surface2: '#1a2235',
+  surface3: '#243049',
+  text: '#e8ecf4',
+  textMuted: '#8b97ad',
+  white: '#FFFFFF',
+};
 
 /** Time-based greeting */
 const getGreeting = (): string => {
@@ -73,7 +78,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-[#181818] border-t border-[#282828] flex items-center px-4" style={{ paddingLeft: '160px' }}>
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-[#121826] border-t border-[#1a2235] flex items-center px-4" style={{ paddingLeft: '160px' }}>
       {/* Track info */}
       <div className="flex items-center gap-3 w-[30%] min-w-0">
         <img
@@ -83,9 +88,9 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
         />
         <div className="min-w-0">
           <p className="text-white text-sm font-bold truncate">{currentTrack.title}</p>
-          <p className="text-[#B3B3B3] text-xs truncate">{artistName}</p>
+          <p className="text-[#8b97ad] text-xs truncate">{artistName}</p>
         </div>
-        <button className="text-[#B3B3B3] hover:text-white ml-2 shrink-0 transition-colors">
+        <button className="text-[#8b97ad] hover:text-white ml-2 shrink-0 transition-colors">
           <Heart className="w-4 h-4" />
         </button>
       </div>
@@ -93,10 +98,10 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
       {/* Controls */}
       <div className="flex flex-col items-center flex-1 max-w-xl">
         <div className="flex items-center gap-4 mb-1">
-          <button className="text-[#B3B3B3] hover:text-white transition-colors" title="Shuffle">
+          <button className="text-[#8b97ad] hover:text-white transition-colors" title="Shuffle">
             <Shuffle className="w-4 h-4" />
           </button>
-          <button onClick={onPrev} className="text-[#B3B3B3] hover:text-white transition-colors" title="Previous">
+          <button onClick={onPrev} className="text-[#8b97ad] hover:text-white transition-colors" title="Previous">
             <SkipBack className="w-5 h-5" />
           </button>
           <button
@@ -106,15 +111,15 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
           >
             {isPlaying ? <Pause className="w-4 h-4 text-black fill-current" /> : <Play className="w-4 h-4 text-black fill-current ml-0.5" />}
           </button>
-          <button onClick={onNext} className="text-[#B3B3B3] hover:text-white transition-colors" title="Next">
+          <button onClick={onNext} className="text-[#8b97ad] hover:text-white transition-colors" title="Next">
             <SkipForward className="w-5 h-5" />
           </button>
-          <button className="text-[#B3B3B3] hover:text-white transition-colors" title="Repeat">
+          <button className="text-[#8b97ad] hover:text-white transition-colors" title="Repeat">
             <Repeat className="w-4 h-4" />
           </button>
         </div>
         <div className="flex items-center gap-2 w-full">
-          <span className="text-[11px] text-[#B3B3B3] font-mono w-10 text-right">{formatTime(currentTime)}</span>
+          <span className="text-[11px] text-[#8b97ad] font-mono w-10 text-right">{formatTime(currentTime)}</span>
           <div
             className="flex-1 h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
             onClick={(e) => {
@@ -124,7 +129,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
             }}
           >
             <div
-              className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors"
+              className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors"
               style={{ width: `${progress}%` }}
             />
             <div
@@ -132,21 +137,21 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
               style={{ left: `calc(${progress}% - 6px)` }}
             />
           </div>
-          <span className="text-[11px] text-[#B3B3B3] font-mono w-10">{formatTime(duration)}</span>
+          <span className="text-[11px] text-[#8b97ad] font-mono w-10">{formatTime(duration)}</span>
         </div>
       </div>
 
       {/* Volume + expand */}
       <div className="flex items-center gap-3 w-[30%] justify-end">
-        <button onClick={onMute} className="text-[#B3B3B3] hover:text-white transition-colors">
+        <button onClick={onMute} className="text-[#8b97ad] hover:text-white transition-colors">
           {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
         <input
           type="range" min="0" max="100" value={volume}
           onChange={(e) => onVolumeChange(parseInt(e.target.value))}
-          className="w-24 h-1 accent-[#1DB954] cursor-pointer"
+          className="w-24 h-1 accent-[#3b82f6] cursor-pointer"
         />
-        <button onClick={onExpand} className="text-[#B3B3B3] hover:text-white transition-colors" title="Expand player">
+        <button onClick={onExpand} className="text-[#8b97ad] hover:text-white transition-colors" title="Expand player">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
@@ -183,13 +188,13 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#121212] flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 z-50 bg-[#0a0f1c] flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4">
         <button onClick={onClose} className="text-white hover:scale-110 transition-transform">
           <ChevronLeft className="w-8 h-8" />
         </button>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">Now Playing</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">Now Playing</p>
         <div className="w-8" />
       </div>
 
@@ -205,9 +210,9 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-2xl font-black text-white">{currentTrack.title}</h2>
-                <p className="text-[#B3B3B3] text-base mt-1">{artistName}</p>
+                <p className="text-[#8b97ad] text-base mt-1">{artistName}</p>
               </div>
-              <Heart className="w-7 h-7 text-[#1DB954] fill-current" />
+              <Heart className="w-7 h-7 text-[#3b82f6] fill-current" />
             </div>
 
             {/* Progress */}
@@ -220,10 +225,10 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
                   onSeek(ratio * duration);
                 }}
               >
-                <div className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors" style={{ width: `${progress}%` }} />
+                <div className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors" style={{ width: `${progress}%` }} />
                 <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${progress}% - 6px)` }} />
               </div>
-              <div className="flex justify-between text-[11px] text-[#B3B3B3] font-mono mt-1">
+              <div className="flex justify-between text-[11px] text-[#8b97ad] font-mono mt-1">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -231,7 +236,7 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
 
             {/* Controls */}
             <div className="flex items-center justify-between mt-4">
-              <button className="text-[#B3B3B3] hover:text-white"><Shuffle className="w-5 h-5" /></button>
+              <button className="text-[#8b97ad] hover:text-white"><Shuffle className="w-5 h-5" /></button>
               <button onClick={onPrev} className="text-white hover:scale-110 transition-transform"><SkipBack className="w-7 h-7" /></button>
               <button
                 onClick={onPlayPause}
@@ -240,27 +245,27 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
                 {isPlaying ? <Pause className="w-6 h-6 text-black fill-current" /> : <Play className="w-6 h-6 text-black fill-current ml-1" />}
               </button>
               <button onClick={onNext} className="text-white hover:scale-110 transition-transform"><SkipForward className="w-7 h-7" /></button>
-              <button className="text-[#B3B3B3] hover:text-white"><Repeat className="w-5 h-5" /></button>
+              <button className="text-[#8b97ad] hover:text-white"><Repeat className="w-5 h-5" /></button>
             </div>
           </div>
         </div>
 
         {/* Track list */}
-        <div className="w-96 bg-[#181818] overflow-y-auto">
-          <div className="px-6 py-4 border-b border-[#282828]">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">{tracks.length} Tracks</p>
+        <div className="w-96 bg-[#121826] overflow-y-auto">
+          <div className="px-6 py-4 border-b border-[#1a2235]">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">{tracks.length} Tracks</p>
           </div>
           {tracks.map((track, i) => (
             <button
               key={track.url || i}
               onClick={() => onTrackSelect(i)}
-              className={`w-full flex items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[#282828] ${i === trackIndex ? 'bg-[#282828]' : ''}`}
+              className={`w-full flex items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[#1a2235] ${i === trackIndex ? 'bg-[#1a2235]' : ''}`}
             >
-              <span className={`w-6 text-center text-sm font-mono ${i === trackIndex ? 'text-[#1DB954]' : 'text-[#B3B3B3]'}`}>
+              <span className={`w-6 text-center text-sm font-mono ${i === trackIndex ? 'text-[#3b82f6]' : 'text-[#8b97ad]'}`}>
                 {i === trackIndex && isPlaying ? (
                   <span className="flex items-center justify-center gap-0.5">
                     {[...Array(3)].map((_, j) => (
-                      <span key={j} className="w-0.5 bg-[#1DB954] animate-pulse" style={{ height: `${8 + j * 3}px`, animationDelay: `${j * 0.15}s` }} />
+                      <span key={j} className="w-0.5 bg-[#3b82f6] animate-pulse" style={{ height: `${8 + j * 3}px`, animationDelay: `${j * 0.15}s` }} />
                     ))}
                   </span>
                 ) : (
@@ -268,10 +273,10 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
                 )}
               </span>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold truncate ${i === trackIndex ? 'text-[#1DB954]' : 'text-white'}`}>{track.title}</p>
-                <p className="text-xs text-[#B3B3B3] truncate">{track.artist || artistName}</p>
+                <p className={`text-sm font-bold truncate ${i === trackIndex ? 'text-[#3b82f6]' : 'text-white'}`}>{track.title}</p>
+                <p className="text-xs text-[#8b97ad] truncate">{track.artist || artistName}</p>
               </div>
-              <span className="text-xs text-[#B3B3B3] font-mono">{formatTime(track.duration)}</span>
+              <span className="text-xs text-[#8b97ad] font-mono">{formatTime(track.duration)}</span>
             </button>
           ))}
         </div>
@@ -470,7 +475,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
       <nav className="w-40 bg-[#000000] flex flex-col shrink-0 py-6 px-3 gap-2">
         <div className="px-3 mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#1DB954] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#3b82f6] flex items-center justify-center">
               <MusicIcon className="w-4 h-4 text-black" />
             </div>
             <span className="text-white font-black text-sm">Music</span>
@@ -490,14 +495,14 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
           Your Library
         </button>
 
-        <div className="mt-6 pt-4 border-t border-[#282828]">
-          <button className="flex items-center gap-4 px-3 py-2 text-[#B3B3B3] hover:text-white transition-colors text-sm font-bold">
-            <div className="w-6 h-6 bg-[#B3B3B3] rounded flex items-center justify-center">
+        <div className="mt-6 pt-4 border-t border-[#1a2235]">
+          <button className="flex items-center gap-4 px-3 py-2 text-[#8b97ad] hover:text-white transition-colors text-sm font-bold">
+            <div className="w-6 h-6 bg-[#8b97ad] rounded flex items-center justify-center">
               <Play className="w-3 h-3 text-black fill-current" />
             </div>
             Create Playlist
           </button>
-          <button className="flex items-center gap-4 px-3 py-2 text-[#B3B3B3] hover:text-white transition-colors text-sm font-bold">
+          <button className="flex items-center gap-4 px-3 py-2 text-[#8b97ad] hover:text-white transition-colors text-sm font-bold">
             <div className="w-6 h-6 bg-gradient-to-br from-[#450af5] to-[#c4efd9] rounded flex items-center justify-center">
               <Heart className="w-3 h-3 text-white fill-current" />
             </div>
@@ -507,9 +512,9 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
       </nav>
 
       {/* ─── Main Content ─── */}
-      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#2a2a2a] to-[#121212]">
+      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#2a2a2a] to-[#0a0f1c]">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-[#121212]/80 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-[#0a0f1c]/80 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <button className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors">
               <ChevronLeft className="w-5 h-5" />
@@ -519,8 +524,8 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-sm font-bold text-[#B3B3B3] hover:text-white transition-colors">Sign up</button>
-            <button className="px-6 py-3 bg-[#1DB954] text-black text-sm font-black rounded-full hover:scale-105 transition-transform">Log in</button>
+            <button className="px-4 py-2 text-sm font-bold text-[#8b97ad] hover:text-white transition-colors">Sign up</button>
+            <button className="px-6 py-3 bg-[#3b82f6] text-white text-sm font-black rounded-full hover:bg-[#2563eb] hover:scale-105 transition-transform">Log in</button>
           </div>
         </div>
 
@@ -534,25 +539,25 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
           {/* Search */}
           <div className="mb-8">
             <form onSubmit={handleSubmit} className="relative">
-              <Search className="w-5 h-5 text-[#B3B3B3] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-5 h-5 text-[#8b97ad] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="What do you want to listen to?"
-                className="w-full max-w-md bg-[#282828] border border-transparent focus:border-[#1DB954] rounded-full py-3 pl-12 pr-24 text-white placeholder-[#B3B3B3] font-medium text-sm focus:outline-none transition-colors"
+                className="w-full max-w-md bg-[#1a2235] border border-transparent focus:border-[#3b82f6] rounded-full py-3 pl-12 pr-24 text-white placeholder-[#8b97ad] font-medium text-sm focus:outline-none transition-colors"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 {searchActive && (
-                  <button type="button" onClick={clearSearch} className="px-3 py-1.5 text-xs font-bold text-[#B3B3B3] hover:text-white bg-[#3E3E3E] rounded-full transition-colors">
+                  <button type="button" onClick={clearSearch} className="px-3 py-1.5 text-xs font-bold text-[#8b97ad] hover:text-white bg-[#243049] rounded-full transition-colors">
                     Clear
                   </button>
                 )}
                 <button
                   type="submit"
                   disabled={isLoading || !searchQuery.trim()}
-                  className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] disabled:bg-[#3E3E3E] disabled:text-[#B3B3B3] text-black text-sm font-black rounded-full transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] disabled:bg-[#243049] disabled:text-[#8b97ad] text-white text-sm font-black rounded-full transition-colors flex items-center gap-2"
                 >
                   {isLoading ? <Clock className="w-4 h-4 animate-spin" /> : 'Search'}
                 </button>
@@ -581,9 +586,9 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                 </div>
               ) : (
                 <div className="py-16 flex flex-col items-center text-center">
-                  <SearchIcon className="w-12 h-12 text-[#B3B3B3] mb-4" />
+                  <SearchIcon className="w-12 h-12 text-[#8b97ad] mb-4" />
                   <p className="text-lg font-bold text-white mb-2">No artists found</p>
-                  <p className="text-sm text-[#B3B3B3]">Try a different search term</p>
+                  <p className="text-sm text-[#8b97ad]">Try a different search term</p>
                 </div>
               )}
             </div>
@@ -592,7 +597,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
           {/* Loading */}
           {isLoading && (
             <div className="py-16 flex flex-col items-center">
-              <Clock className="w-10 h-10 text-[#1DB954] animate-spin mb-4" />
+              <Clock className="w-10 h-10 text-[#3b82f6] animate-spin mb-4" />
               <p className="text-base font-bold text-white">Searching...</p>
             </div>
           )}
@@ -605,7 +610,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                 <section className="mb-10">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-black text-white">Top Artists</h2>
-                    <span className="text-xs font-bold text-[#B3B3B3] uppercase tracking-widest">{top50Artists.length} artists</span>
+                    <span className="text-xs font-bold text-[#8b97ad] uppercase tracking-widest">{top50Artists.length} artists</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {top50Artists.slice(0, 12).map((artist, i) => (
@@ -694,7 +699,7 @@ const ArtistCard: React.FC<{
   <button
     onClick={onClick}
     className={`group rounded-lg p-3 transition-all duration-200 text-left w-full ${
-      isActive ? 'bg-[#282828]' : 'bg-[#181818] hover:bg-[#282828]'
+      isActive ? 'bg-[#1a2235]' : 'bg-[#121826] hover:bg-[#1a2235]'
     }`}
   >
     <div className="relative aspect-square rounded-md overflow-hidden mb-3 shadow-lg">
@@ -705,13 +710,13 @@ const ArtistCard: React.FC<{
         loading="lazy"
       />
       {/* Play button */}
-      <div className={`absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#1DB954] flex items-center justify-center shadow-xl transition-all duration-300 ${
+      <div className={`absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#3b82f6] flex items-center justify-center shadow-xl transition-all duration-300 ${
         isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
       }`}>
         <Play className="w-5 h-5 text-black fill-current ml-0.5" />
       </div>
     </div>
-    <p className={`text-sm font-black truncate ${isActive ? 'text-[#1DB954]' : 'text-white'}`}>{artist.name}</p>
-    <p className="text-xs text-[#B3B3B3] mt-0.5 truncate">Artist</p>
+    <p className={`text-sm font-black truncate ${isActive ? 'text-[#3b82f6]' : 'text-white'}`}>{artist.name}</p>
+    <p className="text-xs text-[#8b97ad] mt-0.5 truncate">Artist</p>
   </button>
 );

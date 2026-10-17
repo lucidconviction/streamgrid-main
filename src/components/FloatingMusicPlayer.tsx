@@ -111,10 +111,10 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
 
   if (!currentTrack) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 w-72 bg-[#282828] rounded-lg shadow-2xl overflow-hidden border border-[#3E3E3E]">
+      <div className="fixed bottom-6 right-6 z-50 w-72 bg-[#1a2235] rounded-lg shadow-2xl overflow-hidden border border-[#243049]">
         <div className="p-4 flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-[#1DB954] animate-spin shrink-0" />
-          <p className="text-sm text-[#B3B3B3]">Loading tracks...</p>
+          <Loader2 className="w-5 h-5 text-[#3b82f6] animate-spin shrink-0" />
+          <p className="text-sm text-[#8b97ad]">Loading tracks...</p>
         </div>
       </div>
     );
@@ -125,7 +125,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
       <audio ref={audioRef} preload="auto" />
 
       {/* Mini Player — Spotify style floating bar */}
-      <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#282828] rounded-lg shadow-2xl overflow-hidden border border-[#3E3E3E]">
+      <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#1a2235] rounded-lg shadow-2xl overflow-hidden border border-[#243049]">
         <div className="flex items-center gap-3 px-4 py-3">
           <img
             src={artistThumbnail || currentTrack.thumbnail || '/hero.png'}
@@ -134,11 +134,11 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
           />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white truncate">{currentTrack.title}</p>
-            <p className="text-xs text-[#B3B3B3] truncate font-mono">{artistName}</p>
+            <p className="text-xs text-[#8b97ad] truncate font-mono">{artistName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-[#3E3E3E] rounded text-[#B3B3B3] hover:text-white transition-colors shrink-0"
+            className="p-1.5 hover:bg-[#243049] rounded text-[#8b97ad] hover:text-white transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -153,11 +153,11 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
                 className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
               >
                 <div
-                  className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors"
+                  className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors"
                   style={{ width: `${(currentTime / duration) * 100}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] text-[#B3B3B3] mt-0.5 font-mono">
+              <div className="flex justify-between text-[10px] text-[#8b97ad] mt-0.5 font-mono">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -168,29 +168,29 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
           <div className="flex items-center justify-between">
             <button
               onClick={() => setVolume(v => v > 0 ? 0 : 80)}
-              className="p-1.5 text-[#B3B3B3] hover:text-white transition-colors"
+              className="p-1.5 text-[#8b97ad] hover:text-white transition-colors"
             >
               {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
 
             <div className="flex items-center gap-1">
-              <button onClick={prevTrack} className="p-2 hover:bg-[#3E3E3E] rounded-full text-[#B3B3B3] hover:text-white transition-colors">
+              <button onClick={prevTrack} className="p-2 hover:bg-[#243049] rounded-full text-[#8b97ad] hover:text-white transition-colors">
                 <SkipBack className="w-4 h-4" />
               </button>
               <button
                 onClick={togglePlay}
-                className="w-9 h-9 rounded-full bg-[#1DB954] hover:bg-[#1ed760] flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] flex items-center justify-center transition-colors"
               >
                 {isPlaying ? <Pause className="w-4 h-4 text-black fill-current" /> : <Play className="w-4 h-4 text-black fill-current ml-0.5" />}
               </button>
-              <button onClick={nextTrack} className="p-2 hover:bg-[#3E3E3E] rounded-full text-[#B3B3B3] hover:text-white transition-colors">
+              <button onClick={nextTrack} className="p-2 hover:bg-[#243049] rounded-full text-[#8b97ad] hover:text-white transition-colors">
                 <SkipForward className="w-4 h-4" />
               </button>
             </div>
 
             <button
               onClick={() => setIsExpanded(true)}
-              className="p-1.5 text-[#B3B3B3] hover:text-white transition-colors"
+              className="p-1.5 text-[#8b97ad] hover:text-white transition-colors"
               title="Expand player"
             >
               <Maximize2 className="w-4 h-4" />
@@ -202,7 +202,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
             <input
               type="range" min="0" max="100" value={volume}
               onChange={e => setVolume(parseInt(e.target.value))}
-              className="w-full h-0.5 bg-[#4D4D4D] rounded-full appearance-none cursor-pointer accent-[#1DB954]"
+              className="w-full h-0.5 bg-[#4D4D4D] rounded-full appearance-none cursor-pointer accent-[#3b82f6]"
             />
           </div>
         </div>
@@ -210,13 +210,13 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
 
       {/* Expanded Player Modal — Spotify style */}
       {isExpanded && (
-        <div className="fixed inset-0 z-50 bg-[#121212] flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-50 bg-[#0a0f1c] flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) setIsExpanded(false); }}>
           {/* Header */}
           <div className="flex items-center justify-between px-8 py-5">
             <button onClick={() => setIsExpanded(false)} className="text-white hover:scale-110 transition-transform">
               <ChevronDown className="w-7 h-7" />
             </button>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">Now Playing</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">Now Playing</p>
             <div className="w-7" />
           </div>
 
@@ -232,9 +232,9 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <div>
                     <h2 className="text-2xl font-black text-white">{currentTrack.title}</h2>
-                    <p className="text-[#B3B3B3] text-base mt-1">{currentTrack.artist || artistName}</p>
+                    <p className="text-[#8b97ad] text-base mt-1">{currentTrack.artist || artistName}</p>
                   </div>
-                  <Heart className="w-7 h-7 text-[#1DB954] fill-current" />
+                  <Heart className="w-7 h-7 text-[#3b82f6] fill-current" />
                 </div>
 
                 {/* Progress */}
@@ -244,11 +244,11 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
                     className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative mb-1"
                   >
                     <div
-                      className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors"
+                      className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors"
                       style={{ width: `${(currentTime / duration) * 100}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-[11px] text-[#B3B3B3] font-mono">
+                  <div className="flex justify-between text-[11px] text-[#8b97ad] font-mono">
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
@@ -256,34 +256,34 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
 
                 {/* Controls */}
                 <div className="flex items-center justify-center gap-6 mt-4">
-                  <button className="text-[#B3B3B3] hover:text-white transition-colors"><SkipBack className="w-6 h-6" /></button>
+                  <button className="text-[#8b97ad] hover:text-white transition-colors"><SkipBack className="w-6 h-6" /></button>
                   <button
                     onClick={togglePlay}
                     className="w-14 h-14 rounded-full bg-white hover:scale-105 flex items-center justify-center transition-transform"
                   >
                     {isPlaying ? <Pause className="w-6 h-6 text-black fill-current" /> : <Play className="w-6 h-6 text-black fill-current ml-1" />}
                   </button>
-                  <button className="text-[#B3B3B3] hover:text-white transition-colors"><SkipForward className="w-6 h-6" /></button>
+                  <button className="text-[#8b97ad] hover:text-white transition-colors"><SkipForward className="w-6 h-6" /></button>
                 </div>
               </div>
             </div>
 
             {/* Right: Track list */}
-            <div className="w-96 bg-[#181818] rounded-lg ml-8 overflow-y-auto">
-              <div className="px-6 py-4 border-b border-[#282828]">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">{tracks.length} Tracks</p>
+            <div className="w-96 bg-[#121826] rounded-lg ml-8 overflow-y-auto">
+              <div className="px-6 py-4 border-b border-[#1a2235]">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">{tracks.length} Tracks</p>
               </div>
               {tracks.map((track, i) => (
                 <button
                   key={track.url || i}
                   onClick={() => { setCurrentTrackIndex(i); setIsPlaying(true); }}
-                  className={`w-full flex items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[#282828] ${i === currentTrackIndex ? 'bg-[#282828]' : ''}`}
+                  className={`w-full flex items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[#1a2235] ${i === currentTrackIndex ? 'bg-[#1a2235]' : ''}`}
                 >
-                  <span className={`w-6 text-center text-sm font-mono ${i === currentTrackIndex ? 'text-[#1DB954]' : 'text-[#B3B3B3]'}`}>
+                  <span className={`w-6 text-center text-sm font-mono ${i === currentTrackIndex ? 'text-[#3b82f6]' : 'text-[#8b97ad]'}`}>
                     {i === currentTrackIndex && isPlaying ? (
                       <span className="flex items-center justify-center gap-0.5">
                         {[...Array(3)].map((_, j) => (
-                          <span key={j} className="w-0.5 bg-[#1DB954] animate-pulse" style={{ height: `${8 + j * 3}px`, animationDelay: `${j * 0.15}s` }} />
+                          <span key={j} className="w-0.5 bg-[#3b82f6] animate-pulse" style={{ height: `${8 + j * 3}px`, animationDelay: `${j * 0.15}s` }} />
                         ))}
                       </span>
                     ) : (
@@ -291,10 +291,10 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
                     )}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-bold truncate ${i === currentTrackIndex ? 'text-[#1DB954]' : 'text-white'}`}>{track.title}</p>
-                    <p className="text-xs text-[#B3B3B3] truncate">{track.artist || artistName}</p>
+                    <p className={`text-sm font-bold truncate ${i === currentTrackIndex ? 'text-[#3b82f6]' : 'text-white'}`}>{track.title}</p>
+                    <p className="text-xs text-[#8b97ad] truncate">{track.artist || artistName}</p>
                   </div>
-                  <span className="text-xs text-[#B3B3B3] font-mono">{formatTime(track.duration)}</span>
+                  <span className="text-xs text-[#8b97ad] font-mono">{formatTime(track.duration)}</span>
                 </button>
               ))}
             </div>
