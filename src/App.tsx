@@ -496,6 +496,7 @@ export default function App() {
         sidebarOpen={sidebarOpen}
         liveStreams={liveStreams}
         onPlayStream={handlePlayStream}
+        currentPage={currentView}
       />
 
       {/* Main Container with Sidebar + Content */}

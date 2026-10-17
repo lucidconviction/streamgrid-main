@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import Hls from 'hls.js';
 
@@ -8,6 +9,7 @@ interface HeaderProps {
   sidebarOpen: boolean;
   liveStreams: StreamItem[];
   onPlayStream: (stream: StreamItem) => void;
+  currentPage?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,11 +18,26 @@ export const Header: React.FC<HeaderProps> = ({
   sidebarOpen,
   liveStreams,
   onPlayStream,
+  currentPage,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [currentBgStream, setCurrentBgStream] = useState<StreamItem | null>(null);
   const [bgReady, setBgReady] = useState(false);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const pageDropdownRef = useRef<HTMLDivElement>(null);
+
+  const VIEW_LABELS: Record<string, string> = {
+    home: 'Explore',
+    sports: 'Live Sports',
+    channels: '24/7 Channels',
+    iptv: 'IPTV Playlists',
+    smutt: 'Nett Smutt',
+    music: 'Music',
+    multiview: 'Multiview',
+    history: 'Watch History',
+    watchlist: 'Watchlist',
+  };
 
   // Pick the first available live stream for instant playback
   const pickBgStream = useCallback(() => {
@@ -120,6 +137,17 @@ export const Header: React.FC<HeaderProps> = ({
     setupBgPlayer(next);
   }, [bgReady, liveStreams]);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (pageDropdownRef.current && !pageDropdownRef.current.contains(e.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   return (
     <>
       {/* Background Live Stream Player */}
@@ -175,8 +203,39 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Sidebar Toggle */}
+          {/* Right: Page Dropdown + Sidebar Toggle */}
           <div className="flex items-center gap-2">
+            {/* Page Selector Dropdown */}
+            <div className="relative" ref={pageDropdownRef}>
+              <button
+                onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+              >
+                <span className="hidden sm:inline">{VIEW_LABELS[currentPage || 'home']}</span>
+                <span className="sm:hidden">{(VIEW_LABELS[currentPage || 'home'] || 'Home').charAt(0)}</span>
+                {pageDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {pageDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-44 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-1.5">
+                    {Object.entries(VIEW_LABELS).map(([id, label]) => (
+                      <button
+                        key={id}
+                        onClick={() => { onNavigate(id); setPageDropdownOpen(false); }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                          currentPage === id
+                            ? 'bg-blue-600 text-white'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={onToggleSidebar}
               className={`p-2 rounded-lg transition-colors ${
