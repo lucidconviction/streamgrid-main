@@ -253,7 +253,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {searchDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {searchDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-52 bg-[#0f172a]/92 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
+                <div className="absolute top-full left-0 mt-2 w-44 bg-[#0f172a]/92 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
                   {/* Top: Save Input */}
                   <div className="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950/40 to-transparent">
                     <div className="flex items-center gap-1.5 mb-2">

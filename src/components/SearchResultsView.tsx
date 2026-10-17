@@ -41,7 +41,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
-    const amount = dir === 'left' ? -340 : 340;
+    const amount = dir === 'left' ? -200 : 200;
     scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
   };
 
@@ -85,12 +85,12 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
         {/* Scrollable card row */}
         <div className="relative px-4 py-4">
           {/* Left fade edge */}
-          {matched.length > 5 && (
-            <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#0a0f1c] to-transparent pointer-events-none z-10" />
+          {matched.length > 3 && (
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[#0a0f1c] to-transparent pointer-events-none z-10" />
           )}
           {/* Right fade edge */}
-          {matched.length > 5 && (
-            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#0a0f1c] to-transparent pointer-events-none z-10" />
+          {matched.length > 3 && (
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[#0a0f1c] to-transparent pointer-events-none z-10" />
           )}
 
           {/* Nav arrows */}
@@ -128,7 +128,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
               matched.map((stream) => (
                 <div
                   key={stream.id}
-                  className="shrink-0 w-[200px] sm:w-[220px]"
+                  className="shrink-0 w-[148px] sm:w-[172px]"
                 >
                   <StreamCard
                     stream={stream}
