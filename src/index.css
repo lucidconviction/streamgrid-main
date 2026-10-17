@@ -195,6 +195,7 @@ img, button, a {
 .channel-nav-btn * {
   color: #ffffff !important;
   fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Hide native video captions/subtitles (WebVTT) */
