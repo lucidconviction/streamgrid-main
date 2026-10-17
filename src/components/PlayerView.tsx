@@ -615,9 +615,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         </div>
 
         {/* Right Sidebar: Channel List & Chat */}
-        <div className={isTheaterMode ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-6' : 'lg:col-span-4 flex flex-col gap-4'}>
+        <div className={isTheaterMode ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-6' : 'lg:col-span-4 grid grid-cols-1 lg:grid-cols-2 gap-4'}>
 
-          {/* Now Playing Card */}
+          {/* Now Playing Card — half width */}
           <div className="bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
               <div className="flex items-center gap-2">
@@ -656,8 +656,59 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             </div>
           </div>
 
-          {/* Full Channel List (toggleable) */}
+          {/* Channel Suggestions — half width */}
           <div className="bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-wider text-white">Hot Sports Now</span>
+              </div>
+              <span className="text-[10px] font-mono text-slate-500">Live</span>
+            </div>
+            <div className="divide-y divide-slate-800/50">
+              {(() => {
+                const sportsStreams = (allStreams || relatedStreams)
+                  .filter((s) => s.id !== stream.id && s.status === 'live' && (
+                    s.category.includes('Sport') || s.category.includes('Basketball') ||
+                    s.category.includes('Football') || s.category.includes('Combat') ||
+                    s.category.includes('Golf') || s.category.includes('Motorsport') ||
+                    s.category.includes('Tennis') || s.category.includes('Cricket') ||
+                    s.category.includes('Rugby') || s.category.includes('Hockey') ||
+                    s.category.includes('Baseball') || s.category.includes('MMA') ||
+                    s.category.includes('Boxing') || s.category.includes('Soccer')
+                  ))
+                  .slice(0, 4);
+                return sportsStreams.length > 0 ? sportsStreams.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => onPlayStream(s)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-800/60 transition-colors text-left"
+                  >
+                    <img
+                      src={s.poster || '/hero.png'}
+                      alt={s.title}
+                      className="w-14 h-9 rounded object-cover shrink-0"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-white truncate">{s.title}</p>
+                      <p className="text-[10px] text-slate-400">{s.category}</p>
+                    </div>
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  </button>
+                )) : (
+                  <div className="px-4 py-8 text-center">
+                    <Radio className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No live sports available</p>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Full Channel List (toggleable) — spans full width on desktop */}
+          <div className="lg:col-span-2 bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-white">Channel List</span>
