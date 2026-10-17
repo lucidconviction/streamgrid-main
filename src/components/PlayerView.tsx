@@ -152,43 +152,40 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     return () => { unsubscribed = true; watchPartyService.disconnect(); };
   }, []);
 
-  // Build group tabs from available streams
-  const groups = useMemo(() => {
-    const source = allStreams || relatedStreams;
-    const groupSet = new Set<string>();
-    source.forEach((s) => {
-      if (s.provider === 'iptv') return; // IPTV handled separately
-      const g = s.groupTitle || s.category || 'Uncategorized';
-      groupSet.add(g);
-    });
-    return ['All', 'IPTV', 'Live Sports', '24/7', ...Array.from(groupSet).sort()];
-  }, [allStreams, relatedStreams]);
+  // Build group tabs — every site section accessible from channel list (except smutt)
+  const groups = ['All', 'Live Sports', '24/7 Channels', 'IPTV', 'Entertainment & Movies', 'News & Documentaries'];
 
   // Filter channels based on selected tab
   const filteredChannels = useMemo(() => {
-    const source = allStreams || relatedStreams;
+    const source = (allStreams || relatedStreams).filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
     if (selectedGroup === 'All') return source;
     if (selectedGroup === 'IPTV') return source.filter((s) => s.provider === 'iptv');
     if (selectedGroup === 'Live Sports') return source.filter((s) => s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer')));
-    if (selectedGroup === '24/7') return source.filter((s) => s.status === '24/7');
+    if (selectedGroup === '24/7 Channels') return source.filter((s) => s.status === '24/7');
+    if (selectedGroup === 'Entertainment & Movies') return source.filter((s) => s.category === 'Entertainment & Movies');
+    if (selectedGroup === 'News & Documentaries') return source.filter((s) => s.category === 'News & Documentaries');
     return source.filter((s) => s.provider !== 'iptv' && (s.groupTitle === selectedGroup || s.category === selectedGroup));
   }, [allStreams, relatedStreams, selectedGroup]);
 
   // Group counts for tab badges
   const groupCounts = useMemo(() => {
-    const source = allStreams || relatedStreams;
-    const counts: Record<string, number> = { 'All': source.length, 'IPTV': 0, 'Live Sports': 0, '24/7': 0 };
+    const source = (allStreams || relatedStreams).filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
+    const counts: Record<string, number> = {
+      'All': source.length,
+      'IPTV': 0,
+      'Live Sports': 0,
+      '24/7 Channels': 0,
+      'Entertainment & Movies': 0,
+      'News & Documentaries': 0,
+    };
     source.forEach((s) => {
-      if (s.provider === 'iptv') {
-        counts['IPTV']++;
-        return;
-      }
+      if (s.provider === 'iptv') { counts['IPTV']++; return; }
       if (s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer'))) {
         counts['Live Sports']++;
       }
-      if (s.status === '24/7') counts['24/7']++;
-      const g = s.groupTitle || s.category || 'Uncategorized';
-      counts[g] = (counts[g] || 0) + 1;
+      if (s.status === '24/7') counts['24/7 Channels']++;
+      if (s.category === 'Entertainment & Movies') counts['Entertainment & Movies']++;
+      if (s.category === 'News & Documentaries') counts['News & Documentaries']++;
     });
     return counts;
   }, [allStreams, relatedStreams]);
@@ -736,8 +733,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                       }`}
                     >
                       {group === 'Live Sports' && '⚡ '}
-                      {group === '24/7' && '📺 '}
+                      {group === '24/7 Channels' && '📺 '}
                       {group === 'IPTV' && '📡 '}
+                      {group === 'Entertainment & Movies' && '🎬 '}
+                      {group === 'News & Documentaries' && '📰 '}
                       {group}
                       <span className={`ml-1 text-[10px] ${selectedGroup === group ? 'text-white/70' : 'text-slate-600'}`}>
                         {groupCounts[group] || 0}
