@@ -20,8 +20,6 @@ import {
   PictureInPicture2,
   Users,
   AlertCircle,
-  Volume2,
-  VolumeX,
 } from 'lucide-react';
 import { StreamItem, StreamSource } from '../types/stream';
 import { streamService } from '../services/streamService';
@@ -96,7 +94,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   const [showChannelList, setShowChannelList] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [playerError, setPlayerError] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Watch Party state
@@ -318,7 +315,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 url={activeEmbedUrl}
                 title={stream.title}
                 streamType={stream.streamType}
-                isMuted={isMuted}
                 autoPlay={true}
                 onRefresh={handleRefreshStream}
                 onTogglePiP={onTogglePiP}
@@ -345,18 +341,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             >
               <ChevronUp className="w-5 h-5" />
               <span>Channel Up</span>
-            </button>
-            <button
-              onClick={() => setIsMuted((m) => !m)}
-              className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 transition-all touch-manipulation text-sm font-bold ${
-                isMuted
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                  : 'bg-emerald-600/90 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30'
-              }`}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              <span>{isMuted ? 'Unmute' : 'Muted'}</span>
             </button>
             <div className="flex-1 bg-[#0f121a] rounded-xl border border-slate-800/80 px-4 py-2.5">
               <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Channel</span>
