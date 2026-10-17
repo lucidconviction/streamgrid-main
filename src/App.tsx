@@ -507,7 +507,7 @@ export default function App() {
   const watchlistStreams = streams.filter((s) => watchlistIds.includes(s.id));
 
   return (
-    <div className={`min-h-screen bg-[#050810] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white ${sidebarOpen && 'sidebar-overlay-open'}`}>
+    <div className={`min-h-screen bg-[#0a0f1c] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white ${sidebarOpen && 'sidebar-overlay-open'}`}>
       {/* Top Bar Header */}
       <Header
         onNavigate={(view) => {
@@ -519,6 +519,17 @@ export default function App() {
         liveStreams={liveStreams}
         onPlayStream={handlePlayStream}
         currentPage={currentView}
+        onSearch={(query: string) => {
+          setSearchQuery(query);
+          // Open search results in sidebar if available
+          const sidebarSearchInput = document.querySelector('input[placeholder="Search all streams..."]') as HTMLInputElement;
+          if (sidebarSearchInput) {
+            sidebarSearchInput.value = query;
+            sidebarSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }}
+        savedSearches={storageService.getSavedSearches(activeProfile.id)}
+        activeProfileId={activeProfile.id}
       />
 
       {/* Main Container with Sidebar + Content */}

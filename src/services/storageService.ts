@@ -5,6 +5,7 @@ const ACTIVE_PROFILE_KEY = 'streamgrid_active_profile_id';
 const HISTORY_PREFIX = 'streamgrid_history_';
 const WATCHLIST_PREFIX = 'streamgrid_watchlist_';
 const PRESETS_PREFIX = 'streamgrid_presets_';
+const SEARCH_PREFIX = 'streamgrid_saved_searches_';
 
 export const DEFAULT_PROFILES: UserProfile[] = [
   {
@@ -264,4 +265,47 @@ export const storageService = {
       console.error('Failed to delete preset', e);
     }
   },
+
+  // Saved Searches per Profile
+  getSavedSearches(profileId: string): string[] {
+    try {
+      const data = localStorage.getItem(`${SEARCH_PREFIX}${profileId}`);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  addSavedSearch(profileId: string, query: string): string[] {
+    const trimmed = query.trim();
+    if (!trimmed) return this.getSavedSearches(profileId);
+    const searches = this.getSavedSearches(profileId)
+      .filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
+    const updated = [trimmed, ...searches].slice(0, 20);
+    try {
+      localStorage.setItem(`${SEARCH_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save search', e);
+    }
+    return updated;
+  },
+
+  removeSavedSearch(profileId: string, query: string) {
+    const updated = this.getSavedSearches(profileId).filter(
+      (s) => s.toLowerCase() !== query.toLowerCase()
+    );
+    try {
+      localStorage.setItem(`${SEARCH_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to remove saved search', e);
+    }
+  },
+
+  clearSavedSearches(profileId: string) {
+    try {
+      localStorage.removeItem(`${SEARCH_PREFIX}${profileId}`);
+    } catch (e) {
+      console.error('Failed to clear saved searches', e);
+    }
+  }
 };

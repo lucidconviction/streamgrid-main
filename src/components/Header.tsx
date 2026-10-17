@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark } from 'lucide-react';
 import { StreamItem } from '../types/stream';
+import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
 
 interface HeaderProps {
@@ -10,6 +11,9 @@ interface HeaderProps {
   liveStreams: StreamItem[];
   onPlayStream: (stream: StreamItem) => void;
   currentPage?: string;
+  onSearch?: (query: string) => void;
+  savedSearches?: string[];
+  activeProfileId?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +23,9 @@ export const Header: React.FC<HeaderProps> = ({
   liveStreams,
   onPlayStream,
   currentPage,
+  onSearch,
+  savedSearches = [],
+  activeProfileId = 'profile-alex',
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -26,6 +33,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [bgReady, setBgReady] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
+  const [searchInput, setSearchInput] = useState('');
   const bgFailRef = useRef(false);
 
   const VIEW_LABELS: Record<string, string> = {
@@ -140,16 +150,38 @@ export const Header: React.FC<HeaderProps> = ({
     setupBgPlayer(next);
   }, [bgReady, liveStreams]);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (pageDropdownRef.current && !pageDropdownRef.current.contains(e.target as Node)) {
         setPageDropdownOpen(false);
       }
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
+        setSearchDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  const handleSaveSearch = () => {
+    const trimmed = searchInput.trim();
+    if (!trimmed) return;
+    storageService.addSavedSearch(activeProfileId, trimmed);
+    if (onSearch) onSearch(trimmed);
+    setSearchInput('');
+    setSearchDropdownOpen(false);
+  };
+
+  const handleLoadSearch = (query: string) => {
+    if (onSearch) onSearch(query);
+    setSearchDropdownOpen(false);
+  };
+
+  const handleRemoveSearch = (e: React.MouseEvent, query: string) => {
+    e.stopPropagation();
+    storageService.removeSavedSearch(activeProfileId, query);
+  };
 
   return (
     <>
@@ -157,15 +189,15 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <video
           ref={videoRef}
-          className="w-full h-full object-cover opacity-35"
+          className="w-full h-full object-cover opacity-55"
           muted
           playsInline
           autoPlay
           loop
           preload="auto"
         />
-        {/* Gradient overlay — reduced opacity so video shows through */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/70 via-[#050810]/50 to-[#050810]/70" />
+        {/* Gradient overlay — lighter so video shows through and pages are brighter */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
         {!bgReady && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-blue-500/60 border-t-blue-400/80 rounded-full animate-spin" />
@@ -206,8 +238,97 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Page Dropdown + Sidebar Toggle */}
+          {/* Right: Saved Searches + Page Dropdown + Sidebar Toggle */}
           <div className="flex items-center gap-2">
+            {/* Saved Searches Dropdown */}
+            <div className="relative" ref={searchDropdownRef}>
+              <button
+                onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
+                title="Saved Searches"
+              >
+                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline">Searches</span>
+                <span className="sm:hidden">🔍</span>
+                {searchDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {searchDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-3 border-b border-slate-800/60">
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2">
+                      Save Current Search
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveSearch();
+                        }}
+                        placeholder="Type a search term..."
+                        autoFocus
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        onClick={handleSaveSearch}
+                        disabled={!searchInput.trim()}
+                        className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors touch-manipulation"
+                      >
+                        <Star className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {savedSearches.length === 0 ? (
+                      <div className="px-4 py-6 text-center">
+                        <Bookmark className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500">No saved searches</p>
+                        <p className="text-[10px] text-slate-600 mt-1">Type above and hit save</p>
+                      </div>
+                    ) : (
+                      <div className="p-1.5">
+                        <div className="flex items-center justify-between px-2 py-1 mb-1">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                            Saved Searches ({savedSearches.length})
+                          </span>
+                          <button
+                            onClick={() => {
+                              storageService.clearSavedSearches(activeProfileId);
+                            }}
+                            className="text-[10px] text-slate-600 hover:text-red-400 transition-colors"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                        {savedSearches.map((query, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center group"
+                          >
+                            <button
+                              onClick={() => handleLoadSearch(query)}
+                              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left touch-manipulation"
+                            >
+                              <Search className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                              <span className="truncate">{query}</span>
+                            </button>
+                            <button
+                              onClick={(e) => handleRemoveSearch(e, query)}
+                              className="p-2 text-slate-600 hover:text-red-400 transition-colors touch-manipulation"
+                              title="Remove search"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Page Selector Dropdown */}
             <div className="relative" ref={pageDropdownRef}>
               <button
