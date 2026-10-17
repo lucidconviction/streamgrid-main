@@ -73,9 +73,20 @@ export interface MultiviewSlot {
   isMuted: boolean;
   volume: number;
   label?: string;
+  /** User-assigned bookmark / label for this slot */
+  bookmark?: string;
 }
 
-export type MultiviewLayout = 'single' | 'dual' | 'triple' | 'quad';
+export type MultiviewLayout =
+  | 'single'
+  | 'dual'
+  | 'triple'
+  | 'quad'
+  | 'six'
+  | 'six-wide'
+  | 'six-tall'
+  | 'focus-5'
+  | 'big-center';
 
 export interface MultiviewPreset {
   id: string;

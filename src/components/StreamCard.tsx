@@ -157,6 +157,40 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             autoPlay
             preload="auto"
           />
+        ) : isIptv ? (
+          /* IPTV: screenshot as background, logo at bottom-left */
+          <div className="relative w-full h-full">
+            {screenshotUrl ? (
+              <img
+                src={screenshotUrl}
+                alt={stream.title}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex flex-col items-center justify-center"
+                style={{ background: iptvGradient || 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+              >
+                <span className="text-3xl mb-1 drop-shadow-lg">📡</span>
+                {iptvLabel && (
+                  <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest px-2 text-center truncate w-full">
+                    {iptvLabel}
+                  </span>
+                )}
+              </div>
+            )}
+            {stream.poster && (
+              <img
+                src={stream.poster}
+                alt=""
+                className="absolute bottom-1 left-1 w-8 h-8 object-contain rounded bg-black/50 p-0.5"
+                referrerPolicy="no-referrer"
+                onError={() => {}}
+              />
+            )}
+          </div>
         ) : !imageError && !isSmutt ? (
           <img
             src={thumbUrl}
@@ -173,28 +207,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           >
             <span className="text-4xl mb-1 drop-shadow-lg">{smuttEmoji}</span>
             <span className="text-[10px] text-white/60 font-mono uppercase tracking-wider px-2 text-center truncate w-full">{stream.category}</span>
-          </div>
-        ) : isIptv && screenshotUrl ? (
-          /* IPTV screenshot from stream capture */
-          <img
-            src={screenshotUrl}
-            alt={stream.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            referrerPolicy="no-referrer"
-            onError={() => setImageError(true)}
-          />
-        ) : isIptv ? (
-          /* IPTV playlist gradient with satellite icon */
-          <div
-            className="w-full h-full flex flex-col items-center justify-center"
-            style={{ background: iptvGradient || 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
-          >
-            <span className="text-3xl mb-1 drop-shadow-lg">📡</span>
-            {iptvLabel && (
-              <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest px-2 text-center truncate w-full">
-                {iptvLabel}
-              </span>
-            )}
           </div>
         ) : (
           /* High quality fallback SVG container per Zero-Broken-Image Policy */

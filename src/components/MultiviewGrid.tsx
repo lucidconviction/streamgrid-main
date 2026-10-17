@@ -1,30 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  LayoutGrid,
   Volume2,
   VolumeX,
   Maximize2,
+  Minimize2,
   Trash2,
   Plus,
-  RefreshCw,
   Search,
   X,
-  Check,
   Save,
   ArrowRightLeft,
-  Tv,
-  Layers,
-  Radio,
-  Minimize2,
+  Bookmark,
+  ChevronDown,
+  Check,
+  LayoutGrid,
 } from 'lucide-react';
 import { StreamItem, MultiviewSlot, MultiviewLayout, MultiviewPreset } from '../types/stream';
 import { VideoPlayer } from './VideoPlayer';
+
+const LAYOUT_OPTIONS: { id: MultiviewLayout; label: string }[] = [
+  { id: 'single', label: '1 Focus' },
+  { id: 'dual', label: '2 Dual' },
+  { id: 'triple', label: '3 Triple' },
+  { id: 'quad', label: '4 Quad' },
+  { id: 'big-center', label: '5 Big Center' },
+  { id: 'focus-5', label: '5 Focus' },
+  { id: 'six-wide', label: '6 Wide' },
+  { id: 'six-tall', label: '6 Tall' },
+];
 
 interface MultiviewGridProps {
   slots: MultiviewSlot[];
   layout: MultiviewLayout;
   onLayoutChange: (layout: MultiviewLayout) => void;
   onUpdateSlotStream: (slotId: number, stream: StreamItem | null) => void;
+  onUpdateSlotBookmark: (slotId: number, bookmark: string) => void;
   onSwapSlots: (slotA: number, slotB: number) => void;
   onClearSlot: (slotId: number) => void;
   onClearAllSlots: () => void;
@@ -41,6 +51,7 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
   layout,
   onLayoutChange,
   onUpdateSlotStream,
+  onUpdateSlotBookmark,
   onSwapSlots,
   onClearSlot,
   onClearAllSlots,
@@ -54,28 +65,99 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
   const [pickerModalSlotId, setPickerModalSlotId] = useState<number | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerCategory, setPickerCategory] = useState('All');
-  const [soloSlotId, setSoloSlotId] = useState<number | null>(0); // Slot 0 has audio by default
+  const [soloSlotId, setSoloSlotId] = useState<number | null>(0);
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
   const [swapSourceSlot, setSwapSourceSlot] = useState<number | null>(null);
-  const [fullscreenSlotId, setFullscreenSlotId] = useState<number | null>(null);
   const [isGridFullscreen, setIsGridFullscreen] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<number | null>(null);
+  const [bookmarkInput, setBookmarkInput] = useState('');
+  const [fullscreenSlotId, setFullscreenSlotId] = useState<number | null>(null);
+  const gridContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Escape to exit grid fullscreen
-  React.useEffect(() => {
+  // True browser fullscreen handling
+  const enterBrowserFullscreen = useCallback(() => {
+    const el = gridContainerRef.current;
+    if (!el) return;
+    el.requestFullscreen?.().catch(() => {});
+  }, []);
+
+  const exitBrowserFullscreen = useCallback(() => {
+    document.exitFullscreen?.().catch(() => {});
+  }, []);
+
+  // Keep React state synced with actual browser fullscreen state (handles ESC key)
+  useEffect(() => {
+    const handleChange = () => {
+      const isInFullscreen = !!document.fullscreenElement;
+      setIsGridFullscreen(isInFullscreen);
+      // If browser exits fullscreen (e.g. ESC), also exit any slot fullscreen
+      if (!isInFullscreen && fullscreenSlotId !== null) {
+        setFullscreenSlotId(null);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleChange);
+    return () => document.removeEventListener('fullscreenchange', handleChange);
+  }, [fullscreenSlotId]);
+
+  useEffect(() => {
     if (!isGridFullscreen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsGridFullscreen(false);
+      if (e.key === 'Escape') {
+        exitBrowserFullscreen();
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isGridFullscreen]);
+  }, [isGridFullscreen, exitBrowserFullscreen]);
 
   // Determine active slots count based on layout
-  const maxSlots = layout === 'single' ? 1 : layout === 'dual' ? 2 : layout === 'triple' ? 3 : 4;
+  const getMaxSlotsForLayout = (l: MultiviewLayout): number => {
+    if (l === 'single') return 1;
+    if (l === 'dual') return 2;
+    if (l === 'triple') return 3;
+    if (l === 'quad') return 4;
+    return 6; // six, six-wide, six-tall, focus-5, big-center all use 6
+  };
+
+  const maxSlots = getMaxSlotsForLayout(layout);
   const activeSlots = slots.slice(0, maxSlots);
 
-  // Toggle Solo Audio for a slot
+  // Refs so the single global listener always reads current state — no re-subscribe storms
+  const isGridFullscreenRef = React.useRef(isGridFullscreen);
+  const pickerModalSlotIdRef = React.useRef(pickerModalSlotId);
+  const savePresetOpenRef = React.useRef(savePresetOpen);
+
+  React.useEffect(() => { isGridFullscreenRef.current = isGridFullscreen; }, [isGridFullscreen]);
+  React.useEffect(() => { pickerModalSlotIdRef.current = pickerModalSlotId; }, [pickerModalSlotId]);
+  React.useEffect(() => { savePresetOpenRef.current = savePresetOpen; }, [savePresetOpen]);
+
+  // Single global keyboard shortcut listener — stable, never re-subscribes
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block when a modal/picker or save-preset dialog is open
+      if (pickerModalSlotIdRef.current !== null || savePresetOpenRef.current) return;
+      // Block while typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        const entering = !isGridFullscreenRef.current;
+        if (entering) {
+          setIsGridFullscreen(true);
+          setTimeout(enterBrowserFullscreen, 50);
+        } else {
+          setIsGridFullscreen(false);
+          exitBrowserFullscreen();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [enterBrowserFullscreen, exitBrowserFullscreen, onShowToast]); // stable deps only
+
   const handleToggleSoloAudio = (slotId: number) => {
     if (soloSlotId === slotId) {
       setSoloSlotId(null);
@@ -90,16 +172,13 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
   const handleSavePresetSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPresetName.trim()) return;
-
     const streamIds = activeSlots
       .map((s) => s.stream?.id)
       .filter((id): id is string => Boolean(id));
-
     if (streamIds.length === 0) {
       onShowToast('Assign at least one stream to save a preset', 'warning');
       return;
     }
-
     onSavePreset(newPresetName.trim(), layout, streamIds);
     setNewPresetName('');
     setSavePresetOpen(false);
@@ -128,7 +207,25 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
     }
   };
 
-  // Filter streams for picker
+  const handleBookmark = (slotId: number) => {
+    const slot = slots.find((s) => s.slotId === slotId);
+    if (!slot) return;
+    if (editingBookmark === slotId) {
+      if (bookmarkInput.trim()) {
+        onUpdateSlotBookmark(slotId, bookmarkInput.trim());
+      }
+      setEditingBookmark(null);
+      setBookmarkInput('');
+      return;
+    }
+    setEditingBookmark(slotId);
+    setBookmarkInput(slot?.bookmark || '');
+  };
+
+  const getSlotLabel = (slot: MultiviewSlot): string => {
+    return slot.bookmark || `Screen ${slot.slotId + 1}`;
+  };
+
   const filteredPickerStreams = allStreams.filter((s) => {
     const matchesSearch =
       s.title.toLowerCase().includes(pickerSearch.toLowerCase()) ||
@@ -137,52 +234,70 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
     return matchesSearch && matchesCat;
   });
 
+  // Layout CSS classes
+  const getLayoutGridClass = (l: MultiviewLayout): string => {
+    switch (l) {
+      case 'single': return 'grid-cols-1';
+      case 'dual': return 'grid grid-cols-1 md:grid-cols-2';
+      case 'triple': return 'grid grid-cols-1 md:grid-cols-3';
+      case 'quad': return 'grid grid-cols-1 md:grid-cols-2';
+      case 'six': return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+      case 'six-wide': return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3';
+      case 'six-tall': return 'grid grid-cols-1 md:grid-cols-2';
+      case 'focus-5': return 'grid grid-cols-1 md:grid-cols-3';
+      case 'big-center': return 'grid grid-cols-1 lg:grid-cols-3';
+      default: return 'grid grid-cols-1 md:grid-cols-2';
+    }
+  };
+
+  // Big center uses special span classes
+  const getSlotSpanClass = (l: MultiviewLayout, slotId: number): string => {
+    if (l === 'big-center') {
+      if (slotId === 0) return 'lg:col-span-1 lg:row-span-1';
+      if (slotId === 1) return 'lg:col-span-1 lg:row-span-2 lg:col-start-2 lg:row-start-1';
+      if (slotId === 2) return 'lg:col-span-1 lg:row-span-1';
+      return '';
+    }
+    return '';
+  };
+
   return (
-    <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-6 py-4 flex flex-col gap-4">
+    <div className="w-full mx-auto px-2 sm:px-6 py-4 flex flex-col gap-4">
       {/* Multiview Workspace Command Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0f121a] p-3.5 rounded-xl border border-slate-800/80">
         {/* Layout Selectors */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900 rounded-lg border border-slate-800">
-          <button
-            onClick={() => onLayoutChange('single')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              layout === 'single' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            1 Focus
-          </button>
-          <button
-            onClick={() => onLayoutChange('dual')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              layout === 'dual' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            2 Dual
-          </button>
-          <button
-            onClick={() => onLayoutChange('triple')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              layout === 'triple' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            3 Triple
-          </button>
-          <button
-            onClick={() => onLayoutChange('quad')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              layout === 'quad' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            4 Quad 2x2
-          </button>
+        <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800 flex-wrap">
+          {[
+            { id: 'single', label: '1 Focus' },
+            { id: 'dual', label: '2 Dual' },
+            { id: 'triple', label: '3 Triple' },
+            { id: 'quad', label: '4 Quad' },
+            { id: 'big-center', label: '5 Big Center' },
+            { id: 'focus-5', label: '5 Focus' },
+            { id: 'six', label: '6 Grid' },
+            { id: 'six-wide', label: '6 Wide' },
+            { id: 'six-tall', label: '6 Tall' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => onLayoutChange(opt.id as MultiviewLayout)}
+              className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                layout === opt.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
         {/* Audio Solo Status & Global Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400 px-3 py-1.5 bg-slate-900/80 rounded-lg border border-slate-800">
             <Volume2 className="w-3.5 h-3.5 text-blue-400" />
             <span>
-              Audio Source:{' '}
+              Audio:{' '}
               {soloSlotId !== null ? (
                 <strong className="text-white">Screen {soloSlotId + 1}</strong>
               ) : (
@@ -200,15 +315,13 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
           </button>
 
           {/* Preset Buttons */}
-          <div className="relative">
-            <button
-              onClick={() => setSavePresetOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-800 transition-colors"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Save Preset</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setSavePresetOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-800 transition-colors"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Save Preset</span>
+          </button>
 
           {/* Preset Quick Loader */}
           {presets.length > 0 && (
@@ -226,18 +339,26 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
             </div>
           )}
 
-          {/* Fullscreen Grid Toggle */}
+          {/* Fullscreen Grid Toggle — browser fullscreen */}
           <button
-            onClick={() => setIsGridFullscreen(!isGridFullscreen)}
+            onClick={() => {
+              if (!isGridFullscreen) {
+                setIsGridFullscreen(true);
+                setTimeout(enterBrowserFullscreen, 50);
+              } else {
+                setIsGridFullscreen(false);
+                exitBrowserFullscreen();
+              }
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
               isGridFullscreen
                 ? 'bg-blue-950/80 border-blue-700 text-blue-300'
                 : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
             }`}
-            title={isGridFullscreen ? 'Exit Fullscreen Grid' : 'Enter Fullscreen Grid (all screens)'}
+            title="Enter browser fullscreen (ESC to exit)"
           >
             {isGridFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-blue-400" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{isGridFullscreen ? 'Exit Fullscreen' : 'Fullscreen Grid'}</span>
+            <span className="hidden sm:inline">{isGridFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
           </button>
 
           <button
@@ -251,157 +372,235 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
         </div>
       </div>
 
-      {/* Grid Layout Canvas */}
-      <div
-        className={`w-full min-h-[600px] md:min-h-[720px] rounded-2xl bg-black border border-slate-800/80 p-2 sm:p-3 gap-2.5 relative transition-all duration-300 ${
-          isGridFullscreen
-            ? 'fixed inset-4 z-50 rounded-none min-h-[calc(100vh-80px)]'
-            : layout === 'single'
-            ? 'grid grid-cols-1'
-            : layout === 'dual'
-            ? 'grid grid-cols-1 md:grid-cols-2'
-            : layout === 'triple'
-            ? 'grid grid-cols-1 md:grid-cols-3'
-            : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2'
-        }`}
-      >
-        {activeSlots.map((slot) => {
-          const isAudioActive = soloSlotId === slot.slotId;
-          const isSwapSelected = swapSourceSlot === slot.slotId;
-          const isSlotFullscreen = fullscreenSlotId === slot.slotId;
+      {/* Grid Layout Canvas — true fullscreen container */}
+      {fullscreenSlotId === null && (
+        <div
+          ref={gridContainerRef}
+          className={`w-full bg-black rounded-2xl transition-all duration-300 ${
+            isGridFullscreen
+              ? 'fixed inset-0 z-50 rounded-none'
+              : 'relative min-h-[600px] md:min-h-[720px] border border-slate-800/80 p-2 sm:p-3'
+          }`}
+        >
+        <div
+          className={`w-full gap-1.5 ${
+            isGridFullscreen ? 'p-1' : ''
+          } ${getLayoutGridClass(layout)}`}
+          style={{ height: isGridFullscreen ? '100vh' : undefined }}
+        >
+          {activeSlots.map((slot) => {
+            const isAudioActive = soloSlotId === slot.slotId;
+            const isSwapSelected = swapSourceSlot === slot.slotId;
+            const slotLabel = getSlotLabel(slot);
 
-          // Resolve URL
-          const embedUrl =
-            slot.resolvedEmbedUrl ||
-            slot.stream?.directEmbedUrl ||
-            (slot.stream?.sources?.[0]
-              ? `https://embed.st/embed/${slot.stream.sources[0].source}/${slot.stream.sources[0].id}/1`
-              : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
+            // Resolve URL
+            const embedUrl =
+              slot.resolvedEmbedUrl ||
+              slot.stream?.directEmbedUrl ||
+              (slot.stream?.sources?.[0]
+                ? `https://embed.st/embed/${slot.stream.sources[0].source}/${slot.stream.sources[0].id}/1`
+                : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
 
-          return (
-            <div
-              key={slot.slotId}
-              className={`relative flex flex-col rounded-xl overflow-hidden bg-[#0c0e14] border transition-all duration-200 group ${
-                isSwapSelected
-                  ? 'border-amber-400 ring-2 ring-amber-400/30'
-                  : isAudioActive
-                  ? 'border-blue-500/80 shadow-lg shadow-blue-950/20'
-                  : 'border-slate-800 hover:border-slate-700'
-            } ${isSlotFullscreen ? 'fixed inset-4 z-50 bg-black' : isGridFullscreen ? 'h-full' : 'h-[320px] sm:h-[380px] md:h-full'}`}>
-              {/* Slot Header Control Bar */}
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 text-xs z-20">
-                <div className="flex items-center gap-2 truncate">
-                  <span className="font-mono font-bold text-slate-400 text-[11px] px-1.5 py-0.5 bg-black/60 rounded">
-                    S{slot.slotId + 1}
-                  </span>
-                  <span className="font-semibold text-slate-200 truncate">
-                    {slot.stream ? slot.stream.title : 'Empty Screen Slot'}
-                  </span>
+            // Height based on layout and fullscreen
+            const isFullscreen = isGridFullscreen;
+            const heightClass = isFullscreen
+              ? 'h-full'
+              : layout === 'single'
+              ? 'h-[400px] sm:h-[500px]'
+              : layout === 'six' || layout === 'six-wide' || layout === 'big-center' || layout === 'focus-5'
+              ? 'h-[200px] sm:h-[260px] md:h-[300px]'
+              : 'h-[280px] sm:h-[340px]';
+
+            return (
+              <div
+                key={slot.slotId}
+                className={`relative flex flex-col rounded-lg overflow-hidden bg-[#0c0e14] border transition-all duration-200 ${
+                  isSwapSelected
+                    ? 'border-amber-400 ring-2 ring-amber-400/30'
+                    : isAudioActive
+                    ? 'border-blue-500/80 shadow-lg shadow-blue-950/20'
+                    : 'border-slate-800/70 hover:border-slate-700'
+                } ${getSlotSpanClass(layout, slot.slotId)} ${heightClass}`}
+              >
+                {/* Slot Header Control Bar — hidden in fullscreen for cleaner look */}
+                {!isFullscreen && (
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 text-xs z-20">
+                  <div className="flex items-center gap-2 truncate min-w-0">
+                    <span className="font-mono font-bold text-slate-500 text-[10px] px-1.5 py-0.5 bg-black/60 rounded shrink-0">
+                      S{slot.slotId + 1}
+                    </span>
+                    {editingBookmark === slot.slotId ? (
+                      <input
+                        type="text"
+                        value={bookmarkInput}
+                        onChange={(e) => setBookmarkInput(e.target.value)}
+                        onBlur={() => {
+                          handleBookmark(slot.slotId);
+                          setEditingBookmark(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleBookmark(slot.slotId);
+                            setEditingBookmark(null);
+                          }
+                          if (e.key === 'Escape') setEditingBookmark(null);
+                        }}
+                        autoFocus
+                        className="flex-1 min-w-0 bg-slate-800 border border-blue-500 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
+                        placeholder="Bookmark name..."
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingBookmark(slot.slotId);
+                          setBookmarkInput(slotLabel);
+                        }}
+                        className="font-semibold text-slate-200 hover:text-blue-400 truncate transition-colors flex items-center gap-1"
+                        title="Click to edit bookmark"
+                      >
+                        <Bookmark className={`w-3 h-3 shrink-0 ${slotLabel !== `Screen ${slot.slotId + 1}` ? 'text-blue-400 fill-blue-400' : 'text-slate-500'}`} />
+                        <span className="truncate">{slotLabel}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {slot.stream && (
+                      <>
+                        <button
+                          onClick={() => handleToggleSoloAudio(slot.slotId)}
+                          className={`p-1 rounded transition-colors ${
+                            isAudioActive
+                              ? 'bg-blue-600 text-white'
+                              : 'text-slate-500 hover:text-white hover:bg-slate-800'
+                          }`}
+                          title={isAudioActive ? 'Un-solo audio' : 'Solo audio'}
+                        >
+                          {isAudioActive ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                        </button>
+                        <button
+                          onClick={() => handleStartSwap(slot.slotId)}
+                          className={`p-1 rounded transition-colors ${
+                            isSwapSelected
+                              ? 'bg-amber-500 text-black'
+                              : 'text-slate-500 hover:text-white hover:bg-slate-800'
+                          }`}
+                          title="Swap screen"
+                        >
+                          <ArrowRightLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => setPickerModalSlotId(slot.slotId)}
+                          className="p-1 rounded text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+                          title="Switch Stream"
+                        >
+                          <Search className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => onClearSlot(slot.slotId)}
+                          className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                          title="Remove stream"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => setFullscreenSlotId(slot.slotId)}
+                          className="p-1 rounded text-slate-500 hover:text-blue-400 hover:bg-slate-800 transition-colors"
+                          title="Fullscreen this screen"
+                        >
+                          <Maximize2 className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+                )}
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {slot.stream && (
-                    <>
-                      {/* Audio Solo Toggle */}
-                      <button
-                        onClick={() => handleToggleSoloAudio(slot.slotId)}
-                        className={`p-1.5 rounded-md transition-colors ${
-                          isAudioActive
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-                        }`}
-                        title={isAudioActive ? 'Screen Audio is LIVE' : 'Solo Audio for this Screen'}
-                      >
-                        {isAudioActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-                      </button>
-
-                      {/* Swap Button */}
-                      <button
-                        onClick={() => handleStartSwap(slot.slotId)}
-                        className={`p-1.5 rounded-md transition-colors ${
-                          isSwapSelected
-                            ? 'bg-amber-500 text-black'
-                            : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
-                        }`}
-                        title="Swap screen position"
-                      >
-                        <ArrowRightLeft className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Fullscreen Slot */}
-                      <button
-                        onClick={() =>
-                          setFullscreenSlotId(isSlotFullscreen ? null : slot.slotId)
-                        }
-                        className="p-1.5 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                        title="Toggle full screen for this slot"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Change stream */}
-                      <button
-                        onClick={() => setPickerModalSlotId(slot.slotId)}
-                        className="p-1.5 rounded-md bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                        title="Switch Stream"
-                      >
-                        <Search className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Clear slot */}
-                      <button
-                        onClick={() => onClearSlot(slot.slotId)}
-                        className="p-1.5 rounded-md bg-slate-800 text-slate-400 hover:text-blue-400 hover:bg-slate-700 transition-colors"
-                        title="Remove stream from screen"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </>
+                {/* Video Player Canvas or Empty Slot State */}
+                <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-0">
+                  {slot.stream ? (
+                    <VideoPlayer
+                      url={embedUrl}
+                      title={slot.stream.title}
+                      streamType={slot.stream.streamType}
+                      isMuted={!isAudioActive}
+                      volume={slot.volume}
+                      autoPlay={true}
+                    />
+                  ) : (
+                    <div
+                      className="flex flex-col items-center justify-center p-4 text-center cursor-pointer hover:bg-slate-900/40 transition-colors w-full h-full"
+                      onClick={() => setPickerModalSlotId(slot.slotId)}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-2 hover:scale-110 transition-transform">
+                        <Plus className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-400">Screen {slot.slotId + 1}</p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">Tap to assign stream</p>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {/* Video Player Canvas or Empty Slot State */}
-              <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-                {slot.stream ? (
-                  <VideoPlayer
-                    url={embedUrl}
-                    title={slot.stream.title}
-                    streamType={slot.stream.streamType}
-                    isMuted={!isAudioActive}
-                    volume={slot.volume}
-                    autoPlay={true}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3 group-hover:scale-105 transition-transform">
-                      <Plus className="w-6 h-6 text-slate-400" />
-                    </div>
-                    <p className="text-sm font-semibold text-slate-300 mb-1">
-                      Screen {slot.slotId + 1} Ready
-                    </p>
-                    <p className="text-xs text-slate-500 max-w-xs mb-4">
-                      Select any live sports match or 24/7 TV channel to stream here.
-                    </p>
+            );
+          })}
+        </div>
+        {/* Floating shortcut legend — hidden in fullscreen */}
+        {!isGridFullscreen && (
+          <div className="absolute bottom-3 right-3 pointer-events-none z-10">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-lg px-2 py-1 text-[10px] font-mono text-slate-400 whitespace-nowrap">
+              F: Fullscreen · Esc: Exit
+            </div>
+          </div>
+        )}
+        {/* Per-slot fullscreen overlay */}
+        {fullscreenSlotId !== null && (
+          (() => {
+            const fsSlot = slots.find((s) => s.slotId === fullscreenSlotId);
+            if (!fsSlot) return null;
+            const fsEmbedUrl =
+              fsSlot.resolvedEmbedUrl ||
+              fsSlot.stream?.directEmbedUrl ||
+              (fsSlot.stream?.sources?.[0]
+                ? `https://embed.st/embed/${fsSlot.stream.sources[0].source}/${fsSlot.stream.sources[0].id}/1`
+                : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
+            return (
+              <>
+                <div className="fixed inset-0 z-50 bg-black flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 shrink-0">
+                    <span className="text-sm font-semibold text-slate-200 truncate pr-4">
+                      {fsSlot.stream?.title || `Screen ${fullscreenSlotId + 1}`}
+                    </span>
                     <button
-                      onClick={() => setPickerModalSlotId(slot.slotId)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+                      onClick={() => setFullscreenSlotId(null)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors shrink-0"
+                      title="Exit fullscreen"
                     >
-                      + Choose Stream
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      <span>Exit</span>
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  <div className="flex-1 min-h-0 bg-black">
+                    <VideoPlayer
+                      url={fsEmbedUrl}
+                      title={fsSlot.stream?.title || ''}
+                      streamType={fsSlot.stream?.streamType}
+                      isMuted={false}
+                      volume={fsSlot.volume ?? 1}
+                      autoPlay={true}
+                    />
+                  </div>
+                </div>
+              </>
+            );
+          })()
+        )}
+        </div>
+      )}
 
-      {/* Stream Selection Modal for Multiview Slot */}
+      {/* Stream Selection Modal */}
       {pickerModalSlotId !== null && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-2xl bg-[#12151e] border border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
               <div>
                 <h3 className="text-base font-bold text-white">
@@ -419,7 +618,6 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
               </button>
             </div>
 
-            {/* Filter & Search Bar */}
             <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex flex-col gap-3">
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -433,7 +631,6 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
                 />
               </div>
 
-              {/* Category Quick Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                 {['All', 'Live Sports', '24/7 Channels', 'Basketball', 'Football / Soccer', 'Tennis', 'Golf'].map(
                   (cat) => (
@@ -453,7 +650,6 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
               </div>
             </div>
 
-            {/* Streams List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {filteredPickerStreams.slice(0, 40).map((stream) => (
                 <div

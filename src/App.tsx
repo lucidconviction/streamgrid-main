@@ -21,7 +21,7 @@ import { WatchlistView } from './components/WatchlistView';
 import { ChannelDirectory } from './components/ChannelDirectory';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
-import { MoviesDirectory } from './components/MoviesDirectory';
+
 import { MusicDirectory } from './components/MusicDirectory';
 import { ProfileModal } from './components/ProfileModal';
 import { FloatingPipPlayer } from './components/FloatingPipPlayer';
@@ -32,7 +32,7 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'music' | 'movies' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStream, setPipStream] = useState<StreamItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +65,8 @@ export default function App() {
     { slotId: 1, stream: null, isMuted: true, volume: 100 },
     { slotId: 2, stream: null, isMuted: true, volume: 100 },
     { slotId: 3, stream: null, isMuted: true, volume: 100 },
+    { slotId: 4, stream: null, isMuted: true, volume: 100 },
+    { slotId: 5, stream: null, isMuted: true, volume: 100 },
   ]);
 
   // Notifications
@@ -131,13 +133,15 @@ export default function App() {
       // Automatically prepopulate multiview slots if currently empty
       setMultiviewSlots((prev) => {
         const hasAny = prev.some((s) => s.stream !== null);
-        if (!hasAny && all.length >= 4) {
+        if (!hasAny && all.length >= 6) {
           const liveItems = all.filter((s) => s.status === 'live' || s.popular);
           return [
             { slotId: 0, stream: liveItems[0] || all[0], isMuted: false, volume: 100 },
             { slotId: 1, stream: liveItems[1] || all[1], isMuted: true, volume: 100 },
             { slotId: 2, stream: liveItems[2] || all[2], isMuted: true, volume: 100 },
             { slotId: 3, stream: liveItems[3] || all[3], isMuted: true, volume: 100 },
+            { slotId: 4, stream: liveItems[4] || all[4], isMuted: true, volume: 100 },
+            { slotId: 5, stream: liveItems[5] || all[5], isMuted: true, volume: 100 },
           ];
         }
         return prev;
@@ -365,6 +369,12 @@ export default function App() {
     );
   };
 
+  const handleUpdateSlotBookmark = (slotId: number, bookmark: string) => {
+    setMultiviewSlots((prev) =>
+      prev.map((s) => (s.slotId === slotId ? { ...s, bookmark } : s))
+    );
+  };
+
   const handleSwapSlots = (slotA: number, slotB: number) => {
     setMultiviewSlots((prev) => {
       const itemA = prev.find((s) => s.slotId === slotA);
@@ -403,7 +413,7 @@ export default function App() {
 
   const handleApplyPreset = (preset: MultiviewPreset) => {
     setMultiviewLayout(preset.layout);
-    const assignedSlots = [0, 1, 2, 3].map((slotId) => {
+    const assignedSlots = [0, 1, 2, 3, 4, 5].map((slotId) => {
       const streamId = preset.streamIds[slotId];
       const match = streamId ? streams.find((s) => s.id === streamId) || null : null;
       return {
@@ -534,6 +544,7 @@ export default function App() {
               layout={multiviewLayout}
               onLayoutChange={setMultiviewLayout}
               onUpdateSlotStream={handleUpdateSlotStream}
+              onUpdateSlotBookmark={handleUpdateSlotBookmark}
               onSwapSlots={handleSwapSlots}
               onClearSlot={handleClearSlot}
               onClearAllSlots={handleClearAllSlots}
@@ -565,7 +576,7 @@ export default function App() {
           ) : currentView === 'sports' ? (
             <ChannelDirectory
               title="Live Sports Center"
-              subtitle="Live football, basketball, F1 motorsport, golf, tennis & combat championships from Streamed.pk and BinTV."
+              subtitle=""
               streams={streams.filter((s) => s.status !== '24/7' || s.category.includes('Sport'))}
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
@@ -609,13 +620,6 @@ export default function App() {
               onSetFloatingArtist={setMusicFloatingArtist}
               onSetTracks={setMusicTracks}
               onSetLoadingTracks={setMusicIsLoadingTracks}
-            />
-          ) : currentView === 'movies' ? (
-            <MoviesDirectory
-              onPlayStream={handlePlayStream}
-              onToggleWatchlist={handleToggleWatchlist}
-              onAddToMultiview={handleAddToMultiview}
-              watchlistIds={watchlistIds}
             />
           ) : currentView === 'iptv' ? (
             <IptvDirectory

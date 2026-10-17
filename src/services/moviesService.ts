@@ -258,7 +258,7 @@ export function tvMazeShowToStream(show: TVMazeShow): StreamItem {
     provider: 'anime' as const,
     streamType: 'embed' as const,
     // P-Stream accepts both TMDB and IMDb IDs for TV
-    directEmbedUrl: imdbId ? `https://embed.pstream.cfd/media/tmdb-tv-${imdbId}` : '',
+    directEmbedUrl: imdbId ? `https://embed.pstream.cfd/media/tmdb-tv-tt${imdbId}` : '',
     viewers: Math.floor(Math.random() * 12000) + 1000,
   };
 }

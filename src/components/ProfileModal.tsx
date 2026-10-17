@@ -386,6 +386,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <Plus className="w-4 h-4" />
                 <span>Add Another Profile</span>
               </button>
+
+              {/* Keyboard Shortcuts Reference */}
+              <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Keyboard Shortcuts</p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                  {[
+                    ['F', 'Grid Fullscreen'],
+                    ['M', 'Mute All'],
+                    ['Shift+1–9', 'Slot Fullscreen'],
+                    ['1–9', 'Solo Audio'],
+                    ['Esc', 'Exit Fullscreen'],
+                  ].map(([key, label]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <kbd className="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-blue-400 shrink-0">
+                        {key}
+                      </kbd>
+                      <span className="text-[11px] text-slate-400">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

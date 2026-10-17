@@ -57,8 +57,8 @@ export async function captureIptvScreenshot(
         }
       };
 
-      // Hard 4-second timeout
-      timeout = setTimeout(() => cleanup(), 4000);
+      // Hard 8-second timeout for more reliable capture
+      timeout = setTimeout(() => cleanup(), 8000);
 
       const startCapture = () => {
         video?.play().then(() => {
@@ -75,33 +75,35 @@ export async function captureIptvScreenshot(
             drawFrame();
           }, { once: true });
 
-          // Aggressive polling: 150ms intervals, 20 attempts = 3s max
+          // Aggressive polling: 200ms intervals, 30 attempts = 6s max
           let attempts = 0;
           const interval = setInterval(() => {
             attempts++;
-            if (attempts >= 20 || captured) {
+            if (attempts >= 30 || captured) {
               clearInterval(interval);
               intervals.delete(cacheKey);
               cleanup();
               return;
             }
             drawFrame();
-          }, 150);
+          }, 200);
           intervals.set(cacheKey, interval);
         }).catch(cleanup);
       };
 
       if (Hls.isSupported()) {
         hls = new Hls({
-          // Aggressive fast-load settings
-          maxBufferLength: 1,
-          maxMaxBufferLength: 2,
-          maxBufferSize: 2 * 1024 * 1024,
-          startLevel: 0,
+          // Balanced settings for reliable frame capture
+          maxBufferLength: 8,
+          maxMaxBufferLength: 16,
+          maxBufferSize: 6 * 1024 * 1024,
+          startLevel: -1, // Auto select quality
           lowLatencyMode: false,
-          manifestLoadingTimeOut: 3000,
-          levelLoadingTimeOut: 3000,
-          fragLoadingTimeOut: 3000,
+          liveDurationInfinity: true,
+          manifestLoadingTimeOut: 5000,
+          levelLoadingTimeOut: 5000,
+          fragLoadingTimeOut: 5000,
+          nudgeMaxRetry: 10,
         });
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
@@ -116,7 +118,12 @@ export async function captureIptvScreenshot(
         });
 
         hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
-          if (data.fatal) cleanup();
+          // On fatal error, give up
+          if (data.fatal) {
+            console.warn('IPTV screenshot capture failed for', cacheKey, data.type);
+            cleanup();
+          }
+          // On recoverable errors, keep trying
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = streamUrl;

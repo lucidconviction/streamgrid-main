@@ -78,7 +78,7 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
   useEffect(() => {
     if (prefetchRef.current) clearTimeout(prefetchRef.current);
     prefetchRef.current = setTimeout(async () => {
-      const hlsStreams = filtered.filter((s) => s.streamType === 'hls' && s.directEmbedUrl);
+      const hlsStreams = filtered.filter((s) => s.directEmbedUrl);
       if (hlsStreams.length === 0) return;
 
       const concurrency = 3;
@@ -116,9 +116,7 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
             <Layers className="w-6 h-6 text-blue-400" />
             <h1 className="text-2xl font-bold tracking-tight text-white">IPTV M3U Channels Hub</h1>
           </div>
-          <p className="text-sm text-slate-300 mt-1">
-            Aggregated HLS live streams from FAST Combined, RDTV (US/UK/CA), and All Resources M3U feeds.
-          </p>
+          
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

@@ -104,6 +104,22 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, [liveStreams]);
 
+  // Retry: if current bg stream fails, pick another live stream
+  useEffect(() => {
+    if (liveStreams.length === 0) return;
+    if (currentBgStream && !bgReady) return; // still trying current one
+
+    const available = liveStreams.filter(
+      (s) => s.directEmbedUrl && s.status === 'live' && s.id !== currentBgStream?.id
+    );
+    if (available.length === 0) return;
+
+    // Rotate through available streams to keep header fresh
+    const next = available[Math.floor(Math.random() * available.length)];
+    setCurrentBgStream(next);
+    setupBgPlayer(next);
+  }, [bgReady, liveStreams]);
+
   return (
     <>
       {/* Background Live Stream Player */}

@@ -12,6 +12,7 @@ import {
   Eye,
   Radio,
   ExternalLink,
+  ChevronLeft,
   ChevronRight,
   ShieldAlert,
   PictureInPicture2,
@@ -20,7 +21,6 @@ import {
 } from 'lucide-react';
 import { StreamItem, StreamSource } from '../types/stream';
 import { streamService } from '../services/streamService';
-import { getFallbackSources, FallbackSource, getFallbackLabel } from '../services/fallbackPlayerService';
 import { getStreamGradient } from '../services/smuttThumbnailService';
 import { StreamCard } from './StreamCard';
 import { VideoPlayer } from './VideoPlayer';
@@ -91,8 +91,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   const [iframeKey, setIframeKey] = useState(0);
   const [showChannelList, setShowChannelList] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
-  const [fallbackSources, setFallbackSources] = useState<FallbackSource[]>([]);
-  const [activeFallbackIndex, setActiveFallbackIndex] = useState(-1);
   const [playerError, setPlayerError] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
@@ -236,35 +234,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     }
   }, [chatMessages]);
 
-  // Build fallback sources when stream changes
-  useEffect(() => {
-    const sources = getFallbackSources(stream);
-    setFallbackSources(sources);
-    setActiveFallbackIndex(-1);
-    setPlayerError(false);
-  }, [stream.id]);
-
-  // Auto-advance to next fallback when primary fails
-  const tryNextFallback = useCallback(() => {
-    setPlayerError(true);
-    if (fallbackSources.length === 0) return;
-
-    const nextIndex = activeFallbackIndex + 1;
-    if (nextIndex >= fallbackSources.length) {
-      // No more fallbacks — reset to first
-      setActiveFallbackIndex(0);
-      setIframeKey((k) => k + 1);
-      return;
-    }
-    setActiveFallbackIndex(nextIndex);
-    setIframeKey((k) => k + 1);
-  }, [fallbackSources, activeFallbackIndex]);
-
   const activeEmbedUrl =
     sources[activeSourceIndex]?.embedUrl ||
     stream.directEmbedUrl ||
-    (activeFallbackIndex >= 0 ? fallbackSources[activeFallbackIndex]?.url : '') ||
-    '/api/bintv-proxy?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng';
+    '';
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -343,11 +316,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 autoPlay={true}
                 onRefresh={handleRefreshStream}
                 onTogglePiP={onTogglePiP}
-                onVideoEnd={() => {
-                  tryNextFallback();
-                  onVideoEnd?.();
-                }}
-                onError={tryNextFallback}
+                onVideoEnd={onVideoEnd}
                 onSyncPlay={(time) => watchPartyService.syncPlay(time)}
                 onSyncPause={(time) => watchPartyService.syncPause(time)}
                 onSyncSeek={(time) => watchPartyService.syncSeek(time)}
@@ -366,9 +335,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               {sources.map((src, idx) => (
                 <button
                   key={idx}
-                  onClick={() => { setActiveSourceIndex(idx); setActiveFallbackIndex(-1); }}
+                  onClick={() => setActiveSourceIndex(idx)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                    activeSourceIndex === idx && activeFallbackIndex === -1
+                    activeSourceIndex === idx
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                   }`}
@@ -376,29 +345,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                   {src.name || `Stream ${idx + 1}`} {src.hd ? 'HD' : ''}
                 </button>
               ))}
-
-              {/* Fallback Players */}
-              {fallbackSources.length > 0 && (
-                <>
-                  <span className="text-slate-700 shrink-0">|</span>
-                  <span className="text-xs text-slate-500 font-mono uppercase tracking-wider shrink-0">
-                    Mirrors:
-                  </span>
-                  {fallbackSources.map((fb, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => { setActiveSourceIndex(-1); setActiveFallbackIndex(idx); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                        activeFallbackIndex === idx
-                          ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/10'
-                          : 'bg-slate-900/60 text-slate-500 hover:text-emerald-300 hover:bg-slate-800/80 border border-slate-800 hover:border-emerald-700/30'
-                      }`}
-                    >
-                      {getFallbackLabel(fb, idx)}
-                    </button>
-                  ))}
-                </>
-              )}
             </div>
 
             {/* Quick Controls */}
@@ -527,7 +473,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             </div>
 
             <div className="p-3">
-              <div className="flex gap-3">
+              <div className="flex items-center gap-3">
                 <div className="relative w-20 aspect-video rounded-md overflow-hidden bg-slate-900 shrink-0">
                   <img
                     src={stream.poster || '/src/assets/images/hero_championship_live_1792048678438.jpg'}
@@ -548,6 +494,32 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                   <p className="text-[10px] font-mono text-slate-500 mt-0.5">
                     <span className="uppercase text-slate-500">Source:</span> {stream.provider}
                   </p>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => {
+                      const list = allStreams || relatedStreams;
+                      const idx = list.findIndex((s) => s.id === stream.id);
+                      const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
+                      if (prev) onPlayStream(prev);
+                    }}
+                    className="w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-colors shadow-lg shadow-blue-600/30"
+                    title="Previous channel"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const list = allStreams || relatedStreams;
+                      const idx = list.findIndex((s) => s.id === stream.id);
+                      const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+                      if (next) onPlayStream(next);
+                    }}
+                    className="w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-colors shadow-lg shadow-blue-600/30"
+                    title="Next channel"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             </div>

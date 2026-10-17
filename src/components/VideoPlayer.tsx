@@ -348,10 +348,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
           />
-          {/* Transparent barrier to block iframe's built-in controls
-              from covering our player controls. Covers bottom 80px where
-              embed player controls typically appear. */}
-          <div className="absolute bottom-0 inset-x-0 h-20 bg-transparent z-5 pointer-events-none" />
         </div>
       ) : (
         <video
@@ -390,7 +386,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Hover Video Controls Overlay */}
+      {/* Hover Video Controls Overlay — hidden for embed URLs so iframe controls stay accessible */}
+      {!isEmbedUrl && (
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2 text-white text-xs z-30">
         {/* Progress Bar — only for non-HLS, non-embed (VOD) content */}
         {!isHls && !isEmbedUrl && duration > 0 && (
@@ -482,6 +479,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,24 @@
 # RdNutz TV Streams — Version History
 
+## v1.2.0 — 2026-10-17
+
+### Multiview Grid Improvements
+- **Dropdown menus for layouts and presets** — replaced flat button bars with collapsible dropdowns for cleaner UI
+- **Removed volume controls** from multiview player slots — simplified slot control bar
+- **Removed 6-grid layout** (`six` option) — layout dropdown now shows: 1 Focus, 2 Dual, 3 Triple, 4 Quad, 5 Big Center, 5 Focus, 6 Wide, 6 Tall
+
+### Header Cleanup
+- **Removed mute/unmute toggle** from HeroBanner — video stays permanently muted (background playback)
+- Removed `Volume2`/`VolumeX` imports from HeroBanner
+- Removed `isMuted` state and `toggleMute` callback
+
+### IPTV Screenshot Improvements
+- **More reliable HLS.js configuration** — relaxed buffer settings for better frame capture
+- **Increased timeout** from 4s to 8s for screenshot capture
+- **Better error handling** — added logging for failed captures, recoverable errors continue polling
+
+---
+
 ## v1.1.0 — 2026-10-15
 
 ### Screenshot Thumbnail Caching

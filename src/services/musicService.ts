@@ -87,23 +87,27 @@ export const searchYouTubeMusic = async (query: string, limit: number = 10): Pro
     const sections = data?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents || [];
 
     for (const section of sections) {
+      // musicCardShelfRenderer — shelf title IS the artist (with browseId)
+      // Shelf contents are individual tracks, not artists
       const cardShelf = section.musicCardShelfRenderer;
       if (cardShelf) {
-        const title = cardShelf.title?.runs?.[0]?.text || '';
+        const titleRun = cardShelf.title?.runs?.[0];
+        const artistName = titleRun?.text || '';
+        const browseId = titleRun?.navigationEndpoint?.browseEndpoint?.browseId || '';
         const subtitle = cardShelf.subtitle?.runs?.[0]?.text || '';
         const thumbnail = cardShelf.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url || '';
-        const navigationId = cardShelf.title?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId || '';
-        if (title && navigationId) {
+        if (artistName && browseId) {
           results.push({
-            id: navigationId,
-            title,
+            id: browseId,
+            title: artistName,
             channel: subtitle,
-            channelId: navigationId.startsWith('UC') ? navigationId : undefined,
+            channelId: browseId.startsWith('UC') ? browseId : undefined,
             thumbnail,
           });
         }
         continue;
       }
+      // itemSectionRenderer — fallback for other result types
       const itemContents = section.itemSectionRenderer?.contents || [];
       for (const content of itemContents.slice(0, limit)) {
         const item = content.musicResponsiveListItemRenderer;
@@ -111,7 +115,8 @@ export const searchYouTubeMusic = async (query: string, limit: number = 10): Pro
         const title = item.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text || '';
         const subtitle = item.flexColumns?.[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text || '';
         const thumbnail = item.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url || '';
-        const navigationId = item.navigationEndpoint?.browseEndpoint?.browseId || '';
+        const nav = item.navigationEndpoint?.browseEndpoint || item.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.browseEndpoint || {};
+        const navigationId = nav.browseId || '';
         if (title && navigationId) {
           results.push({
             id: navigationId,

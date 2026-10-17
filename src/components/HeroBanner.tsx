@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Play, LayoutGrid, Bookmark, Eye, Radio, Volume2, VolumeX } from 'lucide-react';
+import { Play, LayoutGrid, Bookmark, Eye, Radio } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import Hls from 'hls.js';
 
@@ -22,7 +22,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   upcomingLiveEvents = [],
   onSelectHeroStream,
 }) => {
-  const [isMuted, setIsMuted] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -88,7 +87,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
         hls.loadSource(url);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.muted = isMuted;
+          video.muted = true;
           video.play().catch(() => setVideoError(true));
         });
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -97,36 +96,19 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = url;
         video.addEventListener('loadedmetadata', () => {
-          video.muted = isMuted;
+          video.muted = true;
           video.play().catch(() => setVideoError(true));
         });
       }
     } else {
       video.src = url;
       video.addEventListener('loadeddata', () => {
-        video.muted = isMuted;
+        video.muted = true;
         video.play().catch(() => setVideoError(true));
       });
       video.addEventListener('error', () => setVideoError(true));
     }
-  }, [featuredStream?.id, isMuted, streamData]);
-
-  // Toggle mute/unmute
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => {
-      const next = !prev;
-      if (videoRef.current) videoRef.current.muted = next;
-      if (iframeRef.current?.contentWindow) {
-        try {
-          iframeRef.current.contentWindow.postMessage(
-            JSON.stringify({ type: 'mute', muted: next }),
-            '*'
-          );
-        } catch {}
-      }
-      return next;
-    });
-  }, []);
+  }, [featuredStream?.id, streamData]);
 
   if (!featuredStream) {
     return (
@@ -159,7 +141,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             <video
               ref={videoRef}
               className="w-full h-full object-cover object-center scale-175 filter brightness-105"
-              muted={isMuted}
+              muted
               autoPlay
               playsInline
               onError={() => setVideoError(true)}
@@ -188,22 +170,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
         <div className="absolute inset-0 bg-gradient-to-r from-[#050810] via-[#050810]/20 to-transparent" />
         <div className="absolute inset-0 bg-blue-900/10" />
       </div>
-
-      {/* ── Mute/Unmute toggle — always visible when there's a stream ── */}
-      {streamData && streamData.url && (
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleMute();
-          }}
-          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-colors backdrop-blur-sm pointer-events-auto"
-          title={isMuted ? 'Unmute' : 'Mute'}
-          type="button"
-        >
-          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </button>
-      )}
 
       {/* ── Hero Content — sits above everything ── */}
       <div className="relative z-10 px-6 sm:px-10 py-12 sm:py-16 max-w-3xl flex flex-col justify-end min-h-[380px] sm:min-h-[460px]">

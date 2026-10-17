@@ -7,7 +7,6 @@ import {
   History,
   Bookmark,
   Flame,
-  Play,
   Layers,
   Search,
   X,
@@ -45,7 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'sports', label: 'Live Sports', icon: Radio },
     { id: 'channels', label: '24/7 Channels', icon: Tv },
     { id: 'iptv', label: 'IPTV Playlists', icon: Layers },
-    { id: 'movies', label: 'Movies & TV', icon: Play },
     { id: 'music', label: 'Music', icon: Music },
     { id: 'history', label: 'Watch History', icon: History },
     { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
@@ -79,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
         style={{ top: '65px', bottom: 0 }}
       >
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0 lg:h-[calc(100vh-65px)]">
           {/* Search Bar */}
           <div className="px-3 pt-3 pb-2">
             <div className="relative">
