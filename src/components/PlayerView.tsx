@@ -14,6 +14,8 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   ShieldAlert,
   PictureInPicture2,
   Users,
@@ -323,6 +325,38 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 syncCommand={syncCommand}
               />
             )}
+          </div>
+
+          {/* Channel Up/Down — left of sources bar, directly under player */}
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={() => {
+                const list = allStreams || relatedStreams;
+                const idx = list.findIndex((s) => s.id === stream.id);
+                const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
+                if (prev) onPlayStream(prev);
+              }}
+              className="w-10 h-10 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center transition-all shadow-lg shadow-blue-600/30 touch-manipulation"
+              title="Previous channel"
+            >
+              <ChevronUp className="w-5 h-5" />
+            </button>
+            <div className="flex-1 bg-[#0f121a] rounded-xl border border-slate-800/80 px-4 py-2.5">
+              <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Channel</span>
+              <p className="text-sm font-bold text-white mt-0.5 truncate">{stream.title}</p>
+            </div>
+            <button
+              onClick={() => {
+                const list = allStreams || relatedStreams;
+                const idx = list.findIndex((s) => s.id === stream.id);
+                const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+                if (next) onPlayStream(next);
+              }}
+              className="w-10 h-10 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center transition-all shadow-lg shadow-blue-600/30 touch-manipulation"
+              title="Next channel"
+            >
+              <ChevronDown className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Player Toolbar & Sources */}
