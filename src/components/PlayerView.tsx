@@ -46,6 +46,7 @@ interface PlayerViewProps {
   watchlistStreams: StreamItem[];
   multiviewStreamIds: string[];
   watchHistory: WatchHistoryEntry[];
+  iptvStreams: StreamItem[];
   onShowToast: (text: string, type?: 'success' | 'info' | 'warning') => void;
   onTogglePiP?: () => void;
   onVideoEnd?: () => void;
@@ -83,6 +84,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   relatedStreams,
   watchlistIds,
   watchlistStreams,
+  iptvStreams,
   multiviewStreamIds,
   watchHistory,
   onShowToast,
@@ -152,33 +154,38 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     return () => { unsubscribed = true; watchPartyService.disconnect(); };
   }, []);
 
-  // Build group tabs — every site section accessible from channel list (except smutt)
+  // Merge all stream sources — every site section accessible from channel list (except smutt)
+  const mergedStreams = useMemo(() => {
+    return [
+      ...(allStreams || relatedStreams || []),
+      ...(iptvStreams || []),
+    ].filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
+  }, [allStreams, relatedStreams, iptvStreams]);
+
   const groups = ['All', 'Live Sports', '24/7 Channels', 'IPTV', 'Entertainment & Movies', 'News & Documentaries'];
 
   // Filter channels based on selected tab
   const filteredChannels = useMemo(() => {
-    const source = (allStreams || relatedStreams).filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
-    if (selectedGroup === 'All') return source;
-    if (selectedGroup === 'IPTV') return source.filter((s) => s.provider === 'iptv');
-    if (selectedGroup === 'Live Sports') return source.filter((s) => s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer')));
-    if (selectedGroup === '24/7 Channels') return source.filter((s) => s.status === '24/7');
-    if (selectedGroup === 'Entertainment & Movies') return source.filter((s) => s.category === 'Entertainment & Movies');
-    if (selectedGroup === 'News & Documentaries') return source.filter((s) => s.category === 'News & Documentaries');
-    return source.filter((s) => s.provider !== 'iptv' && (s.groupTitle === selectedGroup || s.category === selectedGroup));
-  }, [allStreams, relatedStreams, selectedGroup]);
+    if (selectedGroup === 'All') return mergedStreams;
+    if (selectedGroup === 'IPTV') return mergedStreams.filter((s) => s.provider === 'iptv');
+    if (selectedGroup === 'Live Sports') return mergedStreams.filter((s) => s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer')));
+    if (selectedGroup === '24/7 Channels') return mergedStreams.filter((s) => s.status === '24/7');
+    if (selectedGroup === 'Entertainment & Movies') return mergedStreams.filter((s) => s.category === 'Entertainment & Movies');
+    if (selectedGroup === 'News & Documentaries') return mergedStreams.filter((s) => s.category === 'News & Documentaries');
+    return mergedStreams.filter((s) => s.groupTitle === selectedGroup || s.category === selectedGroup);
+  }, [mergedStreams, selectedGroup]);
 
   // Group counts for tab badges
   const groupCounts = useMemo(() => {
-    const source = (allStreams || relatedStreams).filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
     const counts: Record<string, number> = {
-      'All': source.length,
+      'All': mergedStreams.length,
       'IPTV': 0,
       'Live Sports': 0,
       '24/7 Channels': 0,
       'Entertainment & Movies': 0,
       'News & Documentaries': 0,
     };
-    source.forEach((s) => {
+    mergedStreams.forEach((s) => {
       if (s.provider === 'iptv') { counts['IPTV']++; return; }
       if (s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer'))) {
         counts['Live Sports']++;
@@ -188,7 +195,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
       if (s.category === 'News & Documentaries') counts['News & Documentaries']++;
     });
     return counts;
-  }, [allStreams, relatedStreams]);
+  }, [mergedStreams]);
 
   // Load stream sources on mount or stream change
   useEffect(() => {
@@ -352,7 +359,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           <div className="mt-3 flex items-center gap-3">
             <button
               onClick={() => {
-                const list = allStreams || relatedStreams;
+                const list = mergedStreams;
                 const idx = list.findIndex((s) => s.id === stream.id);
                 const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
                 if (prev) onPlayStream(prev);
@@ -466,7 +473,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
             <button
               onClick={() => {
-                const list = allStreams || relatedStreams;
+                const list = mergedStreams;
                 const idx = list.findIndex((s) => s.id === stream.id);
                 const next = idx < list.length - 1 ? list[idx + 1] : list[0];
                 if (next) onPlayStream(next);
@@ -664,7 +671,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             </div>
             <div className="divide-y divide-slate-800/50">
               {(() => {
-                const sportsStreams = (allStreams || relatedStreams)
+                const sportsStreams = mergedStreams
                   .filter((s) => s.id !== stream.id && s.status === 'live' && (
                     s.category.includes('Sport') || s.category.includes('Basketball') ||
                     s.category.includes('Football') || s.category.includes('Combat') ||

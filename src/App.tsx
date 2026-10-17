@@ -554,6 +554,7 @@ export default function App() {
               watchlistStreams={watchlistStreams}
               multiviewStreamIds={multiviewStreamIds}
               watchHistory={watchHistory}
+              iptvStreams={iptvStreams}
               allStreams={streams}
               currentIndex={smuttStreams.length > 0
                 ? smuttStreams.findIndex(s => s.id === activeStream.id)
