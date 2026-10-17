@@ -19,6 +19,7 @@ interface WatchlistViewProps {
   onPlayStream: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
+  onTogglePiP?: (stream: StreamItem) => void;
   multiviewStreamIds: string[];
   onNavigateHome: () => void;
   onSimulateLiveTransition: (stream: StreamItem) => void;
@@ -29,6 +30,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   onPlayStream,
   onAddToMultiview,
   onToggleWatchlist,
+  onTogglePiP,
   multiviewStreamIds,
   onNavigateHome,
   onSimulateLiveTransition,
@@ -184,6 +186,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                 onPlay={onPlayStream}
                 onAddToMultiview={onAddToMultiview}
                 onToggleWatchlist={onToggleWatchlist}
+                onTogglePiP={onTogglePiP}
                 isInWatchlist={true}
                 isInMultiview={multiviewStreamIds.includes(stream.id)}
               />

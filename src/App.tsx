@@ -629,6 +629,7 @@ export default function App() {
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
+              onTogglePiP={handleTogglePiP}
               multiviewStreamIds={multiviewStreamIds}
               onNavigateHome={() => setCurrentView('home')}
               onSimulateLiveTransition={handleSimulateLiveTransition}
@@ -641,6 +642,7 @@ export default function App() {
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
+              onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
               initialCategory={selectedSportCategory}
@@ -655,6 +657,7 @@ export default function App() {
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
+              onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
               initialCategory="24/7 Channels"
@@ -666,6 +669,7 @@ export default function App() {
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
+              onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
               onSetStreams={setSmuttStreams}
@@ -687,6 +691,7 @@ export default function App() {
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
+              onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
               onRefresh={() => loadStreams(true)}
@@ -790,6 +795,7 @@ export default function App() {
                 onPlayStream={handlePlayStream}
                 onAddToMultiview={handleAddToMultiview}
                 onToggleWatchlist={handleToggleWatchlist}
+                onTogglePiP={handleTogglePiP}
                 watchlistIds={watchlistIds}
                 multiviewStreamIds={multiviewStreamIds}
                 onViewAll={() => setCurrentView('sports')}
@@ -803,6 +809,7 @@ export default function App() {
                 onPlayStream={handlePlayStream}
                 onAddToMultiview={handleAddToMultiview}
                 onToggleWatchlist={handleToggleWatchlist}
+                onTogglePiP={handleTogglePiP}
                 watchlistIds={watchlistIds}
                 multiviewStreamIds={multiviewStreamIds}
                 onViewAll={() => setCurrentView('channels')}
@@ -817,6 +824,7 @@ export default function App() {
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                   onViewAll={() => setCurrentView('iptv')}
@@ -844,6 +852,7 @@ export default function App() {
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                 />
@@ -858,6 +867,7 @@ export default function App() {
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                 />
@@ -872,6 +882,7 @@ export default function App() {
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                 />
@@ -886,6 +897,7 @@ export default function App() {
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                 />
@@ -904,6 +916,7 @@ export default function App() {
           onPlayStream={handlePlayStream}
           onAddToMultiview={handleAddToMultiview}
           onToggleWatchlist={handleToggleWatchlist}
+          onTogglePiP={handleTogglePiP}
           watchlistIds={watchlistIds}
           multiviewStreamIds={multiviewStreamIds}
         />

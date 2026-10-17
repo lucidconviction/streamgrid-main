@@ -14,6 +14,7 @@ interface SmuttDirectoryProps {
   onPlayStream: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
+  onTogglePiP?: (stream: StreamItem) => void;
   watchlistIds: string[];
   multiviewStreamIds: string[];
   onSetStreams?: (streams: StreamItem[]) => void;
@@ -23,6 +24,7 @@ export const SmuttDirectory: React.FC<SmuttDirectoryProps> = ({
   onPlayStream,
   onAddToMultiview,
   onToggleWatchlist,
+  onTogglePiP,
   watchlistIds,
   multiviewStreamIds,
   onSetStreams,
@@ -342,6 +344,7 @@ export const SmuttDirectory: React.FC<SmuttDirectoryProps> = ({
                 onPlay={onPlayStream}
                 onAddToMultiview={onAddToMultiview}
                 onToggleWatchlist={onToggleWatchlist}
+                onTogglePiP={onTogglePiP}
                 isInWatchlist={watchlistIds.includes(stream.id)}
                 isInMultiview={multiviewStreamIds.includes(stream.id)}
               />

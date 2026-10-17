@@ -10,6 +10,7 @@ interface SearchResultsViewProps {
   onPlayStream: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
+  onTogglePiP?: (stream: StreamItem) => void;
   watchlistIds: string[];
   multiviewStreamIds: string[];
 }
@@ -21,6 +22,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
   onPlayStream,
   onAddToMultiview,
   onToggleWatchlist,
+  onTogglePiP,
   watchlistIds,
   multiviewStreamIds,
 }) => {
@@ -135,6 +137,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
                     onPlay={onPlayStream}
                     onAddToMultiview={onAddToMultiview}
                     onToggleWatchlist={onToggleWatchlist}
+                    onTogglePiP={onTogglePiP}
                     isInWatchlist={watchlistIds.includes(stream.id)}
                     isInMultiview={multiviewStreamIds.includes(stream.id)}
                   />

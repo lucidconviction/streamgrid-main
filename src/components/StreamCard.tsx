@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Hls from 'hls.js';
-import { Layers, Bookmark, Play } from 'lucide-react';
+import { Layers, Bookmark, Play, PictureInPicture2 } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
 import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
@@ -10,6 +10,7 @@ interface StreamCardProps {
   onPlay: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
+  onTogglePiP?: (stream: StreamItem) => void;
   isInWatchlist: boolean;
   isInMultiview?: boolean;
   screenshotUrl?: string | null;
@@ -20,6 +21,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   onPlay,
   onAddToMultiview,
   onToggleWatchlist,
+  onTogglePiP,
   isInWatchlist,
   isInMultiview,
   screenshotUrl,
@@ -309,6 +311,15 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             >
               <Play className="w-3.5 h-3.5 fill-white" />
             </button>
+            {onTogglePiP && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onTogglePiP(stream); }}
+                className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-all shadow-md shadow-red-600/30 hover:shadow-red-500/40"
+                title="Picture-in-Picture"
+              >
+                <PictureInPicture2 className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onToggleWatchlist(stream); }}
               className={`flex-1 flex items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-200 ${

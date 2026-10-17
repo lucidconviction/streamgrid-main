@@ -9,6 +9,7 @@ interface ChannelDirectoryProps {
   onPlayStream: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
+  onTogglePiP?: (stream: StreamItem) => void;
   watchlistIds: string[];
   multiviewStreamIds: string[];
   initialCategory?: string;
@@ -23,6 +24,7 @@ export const ChannelDirectory: React.FC<ChannelDirectoryProps> = ({
   onPlayStream,
   onAddToMultiview,
   onToggleWatchlist,
+  onTogglePiP,
   watchlistIds,
   multiviewStreamIds,
   initialCategory = 'All',
@@ -153,6 +155,7 @@ export const ChannelDirectory: React.FC<ChannelDirectoryProps> = ({
               onPlay={onPlayStream}
               onAddToMultiview={onAddToMultiview}
               onToggleWatchlist={onToggleWatchlist}
+              onTogglePiP={onTogglePiP}
               isInWatchlist={watchlistIds.includes(stream.id)}
               isInMultiview={multiviewStreamIds.includes(stream.id)}
               screenshotUrl={screenshotUrls.get(stream.id) ?? undefined}
