@@ -364,7 +364,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
                 if (prev) onPlayStream(prev);
               }}
-              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold"
+              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold channel-nav-btn"
               title="Previous channel"
             >
               <ChevronUp className="w-5 h-5" />
@@ -478,7 +478,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 const next = idx < list.length - 1 ? list[idx + 1] : list[0];
                 if (next) onPlayStream(next);
               }}
-              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold"
+              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold channel-nav-btn"
               title="Next channel"
             >
               <span>Channel Down</span>
