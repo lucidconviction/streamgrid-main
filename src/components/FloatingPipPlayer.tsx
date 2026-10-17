@@ -28,7 +28,7 @@ export const FloatingPipPlayer: React.FC<FloatingPipPlayerProps> = ({
   const [volume, setVolume] = useState(100);
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 w-80 sm:w-96 rounded-2xl bg-[#0e111a] border border-slate-700/80 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 group">
+    <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 rounded-2xl bg-[#0e111a] border border-slate-700/80 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 group">
       {/* PiP Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-slate-800 text-xs">
         <div className="flex items-center gap-2 truncate pr-2">
@@ -44,7 +44,7 @@ export const FloatingPipPlayer: React.FC<FloatingPipPlayerProps> = ({
           {/* Mute toggle */}
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+            className="min-h-11 min-w-11 p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors touch-manipulation"
             title={isMuted ? 'Unmute' : 'Mute'}
           >
             {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
@@ -53,7 +53,7 @@ export const FloatingPipPlayer: React.FC<FloatingPipPlayerProps> = ({
           {/* Expand to Full Theater Player */}
           <button
             onClick={onExpandToFullPlayer}
-            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+            className="min-h-11 min-w-11 p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors touch-manipulation"
             title="Expand to Full Player"
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -62,7 +62,7 @@ export const FloatingPipPlayer: React.FC<FloatingPipPlayerProps> = ({
           {/* Close PiP */}
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-blue-400 rounded hover:bg-slate-800 transition-colors"
+            className="min-h-11 min-w-11 p-1.5 text-slate-400 hover:text-blue-400 rounded hover:bg-slate-800 transition-colors touch-manipulation"
             title="Close Picture-in-Picture"
           >
             <X className="w-3.5 h-3.5" />

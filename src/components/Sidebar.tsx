@@ -75,9 +75,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`fixed lg:static left-0 z-40 flex flex-col glass-panel border-r border-blue-500/20 transition-all duration-300 ${
           isOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-0 lg:overflow-hidden'
         }`}
-        style={{ top: '65px', bottom: 0 }}
+        style={{ top: 'var(--header-height, 65px)', bottom: 0 }}
       >
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0 lg:h-[calc(100vh-65px)]">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0 lg:h-[calc(100vh-var(--header-height,65px))]">
           {/* Search Bar */}
           <div className="px-3 pt-3 pb-2">
             <div className="relative">

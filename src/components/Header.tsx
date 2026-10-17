@@ -212,20 +212,20 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="relative" ref={pageDropdownRef}>
               <button
                 onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
               >
                 <span className="hidden sm:inline">{VIEW_LABELS[currentPage || 'home']}</span>
                 <span className="sm:hidden">{(VIEW_LABELS[currentPage || 'home'] || 'Home').charAt(0)}</span>
                 {pageDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {pageDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-44 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
                   <div className="p-1.5">
                     {Object.entries(VIEW_LABELS).map(([id, label]) => (
                       <button
                         key={id}
                         onClick={() => { onNavigate(id); setPageDropdownOpen(false); }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        className={`w-full text-left px-4 py-3 min-h-11 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
                           currentPage === id
                             ? 'bg-blue-600 text-white'
                             : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -241,7 +241,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onToggleSidebar}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`min-h-11 min-w-11 p-2 rounded-lg transition-colors touch-manipulation ${
                 sidebarOpen
                   ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'

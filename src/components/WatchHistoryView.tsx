@@ -131,7 +131,7 @@ export const WatchHistoryView: React.FC<WatchHistoryViewProps> = ({
                 {/* Thumbnail */}
                 <div
                   onClick={() => onPlayHistoryItem(item)}
-                  className="relative aspect-video w-32 sm:w-40 rounded-lg overflow-hidden bg-slate-900 shrink-0 cursor-pointer group/thumb"
+                  className="relative aspect-video w-28 sm:w-32 md:w-40 rounded-lg overflow-hidden bg-slate-900 shrink-0 cursor-pointer group/thumb"
                 >
                   <img
                     src={item.poster || '/src/assets/images/hero_championship_live_1792048678438.jpg'}

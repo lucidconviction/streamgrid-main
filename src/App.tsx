@@ -481,11 +481,7 @@ export default function App() {
   const watchlistStreams = streams.filter((s) => watchlistIds.includes(s.id));
 
   return (
-    <div className="min-h-screen bg-[#050810] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Prevent body scroll when sidebar overlay is open on mobile */}
-      {sidebarOpen && window.innerWidth < 1024 && (
-        <style>{`body { overflow: hidden; }`}</style>
-      )}
+    <div className={`min-h-screen bg-[#050810] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white ${sidebarOpen && 'sidebar-overlay-open'}`}>
       {/* Top Bar Header */}
       <Header
         onNavigate={(view) => {
@@ -516,7 +512,7 @@ export default function App() {
         />
 
         {/* Viewport Content */}
-        <main className="flex-1 overflow-x-hidden min-h-[calc(100vh-65px)] pb-16">
+        <main className="flex-1 overflow-x-hidden min-h-[calc(100vh-var(--header-height,65px))] pb-16">
           {/* Active View Rendering */}
           {currentView === 'player' && activeStream ? (
             <PlayerView
@@ -691,7 +687,7 @@ export default function App() {
                       <div
                         key={item.id}
                         onClick={() => handlePlayHistoryItem(item)}
-                        className="w-[280px] sm:w-[340px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
+                        className="w-[240px] sm:w-[280px] md:w-[340px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
                       >
                         <div className="relative aspect-video w-full bg-slate-900">
                           <img

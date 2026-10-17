@@ -659,7 +659,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               }}
             />
           ) : showChat && (
-            <div className="flex flex-col h-[320px] bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
+            <div className="flex flex-col h-[260px] sm:h-[320px] bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
               <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-blue-400" />

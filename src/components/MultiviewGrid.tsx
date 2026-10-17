@@ -416,14 +416,14 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
           className={`w-full bg-black rounded-2xl transition-all duration-300 ${
             isGridFullscreen
               ? 'fixed inset-0 z-50 rounded-none'
-              : 'relative min-h-[600px] md:min-h-[720px] border border-slate-800/80 p-2 sm:p-3'
+              : 'relative min-h-[500px] sm:min-h-[600px] lg:min-h-[720px] border border-slate-800/80 p-2 sm:p-3'
           }`}
         >
         <div
           className={`w-full gap-1.5 ${
             isGridFullscreen ? 'p-1' : ''
           } ${getLayoutGridClass(layout)}`}
-          style={{ height: isGridFullscreen ? '100vh' : undefined }}
+          style={{ height: isGridFullscreen ? '100dvh' : undefined }}
         >
           {activeSlots.map((slot) => {
             const isAudioActive = soloSlotId === slot.slotId;
@@ -443,10 +443,10 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
             const heightClass = isFullscreen
               ? 'h-full'
               : layout === 'single'
-              ? 'h-[400px] sm:h-[500px]'
+              ? 'h-[300px] sm:h-[400px] lg:h-[500px]'
               : layout === 'six' || layout === 'six-wide' || layout === 'big-center' || layout === 'focus-5'
-              ? 'h-[200px] sm:h-[260px] md:h-[300px]'
-              : 'h-[280px] sm:h-[340px]';
+              ? 'h-[150px] sm:h-[200px] md:h-[260px]'
+              : 'h-[200px] sm:h-[260px] lg:h-[340px]';
 
             return (
               <div
@@ -506,35 +506,35 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
                       <>
                         <button
                           onClick={() => handleStartSwap(slot.slotId)}
-                          className={`p-1 rounded transition-colors ${
+                          className={`min-h-11 min-w-11 p-1.5 rounded transition-colors touch-manipulation ${
                             isSwapSelected
                               ? 'bg-amber-500 text-black'
                               : 'text-slate-500 hover:text-white hover:bg-slate-800'
                           }`}
                           title="Swap screen"
                         >
-                          <ArrowRightLeft className="w-3 h-3" />
+                          <ArrowRightLeft className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setPickerModalSlotId(slot.slotId)}
-                          className="p-1 rounded text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+                          className="min-h-11 min-w-11 p-1.5 rounded text-slate-500 hover:text-white hover:bg-slate-800 transition-colors touch-manipulation"
                           title="Switch Stream"
                         >
-                          <Search className="w-3 h-3" />
+                          <Search className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onClearSlot(slot.slotId)}
-                          className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                          className="min-h-11 min-w-11 p-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors touch-manipulation"
                           title="Remove stream"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setFullscreenSlotId(slot.slotId)}
-                          className="p-1 rounded text-slate-500 hover:text-blue-400 hover:bg-slate-800 transition-colors"
+                          className="min-h-11 min-w-11 p-1.5 rounded text-slate-500 hover:text-blue-400 hover:bg-slate-800 transition-colors touch-manipulation"
                           title="Fullscreen this screen"
                         >
-                          <Maximize2 className="w-3 h-3" />
+                          <Maximize2 className="w-3.5 h-3.5" />
                         </button>
                       </>
                     )}

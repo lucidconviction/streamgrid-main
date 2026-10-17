@@ -214,7 +214,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
       {/* Track loading overlay for active artist */}
       {activeLoadingArtist && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col items-center min-w-[320px]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col items-center w-[90vw] max-w-sm">
             <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-4" />
             <p className="text-base font-bold text-white">Loading tracks</p>
             <p className="text-sm text-slate-400 mt-1">{activeLoadingArtist}</p>

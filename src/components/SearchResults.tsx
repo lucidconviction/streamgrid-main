@@ -58,7 +58,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         </div>
 
         {/* Results */}
-        <div className="overflow-y-auto h-[calc(100vh-65px)] p-3">
+        <div className="overflow-y-auto h-[calc(100vh-var(--header-height,65px))] p-3">
           {!query ? (
             /* Empty state - show categories */
             <div className="space-y-2">
