@@ -14,6 +14,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { HeroBanner } from './components/HeroBanner';
 import { StreamCarousel } from './components/StreamCarousel';
+import { SearchResultsView } from './components/SearchResultsView';
 import { PlayerView } from './components/PlayerView';
 import { MultiviewGrid } from './components/MultiviewGrid';
 import { WatchHistoryView } from './components/WatchHistoryView';
@@ -36,6 +37,8 @@ export default function App() {
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStream, setPipStream] = useState<StreamItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [searchPanelQuery, setSearchPanelQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedSportCategory, setSelectedSportCategory] = useState<string>('All');
 
@@ -506,6 +509,12 @@ export default function App() {
     .filter((id): id is string => Boolean(id));
   const watchlistStreams = streams.filter((s) => watchlistIds.includes(s.id));
 
+  // All searchable streams — merged site sections (no smutt/eporner)
+  const searchableStreams = [
+    ...streams,
+    ...iptvStreams,
+  ].filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
+
   return (
     <div className={`min-h-screen bg-[#0a0f1c] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white ${sidebarOpen && 'sidebar-overlay-open'}`}>
       {/* Top Bar Header */}
@@ -521,12 +530,8 @@ export default function App() {
         currentPage={currentView}
         onSearch={(query: string) => {
           setSearchQuery(query);
-          // Open search results in sidebar if available
-          const sidebarSearchInput = document.querySelector('input[placeholder="Search all streams..."]') as HTMLInputElement;
-          if (sidebarSearchInput) {
-            sidebarSearchInput.value = query;
-            sidebarSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
+          setSearchPanelQuery(query);
+          setSearchPanelOpen(true);
         }}
         savedSearches={storageService.getSavedSearches(activeProfile.id)}
         activeProfileId={activeProfile.id}
@@ -872,6 +877,20 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {/* Search Results Panel — expands from left, covers ~85% of screen */}
+      {searchPanelOpen && (
+        <SearchResultsView
+          streams={searchableStreams}
+          query={searchPanelQuery}
+          onClose={() => setSearchPanelOpen(false)}
+          onPlayStream={handlePlayStream}
+          onAddToMultiview={handleAddToMultiview}
+          onToggleWatchlist={handleToggleWatchlist}
+          watchlistIds={watchlistIds}
+          multiviewStreamIds={multiviewStreamIds}
+        />
+      )}
 
       {/* Profile Management Modal */}
       <ProfileModal
