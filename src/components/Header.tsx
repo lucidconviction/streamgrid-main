@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark, Zap } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -253,12 +253,16 @@ export const Header: React.FC<HeaderProps> = ({
                 {searchDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {searchDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                  <div className="p-3 border-b border-slate-800/60">
-                    <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2">
-                      Save Current Search
-                    </p>
-                    <div className="flex items-center gap-2">
+                <div className="absolute top-full left-0 mt-2 w-48 bg-[#0f172a]/90 backdrop-blur-xl border border-blue-500/30 rounded-2xl shadow-2xl shadow-blue-900/40 z-50 overflow-hidden animate-slideDown">
+                  {/* Top: Save Input */}
+                  <div className="p-3 border-b border-blue-500/20 bg-blue-950/30">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Zap className="w-3.5 h-3.5 text-blue-400" />
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-blue-300">
+                        Quick Save
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
                       <input
                         type="text"
                         value={searchInput}
@@ -266,62 +270,70 @@ export const Header: React.FC<HeaderProps> = ({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveSearch();
                         }}
-                        placeholder="Type a search term..."
+                        placeholder="Press Enter to save..."
                         autoFocus
-                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                        className="flex-1 bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
                       <button
                         onClick={handleSaveSearch}
                         disabled={!searchInput.trim()}
-                        className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors touch-manipulation"
+                        className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all touch-manipulation hover:scale-105 active:scale-95"
                       >
-                        <Star className="w-4 h-4" />
+                        <Star className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+
+                  {/* Bottom: Saved List */}
+                  <div className="max-h-60 overflow-y-auto">
                     {savedSearches.length === 0 ? (
-                      <div className="px-4 py-6 text-center">
-                        <Bookmark className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-                        <p className="text-xs text-slate-500">No saved searches</p>
-                        <p className="text-[10px] text-slate-600 mt-1">Type above and hit save</p>
+                      <div className="p-5 text-center">
+                        <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center mx-auto mb-2">
+                          <Bookmark className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <p className="text-xs text-slate-400">No saves yet</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Type + Enter to save</p>
                       </div>
                     ) : (
                       <div className="p-1.5">
-                        <div className="flex items-center justify-between px-2 py-1 mb-1">
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-                            Saved Searches ({savedSearches.length})
+                        <div className="flex items-center justify-between px-2 pb-1.5 mb-1">
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-500">
+                            {savedSearches.length} Saved
                           </span>
                           <button
                             onClick={() => {
                               storageService.clearSavedSearches(activeProfileId);
                             }}
-                            className="text-[10px] text-slate-600 hover:text-red-400 transition-colors"
+                            className="text-[9px] text-slate-600 hover:text-red-400 transition-colors"
                           >
-                            Clear all
+                            Clear
                           </button>
                         </div>
-                        {savedSearches.map((query, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center group"
-                          >
-                            <button
-                              onClick={() => handleLoadSearch(query)}
-                              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-left touch-manipulation"
+                        <div className="space-y-0.5">
+                          {savedSearches.map((query, i) => (
+                            <div
+                              key={i}
+                              className="group flex items-center rounded-lg transition-all hover:bg-blue-500/10"
                             >
-                              <Search className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                              <span className="truncate">{query}</span>
-                            </button>
-                            <button
-                              onClick={(e) => handleRemoveSearch(e, query)}
-                              className="p-2 text-slate-600 hover:text-red-400 transition-colors touch-manipulation"
-                              title="Remove search"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                              <button
+                                onClick={() => handleLoadSearch(query)}
+                                className="flex-1 flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 text-left touch-manipulation"
+                              >
+                                <Search className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300 transition-colors" />
+                                <span className="text-xs text-slate-300 group-hover:text-white truncate">
+                                  {query}
+                                </span>
+                              </button>
+                              <button
+                                onClick={(e) => handleRemoveSearch(e, query)}
+                                className="p-1.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all touch-manipulation"
+                                title="Remove"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
