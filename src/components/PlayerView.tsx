@@ -364,7 +364,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
                 if (prev) onPlayStream(prev);
               }}
-              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold channel-nav-btn"
+              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
               title="Previous channel"
             >
               <ChevronUp className="w-5 h-5" />
@@ -375,10 +375,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <div className="relative flex-1">
               <button
                 onClick={(e) => { e.stopPropagation(); setShowHistoryMenu((h) => !h); setShowFavMenu(false); }}
-                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 dropdown-menu"
+                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
               >
                 <div className="flex items-center gap-2">
-                  <HistoryIcon className="w-5 h-5" />
+                  <HistoryIcon className="w-5 h-5 text-white" />
                   <span>History</span>
                 </div>
                 <ChevronDownIcon className={`w-4 h-4 transition-transform ${showHistoryMenu ? 'rotate-180' : ''}`} />
@@ -426,10 +426,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <div className="relative flex-1">
               <button
                 onClick={(e) => { e.stopPropagation(); setShowFavMenu((f) => !f); setShowHistoryMenu(false); }}
-                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 dropdown-menu"
+                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
               >
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5" />
+                  <Star className="w-5 h-5 text-white" />
                   <span>Favorites</span>
                 </div>
                 <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
@@ -478,7 +478,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 const next = idx < list.length - 1 ? list[idx + 1] : list[0];
                 if (next) onPlayStream(next);
               }}
-              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold channel-nav-btn"
+              className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
               title="Next channel"
             >
               <span>Channel Down</span>

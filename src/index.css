@@ -188,14 +188,14 @@ img, button, a {
   min-height: fill-available;
 }
 
-/* Force bright white text/icons on channel up/down nav buttons */
-.channel-nav-btn,
-.channel-nav-btn span,
-.channel-nav-btn svg,
-.channel-nav-btn * {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-  stroke: #ffffff !important;
+/* Force consistent white tone on all player nav buttons (Channel, History, Favorites) */
+.player-nav-btn,
+.player-nav-btn span,
+.player-nav-btn svg,
+.player-nav-btn * {
+  color: #f8fafc !important;
+  fill: #f8fafc !important;
+  stroke: #f8fafc !important;
 }
 
 /* Hide native video captions/subtitles (WebVTT) */
