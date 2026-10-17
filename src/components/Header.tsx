@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [bgReady, setBgReady] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
+  const bgFailRef = useRef(false);
 
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
@@ -97,6 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
             default:
               hls.destroy();
               hlsRef.current = null;
+              bgFailRef.current = true;
               setBgReady(false);
               break;
           }
@@ -124,14 +126,15 @@ export const Header: React.FC<HeaderProps> = ({
   // Retry: if current bg stream fails, pick another live stream
   useEffect(() => {
     if (liveStreams.length === 0) return;
-    if (currentBgStream && !bgReady) return; // still trying current one
+    if (!bgReady && !bgFailRef.current) return; // still trying current one, haven't failed yet
 
     const available = liveStreams.filter(
       (s) => s.directEmbedUrl && s.status === 'live' && s.id !== currentBgStream?.id
     );
     if (available.length === 0) return;
 
-    // Rotate through available streams to keep header fresh
+    // Pick a fallback stream only after a failure
+    bgFailRef.current = false;
     const next = available[Math.floor(Math.random() * available.length)];
     setCurrentBgStream(next);
     setupBgPlayer(next);
