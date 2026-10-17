@@ -290,46 +290,48 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             {stream.title}
           </h3>
 
-          {/* Multiview + Play + Watch buttons — side by side under title */}
-          <div className="mt-2 flex gap-1.5">
+          {/* Buttons row — Multiview | Play+PiP | Watch */}
+          <div className="mt-2 flex items-center gap-1.5">
             <button
               onClick={(e) => { e.stopPropagation(); onAddToMultiview(stream); }}
-              className={`flex-1 flex items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+              className={`flex-[2] flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${
                 isInMultiview
                   ? 'bg-blue-600 text-white border border-blue-500'
                   : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-blue-500/60 hover:text-blue-300 hover:bg-blue-600/20'
               }`}
               title={isInMultiview ? 'Remove from multiview' : 'Add to multiview'}
             >
-              <Layers className="w-2.5 h-2.5" />
+              <Layers className="w-3 h-3" />
               <span>{isInMultiview ? 'In View' : 'Multiview'}</span>
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onPlay(stream); }}
-              className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30 hover:shadow-blue-500/40"
-              title="Play stream"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" />
-            </button>
-            {onTogglePiP && (
+            <div className="flex gap-1">
               <button
-                onClick={(e) => { e.stopPropagation(); onTogglePiP(stream); }}
-                className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-all shadow-md shadow-red-600/30 hover:shadow-red-500/40"
-                title="Picture-in-Picture"
+                onClick={(e) => { e.stopPropagation(); onPlay(stream); }}
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30 hover:shadow-blue-500/40"
+                title="Play stream"
               >
-                <PictureInPicture2 className="w-3.5 h-3.5" />
+                <Play className="w-4 h-4 fill-white" />
               </button>
-            )}
+              {onTogglePiP && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onTogglePiP(stream); }}
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-all shadow-md shadow-red-600/30 hover:shadow-red-500/40"
+                  title="Picture-in-Picture"
+                >
+                  <PictureInPicture2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <button
               onClick={(e) => { e.stopPropagation(); onToggleWatchlist(stream); }}
-              className={`flex-1 flex items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+              className={`flex-[2] flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${
                 isInWatchlist
                   ? 'bg-amber-500 text-black border border-amber-400'
                   : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-amber-500/60 hover:text-amber-300 hover:bg-amber-500/20'
               }`}
               title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
             >
-              <Bookmark className={`w-2.5 h-2.5 ${isInWatchlist ? 'fill-black' : ''}`} />
+              <Bookmark className={`w-3 h-3 ${isInWatchlist ? 'fill-black' : ''}`} />
               <span>{isInWatchlist ? 'Watched' : 'Watch'}</span>
             </button>
           </div>
