@@ -349,16 +349,19 @@ export default function App() {
   };
 
   // Picture-in-Picture Toggle Handler — supports multiple PiPs
-  const handleTogglePiP = () => {
-    if (activeStream) {
+  const handleTogglePiP = (stream?: StreamItem) => {
+    const targetStream = stream || activeStream;
+    if (targetStream) {
       setPipStreams((prev) => {
-        if (prev.some((p) => p.stream.id === activeStream.id)) {
-          return prev.filter((p) => p.stream.id !== activeStream.id);
+        if (prev.some((p) => p.stream.id === targetStream.id)) {
+          return prev.filter((p) => p.stream.id !== targetStream.id);
         }
-        return [...prev, { id: activeStream.id, stream: activeStream }];
+        return [...prev, { id: targetStream.id, stream: targetStream }];
       });
-      setCurrentView('home');
-      showToast(`Browsing in Picture-in-Picture: "${activeStream.title}"`, 'info');
+      if (!stream) {
+        setCurrentView('home');
+      }
+      showToast(`Browsing in Picture-in-Picture: "${targetStream.title}"`, 'info');
     }
   };
 
