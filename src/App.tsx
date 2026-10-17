@@ -48,6 +48,11 @@ export default function App() {
   const [nextStream, setNextStream] = useState<StreamItem | null>(null);
   const [smuttStreams, setSmuttStreams] = useState<StreamItem[]>([]);
 
+  // IPTV streams — lazy loaded on demand (separate from main fetch)
+  const [iptvStreams, setIptvStreams] = useState<StreamItem[]>([]);
+  const [isLoadingIptv, setIsLoadingIptv] = useState(false);
+  const iptvLoadedRef = useRef(false);
+
   // Profiles & User State
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [activeProfile, setActiveProfile] = useState<UserProfile>(storageService.getActiveProfile());
@@ -258,6 +263,13 @@ export default function App() {
     };
   }, [watchlistIds, activeProfile.id]);
 
+  // Lazy-load IPTV streams when navigating to the IPTV view
+  useEffect(() => {
+    if (currentView === 'iptv') {
+      loadIptvStreams();
+    }
+  }, [currentView]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Profile Switching
   const handleSelectProfile = (id: string) => {
     storageService.setActiveProfileId(id);
@@ -316,6 +328,21 @@ export default function App() {
       durationMinutes: Math.floor(Math.random() * 45) + 15,
     });
     setWatchHistory(storageService.getHistory(activeProfile.id));
+  };
+
+  // ── Lazy IPTV load — called when user navigates to IPTV view ─────────────────
+  const loadIptvStreams = async () => {
+    if (iptvLoadedRef.current || isLoadingIptv) return;
+    iptvLoadedRef.current = true;
+    setIsLoadingIptv(true);
+    try {
+      const data = await streamService.fetchIptvStreams();
+      setIptvStreams(data);
+    } catch (e) {
+      console.warn('IPTV lazy load failed', e);
+    } finally {
+      setIsLoadingIptv(false);
+    }
   };
 
   // Picture-in-Picture Toggle Handler
@@ -464,7 +491,6 @@ export default function App() {
   // Filtered views
   const liveStreams = streams.filter((s) => s.status === 'live' || s.popular);
   const channels247 = streams.filter((s) => s.status === '24/7' || s.category.includes('24/7'));
-  const iptvStreams = streams.filter((s) => s.provider === 'iptv');
   const basketballStreams = streams.filter((s) => s.category === 'Basketball');
   const footballStreams = streams.filter((s) => s.category === 'Football / Soccer');
   const motorsportStreams = streams.filter((s) => s.category.includes('Motorsport'));
@@ -620,7 +646,7 @@ export default function App() {
             />
           ) : currentView === 'iptv' ? (
             <IptvDirectory
-              streams={streams}
+              iptvStreams={iptvStreams}
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
               onToggleWatchlist={handleToggleWatchlist}
@@ -746,7 +772,11 @@ export default function App() {
               />
 
               {/* Row 3: IPTV M3U Live Channels */}
-              {iptvStreams.length > 0 && (
+              {isLoadingIptv ? (
+                <div className="mb-8 rounded-xl bg-slate-800/50 border border-slate-700/50 p-6 text-center">
+                  <p className="text-slate-400">Loading IPTV channels...</p>
+                </div>
+              ) : iptvStreams.length > 0 ? (
                 <StreamCarousel
                   title="IPTV Live M3U Channels (FAST, RDTV & Premium)"
                   subtitle="Samsung TV Plus, CloudFront HLS, US, UK, Canada & DAZN PPV feeds"
@@ -758,6 +788,18 @@ export default function App() {
                   multiviewStreamIds={multiviewStreamIds}
                   onViewAll={() => setCurrentView('iptv')}
                 />
+              ) : (
+                <div className="mb-8 rounded-xl bg-gradient-to-r from-blue-950/40 via-slate-900 to-[#0f121a] border border-blue-800/30 p-6 text-center">
+                  <Tv className="w-10 h-10 text-blue-400/60 mx-auto mb-3" />
+                  <h2 className="text-xl font-bold text-white mb-1">17,000+ Live TV Channels</h2>
+                  <p className="text-sm text-slate-400 mb-4">Samsung TV Plus, FAST, US/UK/Canada & premium feeds</p>
+                  <button
+                    onClick={loadIptvStreams}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-transform hover:scale-105 active:scale-95"
+                  >
+                    Load IPTV Channels
+                  </button>
+                </div>
               )}
 
               {/* Row 4: Basketball & NBA */}

@@ -249,7 +249,7 @@ export const streamService = {
 
     // 1. Fetch from bintvjson (Live Events, Upcoming Events, 24/7 Channels)
     try {
-      const res = await fetch(BINTV_URL, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(BINTV_URL, { signal: AbortSignal.timeout(15000) });
       if (res.ok) {
         const data = await res.json();
         // Live Events
@@ -413,16 +413,6 @@ export const streamService = {
       console.warn('westream.su fetch failed', e);
     }
 
-    // 4. Fetch IPTV channels from the 3 M3U playlists
-    try {
-      const iptvChannels = await iptvService.fetchAllIptvChannels();
-      if (Array.isArray(iptvChannels) && iptvChannels.length > 0) {
-        aggregated.push(...iptvChannels);
-      }
-    } catch (e) {
-      console.warn('IPTV fetch failed', e);
-    }
-
     if (aggregated.length === 0) {
       cachedStreams = FALLBACK_STREAMS;
     } else {
@@ -431,6 +421,11 @@ export const streamService = {
     }
 
     return cachedStreams;
+  },
+
+  // ── Lazy IPTV fetch — called only when user navigates to IPTV page ──────────
+  async fetchIptvStreams(): Promise<StreamItem[]> {
+    return iptvService.fetchAllIptvChannels();
   },
 
   // Resolve active sources for a stream (queries /api/stream/{source}/{id} if streamed.pk)

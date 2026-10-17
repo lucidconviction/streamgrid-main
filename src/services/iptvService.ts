@@ -169,7 +169,7 @@ export const iptvService = {
 
     for (const u of targetUrls) {
       try {
-        const res = await fetch(u, { signal: AbortSignal.timeout(8000) });
+        const res = await fetch(u, { signal: AbortSignal.timeout(20000) });
         if (res.ok) {
           rawText = await res.text();
           if (rawText.includes('#EXTINF') || rawText.includes('#EXTM3U')) {

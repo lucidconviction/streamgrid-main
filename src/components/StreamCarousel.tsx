@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { StreamCard } from './StreamCard';
-import { captureIptvScreenshot } from '../services/iptvThumbnailService';
-
 interface StreamCarouselProps {
   title: string;
   subtitle?: string;
@@ -30,30 +28,23 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
   const rowRef = useRef<HTMLDivElement>(null);
   const [screenshotUrls, setScreenshotUrls] = useState<Map<string, string | null>>(new Map());
 
-  // Capture screenshots only for streams without a poster/thumbnail
+  // Use remote screenshot service (image.thum.io) for streams without a poster
+  // This is fast and doesn't block the UI with HLS instance creation
   useEffect(() => {
-    const streamsWithoutPoster = streams.filter((s) => s.directEmbedUrl && !s.poster);
+    // Cap to 100 streams to avoid generating thousands of URLs
+    const cappedStreams = streams.slice(0, 100);
+    const streamsWithoutPoster = cappedStreams.filter((s) => s.directEmbedUrl && !s.poster);
     if (streamsWithoutPoster.length === 0) return;
 
-    const fetchScreenshots = async () => {
-      const newUrls = new Map(screenshotUrls);
-      await Promise.allSettled(
-        streamsWithoutPoster.map(async (stream) => {
-          if (newUrls.has(stream.id)) return;
-          const url = stream.directEmbedUrl!.startsWith('http')
-            ? stream.directEmbedUrl!
-            : `${window.location.origin}${stream.directEmbedUrl!}`;
-          // Use random timestamp 0-30s for VOD, 0s for live streams
-          const isLive = stream.status === 'live';
-          const result = await captureIptvScreenshot(url, 320, isLive ? 0 : 30);
-          if (result) {
-            newUrls.set(stream.id, result);
-            setScreenshotUrls(new Map(newUrls));
-          }
-        })
-      );
-    };
-    fetchScreenshots();
+    const newUrls = new Map(screenshotUrls);
+    streamsWithoutPoster.forEach((stream) => {
+      if (newUrls.has(stream.id)) return;
+      const url = stream.directEmbedUrl!.startsWith('http')
+        ? stream.directEmbedUrl!
+        : `${window.location.origin}${stream.directEmbedUrl!}`;
+      newUrls.set(stream.id, `https://image.thum.io/get/maxage/7200/width/320/fail/${encodeURIComponent(url)}`);
+    });
+    setScreenshotUrls(new Map(newUrls));
   }, [streams]);
 
   const scroll = (direction: 'left' | 'right') => {

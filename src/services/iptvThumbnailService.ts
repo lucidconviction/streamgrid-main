@@ -57,8 +57,8 @@ export async function captureIptvScreenshot(
         }
       };
 
-      // Hard 8-second timeout for more reliable capture
-      timeout = setTimeout(() => cleanup(), 8000);
+      // Hard 5-second timeout for faster fallback
+      timeout = setTimeout(() => cleanup(), 5000);
 
       const startCapture = () => {
         video?.play().then(() => {

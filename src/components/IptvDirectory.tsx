@@ -6,7 +6,7 @@ import { IPTV_PLAYLISTS, IptvPlaylistSource } from '../services/iptvService';
 import { captureIptvScreenshot } from '../services/iptvThumbnailService';
 
 interface IptvDirectoryProps {
-  streams: StreamItem[];
+  iptvStreams: StreamItem[];
   onPlayStream: (stream: StreamItem) => void;
   onAddToMultiview: (stream: StreamItem) => void;
   onToggleWatchlist: (stream: StreamItem) => void;
@@ -17,7 +17,7 @@ interface IptvDirectoryProps {
 }
 
 export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
-  streams,
+  iptvStreams,
   onPlayStream,
   onAddToMultiview,
   onToggleWatchlist,
@@ -33,23 +33,7 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
   const [screenshotUrls, setScreenshotUrls] = useState<Map<string, string | null>>(new Map());
   const prefetchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Filter only IPTV streams
-  const iptvStreams = useMemo(() => {
-    return streams.filter((s) => s.provider === 'iptv');
-  }, [streams]);
-
-  const categories = [
-    'All',
-    'Live Sports',
-    'Entertainment & Movies',
-    'News & Documentaries',
-    'US & FAST Channels',
-    'Canada TV',
-    'UK TV',
-    '24/7 Channels',
-  ];
-
-  // Filtered list
+  // Filtered list (streams already pre-filtered by parent)
   const filtered = useMemo(() => {
     return iptvStreams.filter((s) => {
       const matchesPlaylist =
@@ -70,21 +54,45 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
     });
   }, [iptvStreams, selectedPlaylist, selectedCategory, search]);
 
+  const categories = [
+    'All',
+    'Live Sports',
+    'Entertainment & Movies',
+    'News & Documentaries',
+    'US & FAST Channels',
+    'Canada TV',
+    'UK TV',
+    '24/7 Channels',
+  ];
+
   const displayedStreams = useMemo(() => {
     return filtered.slice(0, displayCount);
   }, [filtered, displayCount]);
 
-  // Prefetch screenshots for ALL filtered IPTV streams (not just displayed)
+  // Prefetch screenshots for displayed IPTV streams only (not all)
+  // Uses remote image.thum.io for instant display; local HLS capture for high-quality fallback
   useEffect(() => {
     if (prefetchRef.current) clearTimeout(prefetchRef.current);
     prefetchRef.current = setTimeout(async () => {
-      const hlsStreams = filtered.filter((s) => s.directEmbedUrl);
+      const hlsStreams = filtered.slice(0, 20).filter((s) => s.directEmbedUrl);
       if (hlsStreams.length === 0) return;
 
-      const concurrency = 3;
+      const concurrency = 2;
       const newUrls = new Map(screenshotUrls);
 
-      for (let i = 0; i < hlsStreams.length; i += concurrency) {
+      // First pass: fill with remote screenshots instantly
+      hlsStreams.forEach((stream) => {
+        if (!newUrls.has(stream.id) && stream.directEmbedUrl) {
+          const url = stream.directEmbedUrl.startsWith('http')
+            ? stream.directEmbedUrl
+            : `${window.location.origin}${stream.directEmbedUrl}`;
+          newUrls.set(stream.id, `https://image.thum.io/get/maxage/7200/width/320/fail/${encodeURIComponent(url)}`);
+        }
+      });
+      setScreenshotUrls(new Map(newUrls));
+
+      // Second pass: attempt local HLS capture for top streams (async, non-blocking)
+      for (let i = 0; i < Math.min(hlsStreams.length, 8); i += concurrency) {
         const batch = hlsStreams.slice(i, i + concurrency);
         await Promise.allSettled(
           batch.map(async (stream) => {
@@ -100,7 +108,7 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
           })
         );
       }
-    }, 500);
+    }, 1000);
 
     return () => {
       if (prefetchRef.current) clearTimeout(prefetchRef.current);

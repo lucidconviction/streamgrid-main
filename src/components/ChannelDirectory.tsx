@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Tv, Search, Filter, Radio, RefreshCw } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { StreamCard } from './StreamCard';
-import { captureIptvScreenshot } from '../services/iptvThumbnailService';
-
 interface ChannelDirectoryProps {
   title: string;
   subtitle: string;
@@ -63,28 +61,20 @@ export const ChannelDirectory: React.FC<ChannelDirectoryProps> = ({
     return matchesCat && matchesSearch;
   });
 
-  // Capture IPTV screenshots for all filtered streams
+  // Use remote screenshot service for instant display (no HLS instances created)
   useEffect(() => {
     const iptvStreams = filtered.filter((s) => s.provider === 'iptv' && s.directEmbedUrl);
     if (iptvStreams.length === 0) return;
 
-    const fetchScreenshots = async () => {
-      const newUrls = new Map(screenshotUrls);
-      await Promise.allSettled(
-        iptvStreams.map(async (stream) => {
-          if (newUrls.has(stream.id)) return;
-          const url = stream.directEmbedUrl!.startsWith('http')
-            ? stream.directEmbedUrl!
-            : `${window.location.origin}${stream.directEmbedUrl!}`;
-          const result = await captureIptvScreenshot(url);
-          if (result) {
-            newUrls.set(stream.id, result);
-            setScreenshotUrls(new Map(newUrls));
-          }
-        })
-      );
-    };
-    fetchScreenshots();
+    const newUrls = new Map(screenshotUrls);
+    iptvStreams.slice(0, 30).forEach((stream) => {
+      if (newUrls.has(stream.id)) return;
+      const url = stream.directEmbedUrl!.startsWith('http')
+        ? stream.directEmbedUrl!
+        : `${window.location.origin}${stream.directEmbedUrl!}`;
+      newUrls.set(stream.id, `https://image.thum.io/get/maxage/7200/width/320/fail/${encodeURIComponent(url)}`);
+    });
+    setScreenshotUrls(new Map(newUrls));
   }, [filtered]);
 
   return (
