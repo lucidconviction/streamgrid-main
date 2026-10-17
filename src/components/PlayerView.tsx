@@ -12,8 +12,6 @@ import {
   Eye,
   Radio,
   ExternalLink,
-  ChevronLeft,
-  ChevronRight,
   ChevronUp,
   ChevronDown,
   ChevronDown as ChevronDownIcon,
@@ -631,9 +629,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               </span>
             </div>
 
-            <div className="p-3">
-              <div className="flex items-center gap-3">
-                <div className="relative w-20 aspect-video rounded-md overflow-hidden bg-slate-900 shrink-0">
+            <div className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="relative w-32 sm:w-40 aspect-video rounded-lg overflow-hidden bg-slate-900 shrink-0">
                   <img
                     src={stream.poster || '/src/assets/images/hero_championship_live_1792048678438.jpg'}
                     alt={stream.title}
@@ -644,52 +642,15 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                     }}
                   />
                   <div className="absolute inset-0 bg-blue-600/20 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white drop-shadow">NOW</span>
+                    <span className="text-xs font-bold text-white drop-shadow">NOW</span>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-white line-clamp-2 leading-tight">{stream.title}</p>
-                  <p className="text-[11px] text-slate-400 mt-1">{stream.category}</p>
-                  <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                  <p className="text-sm sm:text-base font-bold text-white line-clamp-2 leading-tight">{stream.title}</p>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1.5">{stream.category}</p>
+                  <p className="text-xs font-mono text-slate-400 mt-1">
                     <span className="uppercase text-slate-500">Source:</span> {stream.provider}
                   </p>
-                </div>
-                <div className="flex flex-col items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => onToggleWatchlist(stream)}
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors touch-manipulation ${
-                      isInWatchlist
-                        ? 'bg-red-600/90 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
-                    }`}
-                    title={isInWatchlist ? 'Remove from Favorites' : 'Add to Favorites'}
-                  >
-                    <Star className={`w-5 h-5 ${isInWatchlist ? 'fill-white' : ''}`} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      const list = allStreams || relatedStreams;
-                      const idx = list.findIndex((s) => s.id === stream.id);
-                      const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
-                      if (prev) onPlayStream(prev);
-                    }}
-                    className="w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-colors shadow-lg shadow-blue-600/30"
-                    title="Previous channel"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      const list = allStreams || relatedStreams;
-                      const idx = list.findIndex((s) => s.id === stream.id);
-                      const next = idx < list.length - 1 ? list[idx + 1] : list[0];
-                      if (next) onPlayStream(next);
-                    }}
-                    className="w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-colors shadow-lg shadow-blue-600/30"
-                    title="Next channel"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
                 </div>
               </div>
             </div>
