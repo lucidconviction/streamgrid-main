@@ -253,13 +253,13 @@ export const Header: React.FC<HeaderProps> = ({
                 {searchDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {searchDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-[#0f172a]/90 backdrop-blur-xl border border-blue-500/30 rounded-2xl shadow-2xl shadow-blue-900/40 z-50 overflow-hidden animate-slideDown">
+                <div className="absolute top-full left-0 mt-2 w-52 bg-[#0f172a]/92 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
                   {/* Top: Save Input */}
-                  <div className="p-3 border-b border-blue-500/20 bg-blue-950/30">
+                  <div className="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950/40 to-transparent">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Zap className="w-3.5 h-3.5 text-blue-400" />
-                      <p className="text-[10px] font-mono uppercase tracking-widest text-blue-300">
-                        Quick Save
+                      <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">
+                        Save
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -270,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveSearch();
                         }}
-                        placeholder="Press Enter to save..."
+                        placeholder="Press Enter..."
                         autoFocus
                         className="flex-1 bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 transition-colors"
                       />
@@ -285,14 +285,12 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
 
                   {/* Bottom: Saved List */}
-                  <div className="max-h-60 overflow-y-auto">
+                  <div className="max-h-56 overflow-y-auto no-scrollbar">
                     {savedSearches.length === 0 ? (
                       <div className="p-5 text-center">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center mx-auto mb-2">
-                          <Bookmark className="w-4 h-4 text-slate-600" />
-                        </div>
-                        <p className="text-xs text-slate-400">No saves yet</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Type + Enter to save</p>
+                        <Bookmark className="w-6 h-6 text-slate-700 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500">No saves yet</p>
+                        <p className="text-[9px] text-slate-600 mt-0.5">Type + Enter to save</p>
                       </div>
                     ) : (
                       <div className="p-1.5">
@@ -301,9 +299,7 @@ export const Header: React.FC<HeaderProps> = ({
                             {savedSearches.length} Saved
                           </span>
                           <button
-                            onClick={() => {
-                              storageService.clearSavedSearches(activeProfileId);
-                            }}
+                            onClick={() => storageService.clearSavedSearches(activeProfileId)}
                             className="text-[9px] text-slate-600 hover:text-red-400 transition-colors"
                           >
                             Clear
@@ -311,10 +307,7 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                         <div className="space-y-0.5">
                           {savedSearches.map((query, i) => (
-                            <div
-                              key={i}
-                              className="group flex items-center rounded-lg transition-all hover:bg-blue-500/10"
-                            >
+                            <div key={i} className="group flex items-center rounded-lg transition-all hover:bg-blue-500/10">
                               <button
                                 onClick={() => handleLoadSearch(query)}
                                 className="flex-1 flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 text-left touch-manipulation"
