@@ -292,11 +292,3 @@ video::cue {
 video::cue(:not(.cc-enabled)) {
   display: none !important;
 }
-
-/* When captions are disabled via parent class, hide everything */
-.captions-off video::cue,
-.captions-off video::-webkit-media-text-track-container {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}

@@ -9,8 +9,6 @@ import {
   Pause,
   Maximize2,
   PictureInPicture2,
-  Captions,
-  CaptionsOff,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -62,20 +60,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [iframeSrc, setIframeSrc] = useState(url);
-  const [captionsDisabled, setCaptionsDisabled] = useState(true);
 
   // Sync iframeSrc when url prop changes (fixes stream switching)
   useEffect(() => {
     setIframeSrc(url);
   }, [url]);
 
-  // Apply CC-disable URL param on mount if captions start disabled
-  useEffect(() => {
-    if (captionsDisabled && isEmbedUrl) {
-      const separator = url.includes('?') ? '&' : '?';
-      setIframeSrc(`${url}${separator}cc=false`);
-    }
-  }, []); // mount only
 
   // Check whether this is a direct video/HLS stream (not an iframe embed)
   const isEmbedUrl =
@@ -95,12 +85,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     (!isEmbedUrl && !url.endsWith('.mp4') && !url.endsWith('.webm') && !url.endsWith('.mkv') && !url.includes('crazyshit.com') && !url.includes('mediav.'));
 
 
-  // Try disabling captions via URL parameter for supported players
-  useEffect(() => {
-    if (!captionsDisabled || !isEmbedUrl) return;
-    const separator = url.includes('?') ? '&' : '?';
-    setIframeSrc(`${url}${separator}cc=false`);
-  }, [captionsDisabled, isEmbedUrl, url]);
 
   useEffect(() => {
     setHasError(false);
@@ -355,7 +339,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center group ${className} ${captionsDisabled ? 'captions-off' : ''}`}>
+    <div className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center group ${className}`}>
       {/* Video Rendering */}
       {isEmbedUrl ? (
         <div className="relative w-full h-full">
@@ -499,18 +483,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </div>
       )}
 
-      {/* Permanent CC Toggle — always visible for iframe embeds */}
-      <button
-        onClick={() => setCaptionsDisabled((v) => !v)}
-        className={`absolute bottom-2 right-2 z-40 p-1.5 rounded-lg backdrop-blur-sm transition-all ${
-          captionsDisabled
-            ? 'bg-blue-600/80 text-white shadow-lg shadow-blue-600/30'
-            : 'bg-black/50 text-slate-400 hover:text-white hover:bg-black/70'
-        }`}
-        title={captionsDisabled ? 'Enable captions' : 'Disable captions'}
-      >
-        {captionsDisabled ? <CaptionsOff className="w-3.5 h-3.5" /> : <Captions className="w-3.5 h-3.5" />}
-      </button>
     </div>
   );
 };
