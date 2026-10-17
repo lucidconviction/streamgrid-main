@@ -35,7 +35,7 @@ export default function App() {
   // Navigation & View State
   const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
-  const [pipStream, setPipStream] = useState<StreamItem | null>(null);
+  const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [searchPanelQuery, setSearchPanelQuery] = useState('');
@@ -307,7 +307,7 @@ export default function App() {
   // Play Stream Handler (also logs to Watch History)
   const handlePlayStream = (stream: StreamItem) => {
     setActiveStream(stream);
-    setPipStream(null); // Dismiss PiP when entering full theater view
+    setPipStreams([]); // Dismiss all PiPs when entering full theater view
     setCurrentView('player');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -348,13 +348,30 @@ export default function App() {
     }
   };
 
-  // Picture-in-Picture Toggle Handler
+  // Picture-in-Picture Toggle Handler — supports multiple PiPs
   const handleTogglePiP = () => {
     if (activeStream) {
-      setPipStream(activeStream);
+      setPipStreams((prev) => {
+        if (prev.some((p) => p.stream.id === activeStream.id)) {
+          return prev.filter((p) => p.stream.id !== activeStream.id);
+        }
+        return [...prev, { id: activeStream.id, stream: activeStream }];
+      });
       setCurrentView('home');
       showToast(`Browsing in Picture-in-Picture: "${activeStream.title}"`, 'info');
     }
+  };
+
+  // Close a specific PiP
+  const handleClosePip = (streamId: string) => {
+    setPipStreams((prev) => prev.filter((p) => p.stream.id !== streamId));
+  };
+
+  // Expand a PiP back to full player
+  const handleExpandPip = (stream: StreamItem) => {
+    setActiveStream(stream);
+    setCurrentView('player');
+    setPipStreams((prev) => prev.filter((p) => p.stream.id !== stream.id));
   };
 
   // Watchlist Toggle
@@ -905,20 +922,21 @@ export default function App() {
         onShowToast={showToast}
       />
 
-      {/* Floating Picture-in-Picture Mini-Player (when browsing other pages) */}
-      {pipStream && currentView !== 'player' && (
-        <FloatingPipPlayer
-          stream={pipStream}
-          embedUrl={pipStream.directEmbedUrl || ''}
-          onExpandToFullPlayer={() => {
-            setActiveStream(pipStream);
-            setPipStream(null);
-            setCurrentView('player');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          onClose={() => setPipStream(null)}
-        />
-      )}
+      {/* Floating Picture-in-Picture Mini-Players (multiple, when browsing other pages) */}
+      {pipStreams.map((pip, index) => {
+        const stream = pip.stream;
+        return (
+          <FloatingPipPlayer
+            key={pip.id}
+            stream={stream}
+            embedUrl={stream.directEmbedUrl || ''}
+            onExpandToFullPlayer={() => handleExpandPip(stream)}
+            onClose={() => handleClosePip(pip.id)}
+            index={index}
+            total={pipStreams.length}
+          />
+        );
+      })}
 
       {/* Floating Toast Notifications */}
       <Toast toasts={toasts} onDismiss={dismissToast} />
