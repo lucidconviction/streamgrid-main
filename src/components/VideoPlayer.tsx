@@ -9,6 +9,8 @@ import {
   Pause,
   Maximize2,
   PictureInPicture2,
+  Captions,
+  CaptionsOff,
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -60,6 +62,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [iframeSrc, setIframeSrc] = useState(url);
+  const [captionsDisabled, setCaptionsDisabled] = useState(false);
 
   // Sync iframeSrc when url prop changes (fixes stream switching)
   useEffect(() => {
@@ -83,6 +86,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     url.includes('.ts') ||
     (!isEmbedUrl && !url.endsWith('.mp4') && !url.endsWith('.webm') && !url.endsWith('.mkv') && !url.includes('crazyshit.com') && !url.includes('mediav.'));
 
+
+  // Try disabling captions via URL parameter for supported players
+  useEffect(() => {
+    if (!captionsDisabled || !isEmbedUrl) return;
+    const separator = url.includes('?') ? '&' : '?';
+    setIframeSrc(`${url}${separator}cc=false`);
+  }, [captionsDisabled, isEmbedUrl, url]);
 
   useEffect(() => {
     setHasError(false);
@@ -337,7 +347,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center group ${className}`}>
+    <div className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center group ${className} ${captionsDisabled ? 'captions-off' : ''}`}>
       {/* Video Rendering */}
       {isEmbedUrl ? (
         <div className="relative w-full h-full">
@@ -348,6 +358,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
           />
+          {/* Caption mask overlay — covers bottom where captions render */}
+          {captionsDisabled && (
+            <div className="absolute bottom-0 left-0 right-0 h-[14%] bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none z-20" />
+          )}
         </div>
       ) : (
         <video
@@ -459,6 +473,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* CC Toggle */}
+            <button
+              onClick={() => setCaptionsDisabled((v) => !v)}
+              className={`p-1 transition-colors ${captionsDisabled ? 'text-blue-400' : 'text-slate-300 hover:text-blue-400'}`}
+              title={captionsDisabled ? 'Enable captions' : 'Disable captions'}
+            >
+              {captionsDisabled ? <CaptionsOff className="w-4 h-4" /> : <Captions className="w-4 h-4" />}
+            </button>
+
             {/* PiP Button */}
             <button
               onClick={handleTogglePiP}

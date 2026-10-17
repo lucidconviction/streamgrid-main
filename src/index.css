@@ -187,3 +187,26 @@ img, button, a {
   min-height: -webkit-fill-available;
   min-height: fill-available;
 }
+
+/* Hide native video captions/subtitles (WebVTT) */
+video::-webkit-media-text-track-container {
+  display: none !important;
+}
+
+video::cue {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+video::cue(:not(.cc-enabled)) {
+  display: none !important;
+}
+
+/* When captions are disabled via parent class, hide everything */
+.captions-off video::cue,
+.captions-off video::-webkit-media-text-track-container {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
