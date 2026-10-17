@@ -1,5 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Search, Loader2, Play, Music, Clock } from 'lucide-react';
+import {
+  Search, Home, Library, Play, Pause, SkipBack, SkipForward,
+  Volume2, VolumeX, Heart, Repeat, Shuffle, Music as MusicIcon,
+  Clock, ChevronLeft, ChevronRight, User, Settings,
+  Home as HomeIcon, Search as SearchIcon, Library as LibraryIcon,
+  Disc, Radio, TrendingUp, Star,
+} from 'lucide-react';
 import {
   fetchTop50Artists, get_cachedTop50Artists, searchArtists, fetchArtistTracks,
   type Artist, type MusicTrack,
@@ -16,68 +22,20 @@ interface MusicDirectoryProps {
   onSetLoadingTracks?: (loading: boolean) => void;
 }
 
-/** Animated equalizer bars — the Musike brand signature (musike-eq CSS in index.css) */
-const Equalizer: React.FC<{ paused?: boolean }> = ({ paused }) => (
-  <span className="musike-eq" style={paused ? { animationPlayState: 'paused', opacity: 0.4 } : undefined} aria-hidden="true">
-    <span />
-    <span />
-    <span />
-    <span />
-    <span />
-    <span />
-    <span />
-  </span>
-);
+const SPOTIFY_GREEN = '#1DB954';
+const SPOTIFY_DARK = '#121212';
+const SPOTIFY_SURFACE = '#181818';
+const SPOTIFY_HOVER = '#282828';
+const SPOTIFY_TEXT = '#B3B3B3';
+const SPOTIFY_WHITE = '#FFFFFF';
 
-/** Artist card — Musike style: square tile, 14px radius, tone separation, pill play button */
-const ArtistCard: React.FC<{
-  artist: Artist;
-  onClick: () => void;
-  isActive: boolean;
-  isPlaying: boolean;
-}> = ({ artist, onClick, isActive, isPlaying }) => (
-  <button
-    onClick={onClick}
-    className={`group musike-card-radius overflow-hidden text-left w-full transition-all duration-300 musike-transition
-      ${isActive ? 'musike-active-ring musike-surface-2' : 'musike-surface-1 hover:musike-surface-2'}
-      musike-press`}
-  >
-    <div className="relative aspect-square overflow-hidden">
-      <img
-        src={artist.thumbnail || 'https://via.placeholder.com/300x300/1e293b/475569?text=' + encodeURIComponent(artist.name)}
-        alt={artist.name}
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-      {/* Overlay with play pill */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent transition-opacity duration-300 flex items-end justify-between p-3 ${
-          isActive || isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        }`}
-      >
-        <span className="musike-eq flex-1" aria-hidden="true">
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-          <span style={isPlaying ? undefined : { animationPlayState: 'paused' }} />
-        </span>
-        <span
-          className="musike-pill w-10 h-10 flex items-center justify-center bg-[#3b82f6] text-[#0a0f1c] shadow-lg shrink-0 musike-transition"
-          aria-hidden="true"
-        >
-          <Play className="w-4 h-4 fill-current ml-0.5" />
-        </span>
-      </div>
-    </div>
-    <div className="px-3 py-2.5 flex items-center justify-between gap-2">
-      <p className="text-[13px] font-bold text-[#e8ecf4] truncate">{artist.name}</p>
-      {isActive && <span className="musike-text-3 text-[10px] font-mono shrink-0">NOW PLAYING</span>}
-    </div>
-  </button>
-);
+/** Time-based greeting */
+const getGreeting = (): string => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const formatTime = (seconds: number): string => {
   if (!seconds || !isFinite(seconds)) return '0:00';
@@ -85,6 +43,244 @@ const formatTime = (seconds: number): string => {
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
+
+// ─── Mini Player (bottom bar) ────────────────────────────────────────────────
+
+interface MiniPlayerProps {
+  currentTrack: MusicTrack | null;
+  artistName: string;
+  artistThumbnail: string;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  onPlayPause: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  onSeek: (time: number) => void;
+  onVolumeChange: (v: number) => void;
+  onMute: () => void;
+  onExpand: () => void;
+}
+
+const MiniPlayer: React.FC<MiniPlayerProps> = ({
+  currentTrack, artistName, artistThumbnail, isPlaying,
+  currentTime, duration, volume,
+  onPlayPause, onNext, onPrev, onSeek, onVolumeChange, onMute, onExpand,
+}) => {
+  if (!currentTrack) return null;
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-[#181818] border-t border-[#282828] flex items-center px-4" style={{ paddingLeft: '160px' }}>
+      {/* Track info */}
+      <div className="flex items-center gap-3 w-[30%] min-w-0">
+        <img
+          src={artistThumbnail || '/hero.png'}
+          alt={artistName}
+          className="w-14 h-14 rounded object-cover shrink-0"
+        />
+        <div className="min-w-0">
+          <p className="text-white text-sm font-bold truncate">{currentTrack.title}</p>
+          <p className="text-[#B3B3B3] text-xs truncate">{artistName}</p>
+        </div>
+        <button className="text-[#B3B3B3] hover:text-white ml-2 shrink-0 transition-colors">
+          <Heart className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-col items-center flex-1 max-w-xl">
+        <div className="flex items-center gap-4 mb-1">
+          <button className="text-[#B3B3B3] hover:text-white transition-colors" title="Shuffle">
+            <Shuffle className="w-4 h-4" />
+          </button>
+          <button onClick={onPrev} className="text-[#B3B3B3] hover:text-white transition-colors" title="Previous">
+            <SkipBack className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onPlayPause}
+            className="w-8 h-8 rounded-full bg-white hover:scale-105 flex items-center justify-center transition-transform"
+            title={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? <Pause className="w-4 h-4 text-black fill-current" /> : <Play className="w-4 h-4 text-black fill-current ml-0.5" />}
+          </button>
+          <button onClick={onNext} className="text-[#B3B3B3] hover:text-white transition-colors" title="Next">
+            <SkipForward className="w-5 h-5" />
+          </button>
+          <button className="text-[#B3B3B3] hover:text-white transition-colors" title="Repeat">
+            <Repeat className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 w-full">
+          <span className="text-[11px] text-[#B3B3B3] font-mono w-10 text-right">{formatTime(currentTime)}</span>
+          <div
+            className="flex-1 h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              onSeek(ratio * duration);
+            }}
+          >
+            <div
+              className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors"
+              style={{ width: `${progress}%` }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow"
+              style={{ left: `calc(${progress}% - 6px)` }}
+            />
+          </div>
+          <span className="text-[11px] text-[#B3B3B3] font-mono w-10">{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      {/* Volume + expand */}
+      <div className="flex items-center gap-3 w-[30%] justify-end">
+        <button onClick={onMute} className="text-[#B3B3B3] hover:text-white transition-colors">
+          {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+        <input
+          type="range" min="0" max="100" value={volume}
+          onChange={(e) => onVolumeChange(parseInt(e.target.value))}
+          className="w-24 h-1 accent-[#1DB954] cursor-pointer"
+        />
+        <button onClick={onExpand} className="text-[#B3B3B3] hover:text-white transition-colors" title="Expand player">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Full Player Modal ────────────────────────────────────────────────────────
+
+interface FullPlayerProps {
+  currentTrack: MusicTrack;
+  trackIndex: number;
+  tracks: MusicTrack[];
+  artistName: string;
+  artistThumbnail: string;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  onClose: () => void;
+  onPlayPause: () => void;
+  onNext: () => void;
+  onPrev: () => void;
+  onSeek: (time: number) => void;
+  onVolumeChange: (v: number) => void;
+  onTrackSelect: (index: number) => void;
+}
+
+const FullPlayer: React.FC<FullPlayerProps> = ({
+  currentTrack, trackIndex, tracks, artistName, artistThumbnail,
+  isPlaying, currentTime, duration, volume,
+  onClose, onPlayPause, onNext, onPrev, onSeek, onVolumeChange, onTrackSelect,
+}) => {
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#121212] flex flex-col" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4">
+        <button onClick={onClose} className="text-white hover:scale-110 transition-transform">
+          <ChevronLeft className="w-8 h-8" />
+        </button>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">Now Playing</p>
+        <div className="w-8" />
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Album art + controls */}
+        <div className="flex-1 flex flex-col items-center justify-center px-12">
+          <img
+            src={artistThumbnail || '/hero.png'}
+            alt={artistName}
+            className="w-72 h-72 rounded-lg shadow-2xl object-cover mb-8"
+          />
+          <div className="w-full max-w-md">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-2xl font-black text-white">{currentTrack.title}</h2>
+                <p className="text-[#B3B3B3] text-base mt-1">{artistName}</p>
+              </div>
+              <Heart className="w-7 h-7 text-[#1DB954] fill-current" />
+            </div>
+
+            {/* Progress */}
+            <div className="mt-6 mb-2">
+              <div
+                className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  onSeek(ratio * duration);
+                }}
+              >
+                <div className="h-full bg-white group-hover:bg-[#1DB954] rounded-full transition-colors" style={{ width: `${progress}%` }} />
+                <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ left: `calc(${progress}% - 6px)` }} />
+              </div>
+              <div className="flex justify-between text-[11px] text-[#B3B3B3] font-mono mt-1">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-between mt-4">
+              <button className="text-[#B3B3B3] hover:text-white"><Shuffle className="w-5 h-5" /></button>
+              <button onClick={onPrev} className="text-white hover:scale-110 transition-transform"><SkipBack className="w-7 h-7" /></button>
+              <button
+                onClick={onPlayPause}
+                className="w-14 h-14 rounded-full bg-white hover:scale-105 flex items-center justify-center transition-transform"
+              >
+                {isPlaying ? <Pause className="w-6 h-6 text-black fill-current" /> : <Play className="w-6 h-6 text-black fill-current ml-1" />}
+              </button>
+              <button onClick={onNext} className="text-white hover:scale-110 transition-transform"><SkipForward className="w-7 h-7" /></button>
+              <button className="text-[#B3B3B3] hover:text-white"><Repeat className="w-5 h-5" /></button>
+            </div>
+          </div>
+        </div>
+
+        {/* Track list */}
+        <div className="w-96 bg-[#181818] overflow-y-auto">
+          <div className="px-6 py-4 border-b border-[#282828]">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#B3B3B3]">{tracks.length} Tracks</p>
+          </div>
+          {tracks.map((track, i) => (
+            <button
+              key={track.url || i}
+              onClick={() => onTrackSelect(i)}
+              className={`w-full flex items-center gap-4 px-6 py-3 text-left transition-colors hover:bg-[#282828] ${i === trackIndex ? 'bg-[#282828]' : ''}`}
+            >
+              <span className={`w-6 text-center text-sm font-mono ${i === trackIndex ? 'text-[#1DB954]' : 'text-[#B3B3B3]'}`}>
+                {i === trackIndex && isPlaying ? (
+                  <span className="flex items-center justify-center gap-0.5">
+                    {[...Array(3)].map((_, j) => (
+                      <span key={j} className="w-0.5 bg-[#1DB954] animate-pulse" style={{ height: `${8 + j * 3}px`, animationDelay: `${j * 0.15}s` }} />
+                    ))}
+                  </span>
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold truncate ${i === trackIndex ? 'text-[#1DB954]' : 'text-white'}`}>{track.title}</p>
+                <p className="text-xs text-[#B3B3B3] truncate">{track.artist || artistName}</p>
+              </div>
+              <span className="text-xs text-[#B3B3B3] font-mono">{formatTime(track.duration)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Music Directory (Spotify Layout) ────────────────────────────────────
 
 export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
   onPlayStream,
@@ -96,19 +292,31 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
   onSetTracks,
   onSetLoadingTracks,
 }) => {
+  // State
   const [searchQuery, setSearchQuery] = useState('');
   const [artists, setArtists] = useState<Artist[]>([]);
   const [top50Artists, setTop50Artists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTop50, setIsLoadingTop50] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showResults, setShowResults] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const [activeLoadingArtist, setActiveLoadingArtist] = useState<string | null>(null);
-  const [activeArtist, setActiveArtist] = useState<string | null>(null);
+  const [searchActive, setSearchActive] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Load cached top 50 from localStorage on mount
+  // Player state
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(80);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [activeArtistName, setActiveArtistName] = useState('');
+  const [activeArtistThumbnail, setActiveArtistThumbnail] = useState('');
+  const [activeTracks, setActiveTracks] = useState<MusicTrack[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const currentTrack = activeTracks[currentTrackIndex];
+
+  // Load cached top 50
   useEffect(() => {
     const cached = get_cachedTop50Artists();
     if (cached && cached.length >= 50) {
@@ -117,53 +325,75 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
     }
   }, []);
 
-  // Load top 50 artists on mount (if not cached)
+  // Load top 50
   useEffect(() => {
     if (top50Artists.length > 0) return;
-
-    const loadTop50 = async () => {
-      try {
-        const results = await fetchTop50Artists();
-        setTop50Artists(results);
-      } catch (e) {
-        console.error('Top 50 load failed:', e);
-      } finally {
-        setIsLoadingTop50(false);
-      }
-    };
-    loadTop50();
+    fetchTop50Artists().then(setTop50Artists).finally(() => setIsLoadingTop50(false));
   }, [top50Artists.length]);
 
-  // Keyboard shortcut: "/" focuses search (desktop)
+  // Keyboard shortcut
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === '/' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+      if (e.key === '/' && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         searchInputRef.current?.focus();
+      }
+      if (e.key === ' ' && !(e.target instanceof HTMLInputElement)) {
+        e.preventDefault();
+        togglePlay();
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, []);
+  }, [currentTrack, isPlaying]);
 
+  // Audio events
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+    audio.src = currentTrack.url;
+    audio.load();
+    if (isPlaying) audio.play().catch(() => {});
+    audio.volume = volume / 100;
+  }, [currentTrack]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration || 0);
+    const handleEnded = () => {
+      if (currentTrackIndex < activeTracks.length - 1) {
+        setCurrentTrackIndex(i => i + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    };
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [currentTrackIndex, activeTracks.length]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume / 100;
+  }, [volume]);
+
+  // Search
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim() || isLoading) return;
-
     setIsLoading(true);
     setError(null);
-    setShowResults(true);
-
+    setSearchActive(true);
     try {
       const results = await searchArtists(query, 30);
       setArtists(results);
-
-      setSearchHistory(prev => {
-        const updated = [query, ...prev.filter(q => q !== query)].slice(0, 8);
-        return updated;
-      });
-    } catch (e) {
+    } catch {
       setError('Failed to search. Please try again.');
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -174,219 +404,314 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
     handleSearch(searchQuery);
   };
 
-  const handleHistoryClick = (query: string) => {
-    setSearchQuery(query);
-    handleSearch(query);
-  };
+  // Player controls
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+    setIsPlaying(!isPlaying);
+  }, [isPlaying, currentTrack]);
 
-  const handleClearResults = () => {
-    setShowResults(false);
-    setArtists([]);
-    setSearchQuery('');
-  };
+  const nextTrack = useCallback(() => {
+    setCurrentTrackIndex(prev => (prev + 1) % activeTracks.length);
+    setIsPlaying(true);
+  }, [activeTracks.length]);
+
+  const prevTrack = useCallback(() => {
+    setCurrentTrackIndex(prev => (prev - 1 + activeTracks.length) % activeTracks.length);
+    setIsPlaying(true);
+  }, [activeTracks.length]);
+
+  const handleSeek = useCallback((time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  }, []);
 
   const handleArtistClick = useCallback(async (artist: Artist) => {
-    setActiveLoadingArtist(artist.name);
     onSetLoadingTracks?.(true);
-
     try {
       const result = await fetchArtistTracks(artist.name);
       if (result && result.tracks.length > 0) {
-        setActiveArtist(artist.name);
+        setActiveArtistName(result.artist);
+        setActiveArtistThumbnail(result.thumbnail || artist.thumbnail);
+        setActiveTracks(result.tracks);
+        setCurrentTrackIndex(0);
+        setIsPlaying(true);
         onSetFloatingArtist?.({ name: result.artist, thumbnail: result.thumbnail || artist.thumbnail });
         onSetTracks?.(result.tracks);
       } else {
         setError(`No tracks found for "${artist.name}".`);
       }
-    } catch (e) {
-      console.error('Failed to load tracks:', e);
+    } catch {
       setError('Failed to load tracks. Please try again.');
     } finally {
-      setActiveLoadingArtist(null);
       onSetLoadingTracks?.(false);
     }
   }, [onSetFloatingArtist, onSetTracks, onSetLoadingTracks]);
 
+  // Clear search
+  const clearSearch = () => {
+    setSearchActive(false);
+    setArtists([]);
+    setSearchQuery('');
+  };
+
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 relative">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 musike-panel-radius musike-island flex items-center justify-center">
-            <Music className="w-6 h-6 musike-accent-text" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black tracking-tight text-white mb-0.5">
-              Music<span className="musike-accent-text">.</span>
-            </h1>
-            <p className="text-sm font-medium" style={{ color: 'var(--musike-text-2)' }}>
-              Your music, no interruptions — full-length tracks from YouTube
-            </p>
+    <div className="flex h-[calc(100vh-65px)] bg-[#000000] overflow-hidden">
+      <audio ref={audioRef} preload="auto" />
+
+      {/* ─── Sidebar ─── */}
+      <nav className="w-40 bg-[#000000] flex flex-col shrink-0 py-6 px-3 gap-2">
+        <div className="px-3 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1DB954] flex items-center justify-center">
+              <MusicIcon className="w-4 h-4 text-black" />
+            </div>
+            <span className="text-white font-black text-sm">Music</span>
           </div>
         </div>
-      </div>
 
-      {/* Search — pill input, one tap, no separate button */}
-      <div className="mb-8">
-        <form onSubmit={handleSubmit}>
-          <div className="relative">
-            <Search className="w-5 h-5 musike-text-3 absolute left-5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search artists…  (press / to focus)"
-              className="musike-pill w-full musike-surface-2 border font-medium pr-24 py-4 text-base text-[#e8ecf4] placeholder-[#5a6580] focus:outline-none transition-colors duration-200
-                border-[rgb(255_255_255/0.08)] focus:border-[rgba(59,130,246,0.5)] musike-transition"
-              style={{ paddingLeft: '3.25rem' }}
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {showResults && (
+        <button className="flex items-center gap-4 px-3 py-2 text-white hover:text-white transition-colors text-sm font-bold">
+          <HomeIcon className="w-6 h-6" />
+          Home
+        </button>
+        <button className="flex items-center gap-4 px-3 py-2 text-white hover:text-white transition-colors text-sm font-bold">
+          <SearchIcon className="w-6 h-6" />
+          Search
+        </button>
+        <button className="flex items-center gap-4 px-3 py-2 text-white hover:text-white transition-colors text-sm font-bold">
+          <LibraryIcon className="w-6 h-6" />
+          Your Library
+        </button>
+
+        <div className="mt-6 pt-4 border-t border-[#282828]">
+          <button className="flex items-center gap-4 px-3 py-2 text-[#B3B3B3] hover:text-white transition-colors text-sm font-bold">
+            <div className="w-6 h-6 bg-[#B3B3B3] rounded flex items-center justify-center">
+              <Play className="w-3 h-3 text-black fill-current" />
+            </div>
+            Create Playlist
+          </button>
+          <button className="flex items-center gap-4 px-3 py-2 text-[#B3B3B3] hover:text-white transition-colors text-sm font-bold">
+            <div className="w-6 h-6 bg-gradient-to-br from-[#450af5] to-[#c4efd9] rounded flex items-center justify-center">
+              <Heart className="w-3 h-3 text-white fill-current" />
+            </div>
+            Liked Songs
+          </button>
+        </div>
+      </nav>
+
+      {/* ─── Main Content ─── */}
+      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#2a2a2a] to-[#121212]">
+        {/* Top bar */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-[#121212]/80 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <button className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 text-sm font-bold text-[#B3B3B3] hover:text-white transition-colors">Sign up</button>
+            <button className="px-6 py-3 bg-[#1DB954] text-black text-sm font-black rounded-full hover:scale-105 transition-transform">Log in</button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-8 pb-32">
+          {/* Greeting */}
+          {!searchActive && (
+            <h1 className="text-3xl font-black text-white mb-6">{getGreeting()}</h1>
+          )}
+
+          {/* Search */}
+          <div className="mb-8">
+            <form onSubmit={handleSubmit} className="relative">
+              <Search className="w-5 h-5 text-[#B3B3B3] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="What do you want to listen to?"
+                className="w-full max-w-md bg-[#282828] border border-transparent focus:border-[#1DB954] rounded-full py-3 pl-12 pr-24 text-white placeholder-[#B3B3B3] font-medium text-sm focus:outline-none transition-colors"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {searchActive && (
+                  <button type="button" onClick={clearSearch} className="px-3 py-1.5 text-xs font-bold text-[#B3B3B3] hover:text-white bg-[#3E3E3E] rounded-full transition-colors">
+                    Clear
+                  </button>
+                )}
                 <button
-                  type="button"
-                  onClick={handleClearResults}
-                  className="musike-pill px-4 h-9 text-xs font-bold musike-text-2 hover:text-white musike-surface-3 musike-transition musike-press"
+                  type="submit"
+                  disabled={isLoading || !searchQuery.trim()}
+                  className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] disabled:bg-[#3E3E3E] disabled:text-[#B3B3B3] text-black text-sm font-black rounded-full transition-colors flex items-center gap-2"
                 >
-                  Clear
+                  {isLoading ? <Clock className="w-4 h-4 animate-spin" /> : 'Search'}
                 </button>
-              )}
-              <button
-                type="submit"
-                disabled={isLoading || !searchQuery.trim()}
-                className="musike-pill h-10 px-5 bg-[#3b82f6] hover:bg-[#2563eb] disabled:musike-surface-3 disabled:text-[#5a6580] text-[#0a0f1c] text-sm font-black transition-colors duration-200 musike-transition musike-press flex items-center"
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-              </button>
-            </div>
-          </div>
-        </form>
-
-        {/* Search History chips */}
-        {searchHistory.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2 items-center">
-            <Clock className="w-3.5 h-3.5 musike-text-3" />
-            {searchHistory.slice(0, 6).map((q) => (
-              <button
-                key={q}
-                onClick={() => handleHistoryClick(q)}
-                className="musike-pill px-3.5 py-1.5 musike-surface-1 hover:musike-surface-2 border border-[rgb(255_255_255/0.07)] text-xs font-bold musike-text-2 hover:text-white transition-colors duration-200 musike-transition musike-press"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 p-4 musike-card-radius bg-red-950/30 border border-red-800/50 text-red-400 text-sm font-bold">
-          {error}
-        </div>
-      )}
-
-      {/* Search Loading State */}
-      {isLoading && (
-        <div className="py-20 flex flex-col items-center justify-center">
-          <Loader2 className="w-10 h-10 musike-accent-text animate-spin mb-4" />
-          <p className="text-base font-bold text-white">Searching…</p>
-        </div>
-      )}
-
-      {/* Track loading overlay for active artist */}
-      {activeLoadingArtist && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="musike-island musike-panel-radius p-8 flex flex-col items-center w-[90vw] max-w-sm">
-            <div className="w-14 h-14 musike-pill musike-surface-2 flex items-center justify-center mb-4">
-              <Loader2 className="w-7 h-7 musike-accent-text animate-spin" />
-            </div>
-            <p className="text-base font-bold text-white">Loading tracks</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--musike-text-2)' }}>{activeLoadingArtist}</p>
-            <p className="text-xs mt-3 font-mono musike-mono musike-text-3">resolving stream · yt-dlp</p>
-          </div>
-        </div>
-      )}
-
-      {/* Top 50 Artists Grid */}
-      {!showResults && !isLoading && !activeLoadingArtist && (
-        <div>
-          {isLoadingTop50 ? (
-            <div className="py-20 flex flex-col items-center justify-center">
-              <Loader2 className="w-10 h-10 musike-accent-text animate-spin mb-4" />
-              <p className="text-base font-bold text-white">Loading top artists…</p>
-              <p className="text-xs font-mono musike-mono musike-text-3 mt-2">building your music library</p>
-            </div>
-          ) : top50Artists.length > 0 ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-black text-white tracking-tight">
-                  Top 50 Artists
-                  {top50Artists.length === 50 && (
-                    <span className="ml-2 text-sm font-mono musike-mono musike-accent-text font-bold">✓ cached</span>
-                  )}
-                </h2>
-                <span className="text-sm font-mono musike-mono musike-text-3">{top50Artists.length}</span>
               </div>
+            </form>
+          </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {top50Artists.map((artist, i) => (
-                  <ArtistCard
-                    key={`${artist.name}-${i}`}
-                    artist={artist}
-                    onClick={() => handleArtistClick(artist)}
-                    isActive={activeArtist === artist.name}
-                    isPlaying={activeArtist === artist.name}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="py-20 flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 musike-pill musike-surface-1 musike-island flex items-center justify-center mb-4">
-                <Music className="w-10 h-10 text-[#5a6580]" />
-              </div>
-              <p className="text-lg font-bold text-[#cbd5e1] mb-2">No artists yet</p>
-              <p className="text-sm" style={{ color: 'var(--musike-text-2)' }}>Search for an artist to get started</p>
+          {/* Error */}
+          {error && (
+            <div className="mb-6 p-4 bg-[#D25454]/20 border border-[#D25454]/40 rounded-lg text-[#D25454] text-sm font-bold">
+              {error}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Search Results Grid */}
-      {showResults && !isLoading && artists.length > 0 && !activeLoadingArtist && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-black text-white tracking-tight">
-              Results for &quot;{searchQuery}&quot;
-            </h2>
-            <span className="text-sm font-mono musike-mono musike-text-3">{artists.length}</span>
-          </div>
+          {/* Search Results */}
+          {searchActive && !isLoading && (
+            <div>
+              <h2 className="text-2xl font-black text-white mb-4">
+                {artists.length > 0 ? `Results for "${searchQuery}"` : 'No artists found'}
+              </h2>
+              {artists.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {artists.map((artist, i) => (
+                    <ArtistCard key={`${artist.name}-${i}`} artist={artist} onClick={() => handleArtistClick(artist)} isActive={false} />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-16 flex flex-col items-center text-center">
+                  <SearchIcon className="w-12 h-12 text-[#B3B3B3] mb-4" />
+                  <p className="text-lg font-bold text-white mb-2">No artists found</p>
+                  <p className="text-sm text-[#B3B3B3]">Try a different search term</p>
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {artists.map((artist, i) => (
-              <ArtistCard
-                key={`${artist.name}-${i}`}
-                artist={artist}
-                onClick={() => handleArtistClick(artist)}
-                isActive={activeArtist === artist.name}
-                isPlaying={activeArtist === artist.name}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+          {/* Loading */}
+          {isLoading && (
+            <div className="py-16 flex flex-col items-center">
+              <Clock className="w-10 h-10 text-[#1DB954] animate-spin mb-4" />
+              <p className="text-base font-bold text-white">Searching...</p>
+            </div>
+          )}
 
-      {/* Empty search results */}
-      {showResults && !isLoading && artists.length === 0 && !activeLoadingArtist && (
-        <div className="py-20 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 musike-pill musike-surface-1 musike-island flex items-center justify-center mb-4">
-            <Search className="w-10 h-10 text-[#5a6580]" />
-          </div>
-          <p className="text-lg font-bold text-[#cbd5e1] mb-2">No artists found</p>
-          <p className="text-sm" style={{ color: 'var(--musike-text-2)' }}>Try a different search term</p>
+          {/* Top Artists */}
+          {!searchActive && !isLoading && (
+            <>
+              {/* Quick picks */}
+              {top50Artists.length > 0 && (
+                <section className="mb-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-black text-white">Top Artists</h2>
+                    <span className="text-xs font-bold text-[#B3B3B3] uppercase tracking-widest">{top50Artists.length} artists</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {top50Artists.slice(0, 12).map((artist, i) => (
+                      <ArtistCard
+                        key={`${artist.name}-${i}`}
+                        artist={artist}
+                        onClick={() => handleArtistClick(artist)}
+                        isActive={activeArtistName === artist.name}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* All top 50 */}
+              {top50Artists.length > 12 && (
+                <section className="mb-10">
+                  <h2 className="text-xl font-black text-white mb-4">All Artists</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {top50Artists.slice(12).map((artist, i) => (
+                      <ArtistCard
+                        key={`${artist.name}-${i + 12}`}
+                        artist={artist}
+                        onClick={() => handleArtistClick(artist)}
+                        isActive={activeArtistName === artist.name}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
         </div>
+      </main>
+
+      {/* ─── Mini Player Bar ─── */}
+      <MiniPlayer
+        currentTrack={currentTrack || null}
+        artistName={activeArtistName}
+        artistThumbnail={activeArtistThumbnail}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        volume={volume}
+        onPlayPause={togglePlay}
+        onNext={nextTrack}
+        onPrev={prevTrack}
+        onSeek={handleSeek}
+        onVolumeChange={setVolume}
+        onMute={() => setVolume(v => v > 0 ? 0 : 80)}
+        onExpand={() => setIsExpanded(true)}
+      />
+
+      {/* ─── Full Player Modal ─── */}
+      {isExpanded && currentTrack && (
+        <FullPlayer
+          currentTrack={currentTrack}
+          trackIndex={currentTrackIndex}
+          tracks={activeTracks}
+          artistName={activeArtistName}
+          artistThumbnail={activeArtistThumbnail}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          volume={volume}
+          onClose={() => setIsExpanded(false)}
+          onPlayPause={togglePlay}
+          onNext={nextTrack}
+          onPrev={prevTrack}
+          onSeek={handleSeek}
+          onVolumeChange={setVolume}
+          onTrackSelect={(i) => { setCurrentTrackIndex(i); setIsPlaying(true); }}
+        />
       )}
     </div>
   );
 };
+
+// ─── Artist Card (Spotify style) ─────────────────────────────────────────────
+
+const ArtistCard: React.FC<{
+  artist: Artist;
+  onClick: () => void;
+  isActive: boolean;
+}> = ({ artist, onClick, isActive }) => (
+  <button
+    onClick={onClick}
+    className={`group rounded-lg p-3 transition-all duration-200 text-left w-full ${
+      isActive ? 'bg-[#282828]' : 'bg-[#181818] hover:bg-[#282828]'
+    }`}
+  >
+    <div className="relative aspect-square rounded-md overflow-hidden mb-3 shadow-lg">
+      <img
+        src={artist.thumbnail || 'https://via.placeholder.com/300x300/1e293b/475569?text=' + encodeURIComponent(artist.name)}
+        alt={artist.name}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+      />
+      {/* Play button */}
+      <div className={`absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#1DB954] flex items-center justify-center shadow-xl transition-all duration-300 ${
+        isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+      }`}>
+        <Play className="w-5 h-5 text-black fill-current ml-0.5" />
+      </div>
+    </div>
+    <p className={`text-sm font-black truncate ${isActive ? 'text-[#1DB954]' : 'text-white'}`}>{artist.name}</p>
+    <p className="text-xs text-[#B3B3B3] mt-0.5 truncate">Artist</p>
+  </button>
+);
