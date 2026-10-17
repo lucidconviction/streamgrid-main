@@ -62,12 +62,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [iframeSrc, setIframeSrc] = useState(url);
-  const [captionsDisabled, setCaptionsDisabled] = useState(false);
+  const [captionsDisabled, setCaptionsDisabled] = useState(true);
 
   // Sync iframeSrc when url prop changes (fixes stream switching)
   useEffect(() => {
     setIframeSrc(url);
   }, [url]);
+
+  // Apply CC-disable URL param on mount if captions start disabled
+  useEffect(() => {
+    if (captionsDisabled && isEmbedUrl) {
+      const separator = url.includes('?') ? '&' : '?';
+      setIframeSrc(`${url}${separator}cc=false`);
+    }
+  }, []); // mount only
 
   // Check whether this is a direct video/HLS stream (not an iframe embed)
   const isEmbedUrl =
