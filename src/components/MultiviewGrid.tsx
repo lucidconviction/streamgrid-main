@@ -73,6 +73,10 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
   const [editingBookmark, setEditingBookmark] = useState<number | null>(null);
   const [bookmarkInput, setBookmarkInput] = useState('');
   const [fullscreenSlotId, setFullscreenSlotId] = useState<number | null>(null);
+  const [layoutDropdownOpen, setLayoutDropdownOpen] = useState(false);
+  const [presetDropdownOpen, setPresetDropdownOpen] = useState(false);
+  const layoutDropdownRef = useRef<HTMLDivElement>(null);
+  const presetDropdownRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
 
   // True browser fullscreen handling
@@ -110,6 +114,20 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isGridFullscreen, exitBrowserFullscreen]);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (layoutDropdownRef.current && !layoutDropdownRef.current.contains(e.target as Node)) {
+        setLayoutDropdownOpen(false);
+      }
+      if (presetDropdownRef.current && !presetDropdownRef.current.contains(e.target as Node)) {
+        setPresetDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   // Determine active slots count based on layout
   const getMaxSlotsForLayout = (l: MultiviewLayout): number => {
@@ -265,31 +283,36 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
     <div className="w-full mx-auto px-2 sm:px-6 py-4 flex flex-col gap-4">
       {/* Multiview Workspace Command Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0f121a] p-3.5 rounded-xl border border-slate-800/80">
-        {/* Layout Selectors */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800 flex-wrap">
-          {[
-            { id: 'single', label: '1 Focus' },
-            { id: 'dual', label: '2 Dual' },
-            { id: 'triple', label: '3 Triple' },
-            { id: 'quad', label: '4 Quad' },
-            { id: 'big-center', label: '5 Big Center' },
-            { id: 'focus-5', label: '5 Focus' },
-            { id: 'six', label: '6 Grid' },
-            { id: 'six-wide', label: '6 Wide' },
-            { id: 'six-tall', label: '6 Tall' },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => onLayoutChange(opt.id as MultiviewLayout)}
-              className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-                layout === opt.id
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        {/* Layout Dropdown */}
+        <div className="relative" ref={layoutDropdownRef}>
+          <button
+            onClick={() => setLayoutDropdownOpen(!layoutDropdownOpen)}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>{LAYOUT_OPTIONS.find((o) => o.id === layout)?.label || layout}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${layoutDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {layoutDropdownOpen && (
+            <div className="absolute top-full left-0 mt-2 w-40 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="p-1.5">
+                {LAYOUT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { onLayoutChange(opt.id); setLayoutDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                      layout === opt.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    {layout === opt.id && <Check className="w-3.5 h-3.5" />}
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Audio Solo Status & Global Controls */}
@@ -314,30 +337,44 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
             <span>{soloSlotId !== null ? 'Mute All' : 'Unmute'}</span>
           </button>
 
-          {/* Preset Buttons */}
-          <button
-            onClick={() => setSavePresetOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-800 transition-colors"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Save Preset</span>
-          </button>
-
-          {/* Preset Quick Loader */}
-          {presets.length > 0 && (
-            <div className="flex items-center gap-1 overflow-x-auto max-w-xs no-scrollbar">
-              {presets.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => onApplyPreset(p)}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-[11px] font-medium text-slate-300 hover:text-white border border-slate-800 whitespace-nowrap transition-colors"
-                  title={`Load "${p.name}"`}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Preset Dropdown */}
+          <div className="relative" ref={presetDropdownRef}>
+            <button
+              onClick={() => setPresetDropdownOpen(!presetDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Presets</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${presetDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {presetDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-1.5 max-h-60 overflow-y-auto">
+                  {presets.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-slate-500 text-center">No saved presets</div>
+                  ) : (
+                    presets.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => { onApplyPreset(p); setPresetDropdownOpen(false); }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate"
+                      >
+                        {p.name}
+                      </button>
+                    ))
+                  )}
+                  <div className="border-t border-slate-700 mt-1 pt-1">
+                    <button
+                      onClick={() => { setSavePresetOpen(true); setPresetDropdownOpen(false); }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-blue-400 hover:bg-blue-950/50 transition-colors"
+                    >
+                      + Save Current Layout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Fullscreen Grid Toggle — browser fullscreen */}
           <button
@@ -467,17 +504,6 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     {slot.stream && (
                       <>
-                        <button
-                          onClick={() => handleToggleSoloAudio(slot.slotId)}
-                          className={`p-1 rounded transition-colors ${
-                            isAudioActive
-                              ? 'bg-blue-600 text-white'
-                              : 'text-slate-500 hover:text-white hover:bg-slate-800'
-                          }`}
-                          title={isAudioActive ? 'Un-solo audio' : 'Solo audio'}
-                        >
-                          {isAudioActive ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
-                        </button>
                         <button
                           onClick={() => handleStartSwap(slot.slotId)}
                           className={`p-1 rounded transition-colors ${
