@@ -1,5 +1,15 @@
 # RdNutz TV Streams — Version History
 
+## v1.2.1 — 2026-10-17
+
+### Multiview UI Redesign
+- **Layout selector → dropdown** — replaced flat button row with compact dropdown (8 options: 1 Focus, 2 Dual, 3 Triple, 4 Quad, 5 Big Center, 5 Focus, 6 Wide, 6 Tall)
+- **Preset selector → dropdown** — replaced horizontal scrollable buttons with dropdown menu; added "Save Current Layout" action inside dropdown
+- **Removed per-slot volume buttons** from multiview header bar — only global Unmute/Mute All toggle remains
+- **Removed "6 Grid" layout option** — consolidated into 6 Wide / 6 Tall
+
+---
+
 ## v1.2.0 — 2026-10-17
 
 ### Multiview Grid Improvements
