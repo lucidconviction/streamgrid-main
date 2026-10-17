@@ -235,10 +235,9 @@ export const getCachedArtistTracks = (artistName: string): { artist: string; thu
 export const searchArtists = async (query: string, limit: number = 30): Promise<Artist[]> => {
   const ytResults = await searchYouTubeMusic(query, limit);
   return ytResults
-    .filter(r => r.channelId)
     .map(r => ({
       name: r.title,
-      thumbnail: getYouTubeChannelAvatar(r.channelId || '', r.thumbnail),
+      thumbnail: r.channelId ? getYouTubeChannelAvatar(r.channelId, r.thumbnail) : r.thumbnail || '',
       channelId: r.channelId,
     }))
     .slice(0, limit);
