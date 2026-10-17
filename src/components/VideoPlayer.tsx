@@ -366,10 +366,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
           />
-          {/* Caption mask overlay — covers bottom where captions render */}
-          {captionsDisabled && (
-            <div className="absolute bottom-0 left-0 right-0 h-[14%] bg-gradient-to-t from-black via-black/95 to-transparent pointer-events-none z-20" />
-          )}
         </div>
       ) : (
         <video
