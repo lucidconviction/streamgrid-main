@@ -150,7 +150,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
             <div className="mb-2">
               <div
                 onClick={handleSeek}
-                className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
+                className="h-1 bg-[#243049] rounded-full cursor-pointer group relative"
               >
                 <div
                   className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors"
@@ -202,7 +202,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
             <input
               type="range" min="0" max="100" value={volume}
               onChange={e => setVolume(parseInt(e.target.value))}
-              className="w-full h-0.5 bg-[#4D4D4D] rounded-full appearance-none cursor-pointer accent-[#3b82f6]"
+              className="w-full h-0.5 bg-[#243049] rounded-full appearance-none cursor-pointer accent-[#3b82f6]"
             />
           </div>
         </div>
@@ -241,7 +241,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
                 <div className="mt-6">
                   <div
                     onClick={handleSeek}
-                    className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative mb-1"
+                    className="h-1 bg-[#243049] rounded-full cursor-pointer group relative mb-1"
                   >
                     <div
                       className="h-full bg-white group-hover:bg-[#3b82f6] rounded-full transition-colors"

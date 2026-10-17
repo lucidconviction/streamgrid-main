@@ -121,7 +121,7 @@ const MiniPlayer: React.FC<MiniPlayerProps> = ({
         <div className="flex items-center gap-2 w-full">
           <span className="text-[11px] text-[#8b97ad] font-mono w-10 text-right">{formatTime(currentTime)}</span>
           <div
-            className="flex-1 h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
+            className="flex-1 h-1 bg-[#243049] rounded-full cursor-pointer group relative"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -218,7 +218,7 @@ const FullPlayer: React.FC<FullPlayerProps> = ({
             {/* Progress */}
             <div className="mt-6 mb-2">
               <div
-                className="h-1 bg-[#4D4D4D] rounded-full cursor-pointer group relative"
+                className="h-1 bg-[#243049] rounded-full cursor-pointer group relative"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -503,7 +503,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
             Create Playlist
           </button>
           <button className="flex items-center gap-4 px-3 py-2 text-[#8b97ad] hover:text-white transition-colors text-sm font-bold">
-            <div className="w-6 h-6 bg-gradient-to-br from-[#450af5] to-[#c4efd9] rounded flex items-center justify-center">
+            <div className="w-6 h-6 bg-gradient-to-br from-[#3b82f6] to-[#1d4ed8] rounded flex items-center justify-center">
               <Heart className="w-3 h-3 text-white fill-current" />
             </div>
             Liked Songs
@@ -512,7 +512,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
       </nav>
 
       {/* ─── Main Content ─── */}
-      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#2a2a2a] to-[#0a0f1c]">
+      <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#1a2235] to-[#0a0f1c]">
         {/* Top bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-[#0a0f1c]/80 backdrop-blur-md">
           <div className="flex items-center gap-4">
