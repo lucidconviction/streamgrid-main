@@ -477,15 +477,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* CC Toggle */}
-            <button
-              onClick={() => setCaptionsDisabled((v) => !v)}
-              className={`p-1 transition-colors ${captionsDisabled ? 'text-blue-400' : 'text-slate-300 hover:text-blue-400'}`}
-              title={captionsDisabled ? 'Enable captions' : 'Disable captions'}
-            >
-              {captionsDisabled ? <CaptionsOff className="w-4 h-4" /> : <Captions className="w-4 h-4" />}
-            </button>
-
             {/* PiP Button */}
             <button
               onClick={handleTogglePiP}
@@ -507,6 +498,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       </div>
       )}
+
+      {/* Permanent CC Toggle — always visible for iframe embeds */}
+      <button
+        onClick={() => setCaptionsDisabled((v) => !v)}
+        className={`absolute bottom-2 right-2 z-40 p-1.5 rounded-lg backdrop-blur-sm transition-all ${
+          captionsDisabled
+            ? 'bg-blue-600/80 text-white shadow-lg shadow-blue-600/30'
+            : 'bg-black/50 text-slate-400 hover:text-white hover:bg-black/70'
+        }`}
+        title={captionsDisabled ? 'Enable captions' : 'Disable captions'}
+      >
+        {captionsDisabled ? <CaptionsOff className="w-3.5 h-3.5" /> : <Captions className="w-3.5 h-3.5" />}
+      </button>
     </div>
   );
 };
