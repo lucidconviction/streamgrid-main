@@ -266,9 +266,9 @@ export default function App() {
     };
   }, [watchlistIds, activeProfile.id]);
 
-  // Lazy-load IPTV streams when navigating to the IPTV view
+  // Lazy-load IPTV streams when navigating to the IPTV view or home
   useEffect(() => {
-    if (currentView === 'iptv') {
+    if (currentView === 'iptv' || currentView === 'home') {
       loadIptvStreams();
     }
   }, [currentView]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -808,12 +808,12 @@ export default function App() {
                 onViewAll={() => setCurrentView('channels')}
               />
 
-              {/* Row 3: IPTV M3U Live Channels */}
+              {/* Row 3: IPTV M3U Live Channels (first 30) */}
               {iptvStreams.length > 0 ? (
                 <StreamCarousel
                   title="IPTV Live M3U Channels (FAST, RDTV & Premium)"
                   subtitle="Samsung TV Plus, CloudFront HLS, US, UK, Canada & DAZN PPV feeds"
-                  streams={iptvStreams}
+                  streams={iptvStreams.slice(0, 30)}
                   onPlayStream={handlePlayStream}
                   onAddToMultiview={handleAddToMultiview}
                   onToggleWatchlist={handleToggleWatchlist}
