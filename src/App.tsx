@@ -551,7 +551,9 @@ export default function App() {
               isInMultiview={multiviewStreamIds.includes(activeStream.id)}
               relatedStreams={streams.filter((s) => s.id !== activeStream.id)}
               watchlistIds={watchlistIds}
+              watchlistStreams={watchlistStreams}
               multiviewStreamIds={multiviewStreamIds}
+              watchHistory={watchHistory}
               allStreams={streams}
               currentIndex={smuttStreams.length > 0
                 ? smuttStreams.findIndex(s => s.id === activeStream.id)
@@ -560,6 +562,7 @@ export default function App() {
               onShowToast={showToast}
               onTogglePiP={handleTogglePiP}
               onVideoEnd={nextStream ? () => handlePlayStream(nextStream) : undefined}
+              onPlayHistoryItem={handlePlayHistoryItem}
             />
           ) : currentView === 'multiview' ? (
             <MultiviewGrid

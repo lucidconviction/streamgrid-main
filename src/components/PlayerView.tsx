@@ -16,12 +16,17 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
+  ChevronDown as ChevronDownIcon,
   ShieldAlert,
   PictureInPicture2,
   Users,
   AlertCircle,
+  Star,
+  History as HistoryIcon,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
-import { StreamItem, StreamSource } from '../types/stream';
+import { StreamItem, StreamSource, WatchHistoryEntry } from '../types/stream';
 import { streamService } from '../services/streamService';
 import { getStreamGradient } from '../services/smuttThumbnailService';
 import { StreamCard } from './StreamCard';
@@ -40,12 +45,15 @@ interface PlayerViewProps {
   isInMultiview: boolean;
   relatedStreams: StreamItem[];
   watchlistIds: string[];
+  watchlistStreams: StreamItem[];
   multiviewStreamIds: string[];
+  watchHistory: WatchHistoryEntry[];
   onShowToast: (text: string, type?: 'success' | 'info' | 'warning') => void;
   onTogglePiP?: () => void;
   onVideoEnd?: () => void;
   allStreams?: StreamItem[];
   currentIndex?: number;
+  onPlayHistoryItem?: (entry: WatchHistoryEntry) => void;
 }
 
 interface ChatMessage {
@@ -76,12 +84,15 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   isInMultiview,
   relatedStreams,
   watchlistIds,
+  watchlistStreams,
   multiviewStreamIds,
+  watchHistory,
   onShowToast,
   onTogglePiP,
   onVideoEnd,
   allStreams,
   currentIndex,
+  onPlayHistoryItem,
 }) => {
   const [sources, setSources] = useState<StreamSource[]>([]);
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
@@ -94,12 +105,27 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   const [showChannelList, setShowChannelList] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
   const [playerError, setPlayerError] = useState(false);
+  const [showHistoryMenu, setShowHistoryMenu] = useState(false);
+  const [showFavMenu, setShowFavMenu] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Watch Party state
   const [showWatchPartyModal, setShowWatchPartyModal] = useState(false);
   const [watchPartyActive, setWatchPartyActive] = useState(false);
   const [syncCommand, setSyncCommand] = useState<{ type: 'play' | 'pause' | 'seek'; time: number } | null>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-menu')) {
+        setShowHistoryMenu(false);
+        setShowFavMenu(false);
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
 
   // Track watch party activity via service events
   useEffect(() => {
@@ -342,6 +368,107 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               <ChevronUp className="w-5 h-5" />
               <span>Channel Up</span>
             </button>
+
+            {/* History Dropdown */}
+            <div className="relative flex-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowHistoryMenu((h) => !h); setShowFavMenu(false); }}
+                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 dropdown-menu"
+              >
+                <div className="flex items-center gap-2">
+                  <HistoryIcon className="w-5 h-5" />
+                  <span>History</span>
+                </div>
+                <ChevronDownIcon className={`w-4 h-4 transition-transform ${showHistoryMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showHistoryMenu && (
+                <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60">
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Recent History</span>
+                  </div>
+                  {watchHistory.length > 0 ? (
+                    watchHistory.slice(0, 8).map((entry) => (
+                      <button
+                        key={entry.id}
+                        onClick={() => {
+                          if (onPlayHistoryItem) onPlayHistoryItem(entry);
+                          setShowHistoryMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                      >
+                        <img
+                          src={entry.poster || '/hero.png'}
+                          alt=""
+                          className="w-8 h-5 rounded object-cover shrink-0"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-white truncate">{entry.title}</p>
+                          <span className="text-[10px] text-slate-500">{entry.category}</span>
+                        </div>
+                        <Clock className="w-3 h-3 text-slate-600 shrink-0" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <HistoryIcon className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                      <p className="text-xs text-slate-500">No watch history yet</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Favorites Dropdown */}
+            <div className="relative flex-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowFavMenu((f) => !f); setShowHistoryMenu(false); }}
+                className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 dropdown-menu"
+              >
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  <span>Favorites</span>
+                </div>
+                <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showFavMenu && (
+                <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60">
+                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
+                  </div>
+                  {watchlistStreams.length > 0 ? (
+                    watchlistStreams.slice(0, 8).map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                      >
+                        <img
+                          src={s.poster || '/hero.png'}
+                          alt=""
+                          className="w-8 h-5 rounded object-cover shrink-0"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-white truncate">{s.title}</p>
+                          <span className="text-[10px] text-slate-500">{s.category}</span>
+                        </div>
+                        <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                      <p className="text-xs text-slate-500">No favorites yet</p>
+                      <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex-1 bg-[#0f121a] rounded-xl border border-slate-800/80 px-4 py-2.5">
               <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Channel</span>
               <p className="text-sm font-bold text-white mt-0.5 truncate">{stream.title}</p>
@@ -532,6 +659,17 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                   </p>
                 </div>
                 <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => onToggleWatchlist(stream)}
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors touch-manipulation ${
+                      isInWatchlist
+                        ? 'bg-red-600/90 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-400'
+                    }`}
+                    title={isInWatchlist ? 'Remove from Favorites' : 'Add to Favorites'}
+                  >
+                    <Star className={`w-5 h-5 ${isInWatchlist ? 'fill-white' : ''}`} />
+                  </button>
                   <button
                     onClick={() => {
                       const list = allStreams || relatedStreams;
