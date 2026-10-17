@@ -663,7 +663,7 @@ export default function App() {
               onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
-              initialCategory="24/7 Channels"
+              initialCategory="All"
               onRefresh={() => loadStreams(true)}
               isRefreshing={isRefreshing}
             />
