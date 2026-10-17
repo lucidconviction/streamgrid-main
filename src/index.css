@@ -198,6 +198,86 @@ img, button, a {
   stroke: #f8fafc !important;
 }
 
+/* ── Musike Design System Tokens (StreamGrid Blue variant) ── */
+:root {
+  --musike-bg: #0a0f1c;
+  --musike-surface-1: #111a30;
+  --musike-surface-2: #182038;
+  --musike-surface-3: #1e2a47;
+  --musike-line: rgb(255 255 255 / 0.07);
+  --musike-text: #e8ecf4;
+  --musike-text-2: #8b97ad;
+  --musike-text-3: #5a6580;
+  --musike-accent: #3b82f6;
+  --musike-accent-ink: #0a0f1c;
+  --musike-radius-card: 14px;
+  --musike-radius-panel: 20px;
+  --musike-motion: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.musike-surface-1 { background-color: var(--musike-surface-1); }
+.musike-surface-2 { background-color: var(--musike-surface-2); }
+.musike-surface-3 { background-color: var(--musike-surface-3); }
+.musike-accent-text { color: var(--musike-accent); }
+.musike-text-2 { color: var(--musike-text-2); }
+.musike-text-3 { color: var(--musike-text-3); }
+
+/* Musike pill/circle shape rule */
+.musike-pill { border-radius: 9999px; }
+.musike-card-radius { border-radius: var(--musike-radius-card); }
+.musike-panel-radius { border-radius: var(--musike-radius-panel); }
+
+/* Musike double-border island: surface-1 shell + hairline + surface-2 core + inner highlight */
+.musike-island {
+  background-color: var(--musike-surface-1);
+  border: 1px solid var(--musike-line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Musike motion curve */
+.musike-transition {
+  transition-duration: 240ms;
+  transition-timing-function: var(--musike-motion);
+}
+
+/* Active state = inner accent ring (no neon glow) */
+.musike-active-ring {
+  box-shadow: inset 0 0 0 1px var(--musike-accent), inset 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* Tabular-nums for counters/times (the "gamer" touch) */
+.musike-mono { font-variant-numeric: tabular-nums; }
+
+/* Animated equalizer bars — Musike brand signature */
+.musike-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.musike-eq span {
+  width: 3px;
+  background: var(--musike-accent);
+  border-radius: 2px;
+  animation: musikeEq 0.8s ease-in-out infinite;
+}
+.musike-eq span:nth-child(1) { animation-delay: -0.8s; }
+.musike-eq span:nth-child(2) { animation-delay: -0.6s; }
+.musike-eq span:nth-child(3) { animation-delay: -0.4s; }
+.musike-eq span:nth-child(4) { animation-delay: -0.2s; }
+.musike-eq span:nth-child(5) { animation-delay: -1.0s; }
+.musike-eq span:nth-child(6) { animation-delay: -0.3s; }
+.musike-eq span:nth-child(7) { animation-delay: -0.5s; }
+
+@keyframes musikeEq {
+  0%, 100% { height: 20%; opacity: 0.5; }
+  50% { height: 100%; opacity: 1; }
+}
+
+/* Press feedback */
+.musike-press { transition: transform 120ms var(--musike-motion); }
+.musike-press:active { transform: scale(0.97); }
+
 /* Hide native video captions/subtitles (WebVTT) */
 video::-webkit-media-text-track-container {
   display: none !important;
