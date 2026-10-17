@@ -469,10 +469,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               )}
             </div>
 
-            <div className="flex-1 bg-[#0f121a] rounded-xl border border-slate-800/80 px-4 py-2.5">
-              <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Channel</span>
-              <p className="text-sm font-bold text-white mt-0.5 truncate">{stream.title}</p>
-            </div>
             <button
               onClick={() => {
                 const list = allStreams || relatedStreams;
