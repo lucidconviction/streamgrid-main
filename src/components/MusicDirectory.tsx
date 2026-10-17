@@ -523,10 +523,6 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-sm font-bold text-[#8b97ad] hover:text-white transition-colors">Sign up</button>
-            <button className="px-6 py-3 bg-[#3b82f6] text-white text-sm font-black rounded-full hover:bg-[#2563eb] hover:scale-105 transition-transform">Log in</button>
-          </div>
         </div>
 
         {/* Content */}
