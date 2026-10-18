@@ -36,10 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState('');
-  const bgFailRef = useRef(false);
   const rotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cooldownRef = useRef(false);
-  const [retryToken, setRetryToken] = useState(0);
 
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
@@ -108,24 +105,9 @@ export const Header: React.FC<HeaderProps> = ({
     video.muted = true;
     video.volume = 0;
 
-    // Wire up error + ended listeners — just flag failure; the retry effect
-    // picks the next stream automatically (avoids circular refs with setupBgPlayer)
-    const onError = () => {
-      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-      bgFailRef.current = true;
-      setBgReady(false);
-      if (!cooldownRef.current) {
-        cooldownRef.current = true;
-        setTimeout(() => { cooldownRef.current = false; }, 3000);
-        setRetryToken((t) => t + 1);
-      }
-    };
-    const onEnded = () => {
-      // Live streams don't end naturally — only retry if it was a real failure
-      // (network error / fatal HLS error). Don't trigger retry on ended.
-    };
-    video.onerror = onError;
-    video.onended = onEnded;
+    // No per-stream error retry — just let the rotation timer handle switching
+    video.onerror = null;
+    video.onended = null;
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
@@ -138,30 +120,16 @@ export const Header: React.FC<HeaderProps> = ({
       hls.loadSource(url);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => setBgReady(true));
+        video.play().catch(() => {});
         setBgReady(true);
       });
+      // Don't handle fatal errors — the rotation timer picks the next stream
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              hls.recoverMediaError();
-              break;
-            default:
-              hls.destroy();
-              hlsRef.current = null;
-              bgFailRef.current = true;
-              setBgReady(false);
-              if (!cooldownRef.current) {
-                cooldownRef.current = true;
-                setTimeout(() => { cooldownRef.current = false; }, 3000);
-                setRetryToken((t) => t + 1);
-              }
-              break;
-          }
+          // Just destroy; rotation timer will pick next stream automatically
+          hls.destroy();
+          hlsRef.current = null;
+          setBgReady(false);
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -172,24 +140,24 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, []);
 
+  // Schedule a periodic rotation — picks a random stream every 30s
   const scheduleRotation = useCallback(() => {
     clearRotationTimer();
     rotationTimerRef.current = setTimeout(() => {
       const pool = getPool();
-      if (pool.length < 2) return; // nothing to rotate to
-      const next = pickBgStream(currentBgStream);
-      if (next && next.id !== currentBgStream?.id) {
-        bgFailRef.current = false;
+      if (pool.length < 2) return;
+      const next = pool[Math.floor(Math.random() * pool.length)];
+      if (next.id !== currentBgStream?.id) {
         setCurrentBgStream(next);
         setupBgPlayer(next);
       }
-    }, 10 * 60 * 1000); // 10 minutes
-  }, [getPool, pickBgStream, currentBgStream, setupBgPlayer, clearRotationTimer]);
+      scheduleRotation(); // reschedule
+    }, 30 * 1000); // 30 seconds
+  }, [getPool, currentBgStream, setupBgPlayer, clearRotationTimer]);
 
   // Start playing immediately when streams load
   useEffect(() => {
     if (liveStreams.length === 0) return;
-
     const stream = pickBgStream();
     if (stream) {
       setCurrentBgStream(stream);
@@ -201,24 +169,6 @@ export const Header: React.FC<HeaderProps> = ({
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
     };
   }, [liveStreams]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Retry: if current bg stream failed, pick another live stream immediately
-  useEffect(() => {
-    if (liveStreams.length === 0) return;
-    if (!bgFailRef.current) return; // only act on failure
-    if (cooldownRef.current) return; // respect cooldown
-
-    const available = getPool().filter(
-      (s) => s.id !== currentBgStream?.id
-    );
-    if (available.length === 0) return;
-
-    bgFailRef.current = false;
-    const next = available[Math.floor(Math.random() * available.length)];
-    setCurrentBgStream(next);
-    setupBgPlayer(next);
-    scheduleRotation();
-  }, [retryToken, liveStreams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close dropdowns on outside click
   useEffect(() => {
