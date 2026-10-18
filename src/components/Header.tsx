@@ -237,8 +237,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Header Bar */}
-      <header className="sticky top-0 z-50 w-full glass-panel border-b border-blue-500/20 transition-colors">
-        <div className="flex items-center justify-between gap-4 px-3 sm:px-4 py-3">
+      <header className="sticky top-0 z-50 w-full glass-panel border-b border-blue-500/20 transition-colors" style={{ height: 'var(--header-height, 65px)' }}>
+        <div className="flex items-center justify-between gap-4 px-3 sm:px-4" style={{ height: 'var(--header-height, 65px)' }}>
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-3 shrink-0">
             <button
