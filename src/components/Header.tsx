@@ -41,6 +41,11 @@ export const Header: React.FC<HeaderProps> = ({
   const [qjOpen, setQjOpen] = useState(false);
   const qjRef = useRef<HTMLDivElement>(null);
   const quickJumps = storageService.getQuickJumps(activeProfileId);
+  // Add form state
+  const [qjAddMode, setQjAddMode] = useState(false);
+  const [qjNewLabel, setQjNewLabel] = useState('');
+  const [qjNewKeywords, setQjNewKeywords] = useState('');
+  const [qjNewTarget, setQjNewTarget] = useState(currentPage || 'home');
 
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
@@ -396,35 +401,125 @@ export const Header: React.FC<HeaderProps> = ({
                 {qjOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {qjOpen && (
-                <div className="absolute top-full right-0 mt-2 w-52 bg-[#0f172a]/95 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
+                <div className="absolute top-full right-0 mt-2 w-60 bg-[#0f172a]/95 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
                   <div className="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950/40 to-transparent">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400" />
-                      <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">Quick Jumps</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">Quick Jumps</p>
+                      </div>
+                      {!qjAddMode && (
+                        <button
+                          onClick={() => setQjAddMode(true)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-slate-400 hover:text-white hover:bg-blue-500/20 transition-colors"
+                        >
+                          <Zap className="w-3 h-3" />
+                          <span>Add</span>
+                        </button>
+                      )}
                     </div>
-                    {quickJumps.length === 0 ? (
-                      <p className="text-[10px] text-slate-500">No jumps saved yet</p>
-                    ) : (
-                      <div className="max-h-64 overflow-y-auto no-scrollbar space-y-0.5 pt-1">
-                        {quickJumps.map((jump) => (
+
+                    {qjAddMode ? (
+                      /* ── Add Form ── */
+                      <div className="space-y-2 pt-1">
+                        <input
+                          type="text"
+                          value={qjNewLabel}
+                          onChange={(e) => setQjNewLabel(e.target.value)}
+                          placeholder="Label (e.g. My Artists)"
+                          autoFocus
+                          className="w-full bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60"
+                        />
+                        <input
+                          type="text"
+                          value={qjNewKeywords}
+                          onChange={(e) => setQjNewKeywords(e.target.value)}
+                          placeholder="Keywords (comma-separated)"
+                          className="w-full bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60"
+                        />
+                        <select
+                          value={qjNewTarget}
+                          onChange={(e) => setQjNewTarget(e.target.value)}
+                          className="w-full bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/60 appearance-none"
+                        >
+                          {Object.entries(VIEW_LABELS).map(([id, label]) => (
+                            <option key={id} value={id}>{label}</option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-2 pt-1">
                           <button
-                            key={jump.id}
                             onClick={() => {
-                              onQuickJump?.(jump);
-                              setQjOpen(false);
+                              const label = qjNewLabel.trim();
+                              const kws = qjNewKeywords.split(',').map((k) => k.trim()).filter(Boolean);
+                              if (!label || kws.length === 0) return;
+                              storageService.addQuickJump(activeProfileId, label, kws, qjNewTarget);
+                              setQjNewLabel('');
+                              setQjNewKeywords('');
+                              setQjNewTarget(currentPage || 'home');
+                              setQjAddMode(false);
                             }}
-                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-blue-500/10 transition-colors group"
+                            disabled={!qjNewLabel.trim() || !qjNewKeywords.trim()}
+                            className="flex-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[10px] font-bold rounded-lg transition-colors"
                           >
-                            <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{jump.label}</p>
-                              <p className="text-[10px] text-slate-500 truncate">{jump.keywords.slice(0, 2).join(', ')}</p>
-                            </div>
-                            <span className="text-[9px] font-mono text-slate-600 group-hover:text-slate-400 shrink-0">
-                              {VIEW_LABELS[jump.targetView] || jump.targetView}
-                            </span>
+                            Save
                           </button>
+                          <button
+                            onClick={() => { setQjAddMode(false); setQjNewLabel(''); setQjNewKeywords(''); }}
+                            className="px-2.5 py-1.5 text-[10px] text-slate-400 hover:text-white transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : quickJumps.length === 0 ? (
+                      <div className="py-4 text-center">
+                        <p className="text-[10px] text-slate-500 mb-2">No jumps saved yet</p>
+                        <button
+                          onClick={() => setQjAddMode(true)}
+                          className="text-[10px] text-blue-400 hover:text-blue-300 font-bold"
+                        >
+                          + Add your first jump
+                        </button>
+                      </div>
+                    ) : (
+                      /* ── Jump List ── */
+                      <div className="max-h-52 overflow-y-auto no-scrollbar space-y-0.5">
+                        {quickJumps.map((jump) => (
+                          <div key={jump.id} className="group flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                onQuickJump?.(jump);
+                                setQjOpen(false);
+                              }}
+                              className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-blue-500/10 transition-colors"
+                            >
+                              <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold text-slate-200 group-hover:text-white truncate">{jump.label}</p>
+                                <p className="text-[9px] text-slate-500 truncate">{jump.keywords.slice(0, 2).join(', ')}</p>
+                              </div>
+                              <span className="text-[9px] font-mono text-slate-600 group-hover:text-slate-400 shrink-0">
+                                {VIEW_LABELS[jump.targetView] || jump.targetView}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                storageService.removeQuickJump(activeProfileId, jump.id);
+                              }}
+                              className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                              title="Delete"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         ))}
+                        <button
+                          onClick={() => setQjAddMode(true)}
+                          className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 text-[10px] font-bold text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors mt-1"
+                        >
+                          <Zap className="w-3 h-3" />
+                          Add Jump
+                        </button>
                       </div>
                     )}
                   </div>
