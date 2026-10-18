@@ -43,11 +43,11 @@ export const Header: React.FC<HeaderProps> = ({
     sports: 'Live Sports',
     channels: '24/7 Channels',
     iptv: 'IPTV Playlists',
-    smutt: 'Nett Smutt',
     music: 'Music',
     multiview: 'Multiview',
     history: 'Watch History',
     watchlist: 'Watchlist',
+    smutt: 'Nett Smutt',
   };
 
   // Pick the first available live stream for instant playback
@@ -168,13 +168,27 @@ export const Header: React.FC<HeaderProps> = ({
     const trimmed = searchInput.trim();
     if (!trimmed) return;
     storageService.addSavedSearch(activeProfileId, trimmed);
-    if (onSearch) onSearch(trimmed);
+    // Multi-keyword: split by comma and search each, showing merged results
+    const queries = trimmed.split(',').map((q) => q.trim()).filter(Boolean);
+    if (queries.length === 1) {
+      if (onSearch) onSearch(queries[0]);
+    } else {
+      // Combine all for a single search that returns results for each
+      if (onSearch) onSearch(trimmed);
+    }
     setSearchInput('');
     setSearchDropdownOpen(false);
   };
 
   const handleLoadSearch = (query: string) => {
-    if (onSearch) onSearch(query);
+    // Support comma-separated keywords
+    const queries = query.split(',').map((q) => q.trim()).filter(Boolean);
+    if (queries.length === 1 && onSearch) {
+      onSearch(queries[0]);
+    } else {
+      // Multi-keyword: show the combined query
+      if (onSearch) onSearch(query);
+    }
     setSearchDropdownOpen(false);
   };
 

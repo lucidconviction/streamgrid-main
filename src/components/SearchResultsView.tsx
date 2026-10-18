@@ -34,11 +34,15 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({
   );
 
   const matched = query.trim()
-    ? filtered.filter((s) =>
-        s.title.toLowerCase().includes(query.toLowerCase()) ||
-        s.category.toLowerCase().includes(query.toLowerCase()) ||
-        s.provider.toLowerCase().includes(query.toLowerCase())
-      )
+    ? filtered.filter((s) => {
+        // Support comma-separated keywords: match if any keyword matches
+        const kws = query.split(',').map((k) => k.trim().toLowerCase()).filter(Boolean);
+        return kws.length === 0 || kws.some((kw) =>
+          s.title.toLowerCase().includes(kw) ||
+          s.category.toLowerCase().includes(kw) ||
+          s.provider.toLowerCase().includes(kw)
+        );
+      })
     : filtered;
 
   const scroll = (dir: 'left' | 'right') => {

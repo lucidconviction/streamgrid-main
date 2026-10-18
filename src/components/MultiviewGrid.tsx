@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Volume2,
-  VolumeX,
   Maximize2,
   Minimize2,
   Trash2,
@@ -283,59 +281,39 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
     <div className="w-full mx-auto px-2 sm:px-6 py-4 flex flex-col gap-4">
       {/* Multiview Workspace Command Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0f121a] p-3.5 rounded-xl border border-slate-800/80">
-        {/* Layout Dropdown */}
-        <div className="relative" ref={layoutDropdownRef}>
-          <button
-            onClick={() => setLayoutDropdownOpen(!layoutDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>{LAYOUT_OPTIONS.find((o) => o.id === layout)?.label || layout}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${layoutDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {layoutDropdownOpen && (
-            <div className="absolute top-full left-0 mt-2 w-40 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
-              <div className="p-1.5">
-                {LAYOUT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => { onLayoutChange(opt.id); setLayoutDropdownOpen(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                      layout === opt.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    {layout === opt.id && <Check className="w-3.5 h-3.5" />}
-                    <span>{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Audio Solo Status & Global Controls */}
+        {/* Left controls */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400 px-3 py-1.5 bg-slate-900/80 rounded-lg border border-slate-800">
-            <Volume2 className="w-3.5 h-3.5 text-blue-400" />
-            <span>
-              Audio:{' '}
-              {soloSlotId !== null ? (
-                <strong className="text-white">Screen {soloSlotId + 1}</strong>
-              ) : (
-                <span className="text-slate-500">Muted</span>
-              )}
-            </span>
+          {/* Layout Dropdown */}
+          <div className="relative" ref={layoutDropdownRef}>
+            <button
+              onClick={() => setLayoutDropdownOpen(!layoutDropdownOpen)}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>{LAYOUT_OPTIONS.find((o) => o.id === layout)?.label || layout}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${layoutDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {layoutDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-40 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                <div className="p-1.5">
+                  {LAYOUT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => { onLayoutChange(opt.id); setLayoutDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        layout === opt.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {layout === opt.id && <Check className="w-3.5 h-3.5" />}
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          <button
-            onClick={() => handleToggleSoloAudio(soloSlotId === null ? 0 : soloSlotId)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-800 transition-colors"
-          >
-            {soloSlotId !== null ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            <span>{soloSlotId !== null ? 'Mute All' : 'Unmute'}</span>
-          </button>
 
           {/* Preset Dropdown */}
           <div className="relative" ref={presetDropdownRef}>
@@ -348,19 +326,30 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
               <ChevronDown className={`w-3 h-3 transition-transform ${presetDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {presetDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
                 <div className="p-1.5 max-h-60 overflow-y-auto">
                   {presets.length === 0 ? (
                     <div className="px-3 py-2 text-xs text-slate-500 text-center">No saved presets</div>
                   ) : (
                     presets.map((p) => (
-                      <button
+                      <div
                         key={p.id}
-                        onClick={() => { onApplyPreset(p); setPresetDropdownOpen(false); }}
-                        className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate"
+                        className="group flex items-center gap-1 w-full"
                       >
-                        {p.name}
-                      </button>
+                        <button
+                          onClick={() => { onApplyPreset(p); setPresetDropdownOpen(false); }}
+                          className="flex-1 text-left px-3 py-2 rounded-l-lg text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors truncate"
+                        >
+                          {p.name}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDeletePreset(p.id); }}
+                          className="shrink-0 p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-950/40 rounded-r-lg opacity-0 group-hover:opacity-100 transition-all"
+                          title="Delete preset"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     ))
                   )}
                   <div className="border-t border-slate-700 mt-1 pt-1">

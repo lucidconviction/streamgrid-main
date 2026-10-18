@@ -83,7 +83,13 @@ export default function App() {
   // Music floating player state — persists across navigation
   const [musicFloatingArtist, setMusicFloatingArtist] = useState<{ name: string; thumbnail: string } | null>(null);
   const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
+  const [musicTrackIndex, setMusicTrackIndex] = useState(0);
+  const [musicSessionKey, setMusicSessionKey] = useState(0);
+  const [musicChannelId, setMusicChannelId] = useState<string>('');
   const [musicIsLoadingTracks, setMusicIsLoadingTracks] = useState(false);
+  const [musicPlayMode, setMusicPlayMode] = useState<'audio' | 'video'>(() => {
+    try { return localStorage.getItem('rdnutz_music_playmode') as 'audio' | 'video' || 'audio'; } catch { return 'audio'; }
+  });
 
   const showToast = (
     text: string,
@@ -571,6 +577,11 @@ export default function App() {
           onFilterCategory={(cat) => setSelectedSportCategory(cat)}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onSearch={(query: string) => {
+            setSearchQuery(query);
+            setSearchPanelQuery(query);
+            setSearchPanelOpen(true);
+          }}
         />
 
         {/* Viewport Content */}
@@ -685,8 +696,10 @@ export default function App() {
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
               onSetFloatingArtist={setMusicFloatingArtist}
-              onSetTracks={setMusicTracks}
+              onSetTracks={(t, idx) => { setMusicTracks(t || []); setMusicTrackIndex(idx ?? 0); setMusicSessionKey(k => k + 1); }}
               onSetLoadingTracks={setMusicIsLoadingTracks}
+              defaultPlayMode={musicPlayMode}
+              onSetPlayMode={setMusicPlayMode}
             />
           ) : currentView === 'iptv' ? (
             <IptvDirectory
@@ -960,10 +973,14 @@ export default function App() {
       {/* Floating Music Player — persists across all views */}
       {musicFloatingArtist && musicTracks.length > 0 && (
         <FloatingMusicPlayer
+          key={musicSessionKey}
           artistName={musicFloatingArtist.name}
           artistThumbnail={musicFloatingArtist.thumbnail}
           tracks={musicTracks}
-          onClose={() => { setMusicFloatingArtist(null); setMusicTracks([]); }}
+          startIndex={musicTrackIndex}
+          channelId={musicChannelId}
+          defaultPlayMode={musicPlayMode}
+          onClose={() => { setMusicFloatingArtist(null); setMusicTracks([]); setMusicTrackIndex(0); setMusicSessionKey(k => k + 1); setMusicChannelId(''); }}
         />
       )}
     </div>

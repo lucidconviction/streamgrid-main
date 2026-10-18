@@ -6,6 +6,7 @@ const HISTORY_PREFIX = 'streamgrid_history_';
 const WATCHLIST_PREFIX = 'streamgrid_watchlist_';
 const PRESETS_PREFIX = 'streamgrid_presets_';
 const SEARCH_PREFIX = 'streamgrid_saved_searches_';
+const QUICKJUMP_PREFIX = 'streamgrid_quickjumps_';
 
 export const DEFAULT_PROFILES: UserProfile[] = [
   {
@@ -307,5 +308,58 @@ export const storageService = {
     } catch (e) {
       console.error('Failed to clear saved searches', e);
     }
+  },
+
+  // Quick Jump Links per Profile
+  getQuickJumps(profileId: string): Array<{ id: string; label: string; keywords: string[]; targetView: string }> {
+    try {
+      const data = localStorage.getItem(`${QUICKJUMP_PREFIX}${profileId}`);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  addQuickJump(profileId: string, label: string, keywords: string[], targetView: string) {
+    const trimmed = label.trim();
+    if (!trimmed || keywords.length === 0) return this.getQuickJumps(profileId);
+    const jumps = this.getQuickJumps(profileId);
+    const updated = [{ id: `qj-${Date.now()}`, label: trimmed, keywords, targetView }, ...jumps].slice(0, 20);
+    try {
+      localStorage.setItem(`${QUICKJUMP_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save quick jump', e);
+    }
+    return updated;
+  },
+
+  removeQuickJump(profileId: string, id: string) {
+    const updated = this.getQuickJumps(profileId).filter((j) => j.id !== id);
+    try {
+      localStorage.setItem(`${QUICKJUMP_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to remove quick jump', e);
+    }
+  },
+
+  clearQuickJumps(profileId: string) {
+    try {
+      localStorage.removeItem(`${QUICKJUMP_PREFIX}${profileId}`);
+    } catch (e) {
+      console.error('Failed to clear quick jumps', e);
+    }
+  },
+
+  editQuickJump(profileId: string, id: string, label: string, keywords: string[], targetView: string) {
+    const jumps = this.getQuickJumps(profileId);
+    const updated = jumps.map((j) =>
+      j.id === id ? { ...j, label: label.trim(), keywords, targetView } : j
+    ).filter((j) => j.label);
+    try {
+      localStorage.setItem(`${QUICKJUMP_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to edit quick jump', e);
+    }
+    return updated;
   }
 };
