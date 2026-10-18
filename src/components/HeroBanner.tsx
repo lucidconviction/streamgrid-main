@@ -128,7 +128,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             <iframe
               ref={iframeRef}
               src={streamData.url}
-              className="pointer-events-none w-full h-full object-cover scale-175 filter brightness-105"
+              className="pointer-events-none w-full h-full object-cover filter brightness-105"
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
               style={{ border: 'none' }}
@@ -140,7 +140,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           {streamData && !streamData.isEmbed && streamData.url && !videoError && (
             <video
               ref={videoRef}
-              className="w-full h-full object-cover object-center scale-175 filter brightness-105"
+              className="w-full h-full object-cover object-center filter brightness-105"
               muted
               autoPlay
               playsInline
@@ -153,7 +153,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             <img
               src={displayPoster}
               alt={featuredStream.title}
-              className="w-full h-full object-cover object-center scale-175 filter brightness-105 transition-all duration-700"
+              className="w-full h-full object-cover object-center filter brightness-105 transition-all duration-700"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =

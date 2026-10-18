@@ -358,7 +358,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-65px)] bg-[#000000] overflow-hidden">
+    <div className="flex h-[calc(100vh-65px)] bg-[#0a0f1c] overflow-hidden">
       {/* Ambient gradient animation */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#3b82f6]/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
