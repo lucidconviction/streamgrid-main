@@ -189,18 +189,18 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Background Live Stream Player — fills header only, hidden on scroll */}
-      <div className={`fixed top-0 left-0 right-0 z-0 pointer-events-none overflow-hidden transition-opacity duration-300 ${bgScrolled ? 'opacity-0' : 'opacity-100'}`} style={{ height: 'var(--header-height, 65px)' }}>
+      <div className={`fixed top-0 left-0 right-0 z-0 pointer-events-none transition-opacity duration-300 ${bgScrolled ? 'opacity-0' : 'opacity-100'} scale-150`} style={{ height: 'var(--header-height, 65px)' }}>
         <video
           ref={videoRef}
-          className="w-full h-full object-cover opacity-55 scale-150"
+          className="w-full h-full object-cover opacity-55"
           muted
           playsInline
           autoPlay
           loop
           preload="auto"
         />
-        {/* Gradient overlay — lighter so video shows through and pages are brighter */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
+        {/* Gradient overlay — clipped, sits above scaled video */}
+        <div className="absolute inset-0 overflow-hidden bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
         {!bgReady && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-4 h-4 border-2 border-blue-500/60 border-t-blue-400/80 rounded-full animate-spin" />
