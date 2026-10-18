@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Hls from 'hls.js';
-import { Layers, Bookmark, Play, PictureInPicture2 } from 'lucide-react';
+import { Layers, Bookmark, Play, PictureInPicture2, Headphones } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
 import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
@@ -32,6 +32,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const trailerIframeRef = useRef<HTMLIFrameElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const hlsAudioRef = useRef<Hls | null>(null);
 
   const posterUrl = stream.poster || '/hero.png';
   const isSmutt = stream.provider === 'smutt';
@@ -81,7 +83,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     video.playsInline = true;
     video.preload = 'auto';
 
-    // HLS streams — use HLS.js (same approach as iptvThumbnailService)
+    // HLS streams with resilience (auto-reconnect on fatal error)
     if ((streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) && Hls.isSupported()) {
       const hls = new Hls({
         maxBufferLength: 30,
@@ -90,6 +92,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         enableWorker: true,
         fragLoadingTimeOut: 5000,
         manifestLoadingTimeOut: 5000,
+        startLevel: -1,
       });
       hls.loadSource(streamUrl);
       hls.attachMedia(video);
@@ -99,18 +102,42 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       };
       hls.on(Hls.Events.MANIFEST_PARSED, onManifestParsed);
 
+      // Resilience: auto-reconnect on fatal errors with backoff
+      let reconnectAttempts = 0;
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              reconnectAttempts = 0;
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              reconnectAttempts = 0;
+              break;
+            default:
+              reconnectAttempts += 1;
+              if (reconnectAttempts <= 3) {
+                setTimeout(() => hls.startLoad(), Math.min(1000 * reconnectAttempts, 8000));
+              } else {
+                hls.destroy();
+              }
+              break;
+          }
+        }
+      });
+
       return () => {
         hls.destroy();
         video.pause();
         video.src = '';
       };
     } else if (streamUrl.includes('.m3u8') || streamUrl.includes('.ts')) {
-      // Safari native HLS fallback
+      // Safari native HLS fallback with resilience
       video.src = streamUrl;
       video.load();
       video.play().catch(() => {});
     } else if (streamUrl.includes('.mp4') || streamUrl.includes('.webm')) {
-      // Direct video files
       video.src = streamUrl;
       video.play().catch(() => {});
     }
@@ -122,6 +149,51 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       video.src = '';
     };
   }, [isHovered, stream.directEmbedUrl, stream.sources]);
+
+  // Hover-to-Listen: play audio-only from bgVideoUrl when hovering
+  useEffect(() => {
+    if (!isHovered || !audioRef.current) return;
+    const audio = audioRef.current;
+    const url = stream.bgVideoUrl;
+    if (!url) return;
+
+    // Clean up previous audio
+    audio.pause();
+    audio.src = '';
+    if (hlsAudioRef.current) { hlsAudioRef.current.destroy(); hlsAudioRef.current = null; }
+
+    const isHls = url.includes('.m3u8') || url.includes('.ts');
+    audio.volume = 0.5;
+
+    if (isHls && Hls.isSupported()) {
+      const hls = new Hls({
+        maxBufferLength: 16,
+        lowLatencyMode: true,
+        enableWorker: true,
+      });
+      hlsAudioRef.current = hls;
+      hls.loadSource(url);
+      hls.attachMedia(audio);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        audio.play().catch(() => {});
+      });
+      hls.on(Hls.Events.ERROR, (_ev, data) => {
+        if (data.fatal && hlsAudioRef.current) {
+          hlsAudioRef.current.destroy();
+          hlsAudioRef.current = null;
+        }
+      });
+    } else {
+      audio.src = url;
+      audio.play().catch(() => {});
+    }
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+      if (hlsAudioRef.current) { hlsAudioRef.current.destroy(); hlsAudioRef.current = null; }
+    };
+  }, [isHovered, stream.bgVideoUrl]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -142,6 +214,13 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   return (
     <div className="group relative flex flex-col bg-[#0f121a] border border-slate-800/80 hover:border-slate-700 rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40">
+      {/* Hover-to-Listen badge */}
+      {isHovered && stream.bgVideoUrl && (
+        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white/90 pointer-events-none">
+          <Headphones className="w-3 h-3 text-blue-400" />
+          <span>Listen</span>
+        </div>
+      )}
       {/* Thumbnail Aspect Ratio 16:9 */}
       <div
         className="relative aspect-video w-full overflow-hidden bg-slate-900 cursor-pointer"
@@ -335,12 +414,15 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           </div>
         </div>
 
-        {/* Bottom subtle kicker */}
+      {/* Bottom subtle kicker */}
         <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 font-mono">
           <span className="uppercase">{stream.provider}</span>
           <span>{stream.sources?.length ? `${stream.sources.length} sources` : 'HD Feed'}</span>
         </div>
       </div>
+
+      {/* Hidden audio element for Hover-to-Listen */}
+      <audio ref={audioRef} playsInline preload="none" />
     </div>
   );
 };

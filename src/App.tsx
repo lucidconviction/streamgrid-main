@@ -20,6 +20,7 @@ import { MultiviewGrid } from './components/MultiviewGrid';
 import { WatchHistoryView } from './components/WatchHistoryView';
 import { WatchlistView } from './components/WatchlistView';
 import { ChannelDirectory } from './components/ChannelDirectory';
+import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
 
@@ -561,6 +562,18 @@ export default function App() {
         }}
         savedSearches={storageService.getSavedSearches(activeProfile.id)}
         activeProfileId={activeProfile.id}
+        onQuickJump={(jump) => {
+          if (jump.targetView && jump.targetView !== currentView) {
+            setCurrentView(jump.targetView as any);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          if (jump.keywords.length > 0) {
+            const query = jump.keywords.join(', ');
+            setSearchQuery(query);
+            setSearchPanelQuery(query);
+            setSearchPanelOpen(true);
+          }
+        }}
       />
 
       {/* Main Container with Sidebar + Content */}
@@ -648,9 +661,14 @@ export default function App() {
               onSimulateLiveTransition={handleSimulateLiveTransition}
             />
           ) : currentView === 'sports' ? (
-            <ChannelDirectory
-              title="Live Sports Center"
-              subtitle=""
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
+              <SportsEPG
+                streams={streams.filter((s) => s.status !== '24/7' || s.category.includes('Sport'))}
+                onPlayStream={handlePlayStream as any}
+              />
+              <ChannelDirectory
+                title="Live Sports Center"
+                subtitle=""
               streams={streams.filter((s) => s.status !== '24/7' || s.category.includes('Sport'))}
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}
@@ -662,6 +680,7 @@ export default function App() {
               onRefresh={() => loadStreams(true)}
               isRefreshing={isRefreshing}
             />
+            </div>
           ) : currentView === 'channels' ? (
             <ChannelDirectory
               title="24/7 Cable & Premium TV Channels"

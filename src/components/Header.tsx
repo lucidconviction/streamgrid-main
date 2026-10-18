@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark, Zap, Flame as QuickJumpIcon } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -14,6 +14,7 @@ interface HeaderProps {
   onSearch?: (query: string) => void;
   savedSearches?: string[];
   activeProfileId?: string;
+  onQuickJump?: (jump: { keywords: string[]; targetView: string }) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSearch,
   savedSearches = [],
   activeProfileId = 'profile-alex',
+  onQuickJump,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -36,6 +38,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState('');
+  const [qjOpen, setQjOpen] = useState(false);
+  const qjRef = useRef<HTMLDivElement>(null);
+  const quickJumps = storageService.getQuickJumps(activeProfileId);
 
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
@@ -155,6 +160,17 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
         setSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Close quick jump dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (qjRef.current && !qjRef.current.contains(e.target as Node)) {
+        setQjOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -356,6 +372,59 @@ export const Header: React.FC<HeaderProps> = ({
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Jump Dropdown */}
+            <div className="relative" ref={qjRef}>
+              <button
+                onClick={() => setQjOpen(!qjOpen)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
+                title="Quick Jumps"
+              >
+                <QuickJumpIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Jumps</span>
+                {quickJumps.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600/30 text-blue-400 text-[10px] font-black">
+                    {quickJumps.length}
+                  </span>
+                )}
+                {qjOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {qjOpen && (
+                <div className="absolute top-full right-0 mt-2 w-52 bg-[#0f172a]/95 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
+                  <div className="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950/40 to-transparent">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400" />
+                      <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">Quick Jumps</p>
+                    </div>
+                    {quickJumps.length === 0 ? (
+                      <p className="text-[10px] text-slate-500">No jumps saved yet</p>
+                    ) : (
+                      <div className="max-h-64 overflow-y-auto no-scrollbar space-y-0.5 pt-1">
+                        {quickJumps.map((jump) => (
+                          <button
+                            key={jump.id}
+                            onClick={() => {
+                              onQuickJump?.(jump);
+                              setQjOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-blue-500/10 transition-colors group"
+                          >
+                            <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-200 group-hover:text-white truncate">{jump.label}</p>
+                              <p className="text-[10px] text-slate-500 truncate">{jump.keywords.slice(0, 2).join(', ')}</p>
+                            </div>
+                            <span className="text-[9px] font-mono text-slate-600 group-hover:text-slate-400 shrink-0">
+                              {VIEW_LABELS[jump.targetView] || jump.targetView}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
