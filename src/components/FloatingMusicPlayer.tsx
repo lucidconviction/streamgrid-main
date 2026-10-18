@@ -106,7 +106,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
   const tracksRef = useRef(tracks);
   const indexRef = useRef(safeStart);
   const volumeRef = useRef(volume);
-  const nextTrackRef = useRef<() => void>(() => {});
+  const queueEndRef = useRef<() => void>(() => {});
   const radioExtendedRef = useRef(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const resizeHandlesRef = useRef<HTMLDivElement | null>(null);
@@ -445,7 +445,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
             if (!S) return;
             if (e.data === S.PLAYING) setIsPlaying(true);
             else if (e.data === S.PAUSED) setIsPlaying(false);
-            else if (e.data === S.ENDED) queueEndHandler();
+            else if (e.data === S.ENDED) queueEndRef.current();
           },
         },
       });
@@ -517,7 +517,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
               if (!S) return;
               if (e.data === S.PLAYING) setIsPlaying(true);
               else if (e.data === S.PAUSED) setIsPlaying(false);
-              else if (e.data === S.ENDED) queueEndHandler();
+              else if (e.data === S.ENDED) queueEndRef.current();
             },
           },
         });
@@ -525,9 +525,8 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
     }
   }, []);
 
-  const nextTrack = useCallback(() => selectTrack(indexRef.current + 1), [selectTrack]);
-  const prevTrack = useCallback(() => selectTrack(indexRef.current - 1), [selectTrack]);
-  useEffect(() => { nextTrackRef.current = nextTrack; }, [nextTrack]);
+  const prevTrack = () => { const q = tracksRef.current; if (!q.length) return; const idx = indexRef.current; selectTrack(((idx - 1) % q.length) + q.length); };
+  const nextTrack = () => { const q = tracksRef.current; if (!q.length) return; selectTrack(indexRef.current + 1); };
 
   // ── Radio/auto-mix: extend queue when it runs out ────────────────────────────
   const extendQueue = useCallback(async () => {
@@ -563,6 +562,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
       selectTrack(0);
     }
   }, [radioMode, extendQueue, selectTrack]);
+  useEffect(() => { queueEndRef.current = queueEndHandler; }, [queueEndHandler]);
 
   const togglePlay = useCallback(() => {
     const p = playerRef.current;
