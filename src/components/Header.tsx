@@ -31,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({
   const hlsRef = useRef<Hls | null>(null);
   const [currentBgStream, setCurrentBgStream] = useState<StreamItem | null>(null);
   const [bgReady, setBgReady] = useState(false);
+  const [bgScrolled, setBgScrolled] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
@@ -157,6 +158,13 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // Hide bg video when user scrolls down, show when at top
+  useEffect(() => {
+    const onScroll = () => setBgScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const handleSaveSearch = () => {
     const trimmed = searchInput.trim();
     if (!trimmed) return;
@@ -192,8 +200,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Background Live Stream Player */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* Background Live Stream Player — fills header only, hidden on scroll */}
+      <div className={`fixed top-0 left-0 right-0 z-0 pointer-events-none overflow-hidden transition-opacity duration-300 ${bgScrolled ? 'opacity-0' : 'opacity-100'}`} style={{ height: 'var(--header-height, 65px)' }}>
         <video
           ref={videoRef}
           className="w-full h-full object-cover opacity-55"
@@ -211,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({
           return isEmbed && !isHls && url ? (
             <iframe
               src={url}
-              className="w-full h-full object-cover scale-175 filter brightness-105"
+              className="w-full h-full object-cover filter brightness-105"
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
               style={{ border: 'none' }}
@@ -223,7 +231,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
         {!bgReady && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-blue-500/60 border-t-blue-400/80 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-blue-500/60 border-t-blue-400/80 rounded-full animate-spin" />
           </div>
         )}
       </div>
