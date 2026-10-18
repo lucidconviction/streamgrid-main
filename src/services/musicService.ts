@@ -189,7 +189,7 @@ export const fetchTop50Artists = async (): Promise<Artist[]> => {
             seen.add(key);
             allArtists.push({
               name: top.name,
-              thumbnail: top.thumbnail || getYouTubeChannelAvatar(top.channel_id || ''),
+              thumbnail: hdThumb(top.thumbnail || getYouTubeChannelAvatar(top.channel_id || ''), 800),
               channelId: top.channel_id,
             });
           }
@@ -214,7 +214,7 @@ export const fetchTop100Artists = async (): Promise<Artist[]> => {
     const data = await res.json();
     const artists: Artist[] = (data.artists || []).map((a: any) => ({
       name: a.name,
-      thumbnail: a.thumbnail || getYouTubeChannelAvatar(a.channel_id || ''),
+      thumbnail: hdThumb(a.thumbnail || getYouTubeChannelAvatar(a.channel_id || ''), 800),
       channelId: a.channel_id,
     }));
     if (artists.length >= 100) setCached(CACHE_KEY_TOP100, artists.slice(0, 100));

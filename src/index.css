@@ -15,10 +15,10 @@
 }
 
 @utility glass-card {
-  background: rgba(20, 32, 56, 0.78);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 @utility neon-glow-blue {

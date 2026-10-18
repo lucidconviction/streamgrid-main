@@ -13,6 +13,7 @@ import {
   type Artist, type MusicTrack, type ArtistCatalog, type AlbumData, type Album,
   getPlaylists, createPlaylist, deletePlaylist,
   fetchPopularTracks, fetchRadioTracks, type MusicPlaylist,
+  hdThumb,
 } from '../services/musicService';
 import {
   Plus, Trash2, Heart, ListMusic, Radio, Shuffle, Flame,
@@ -383,7 +384,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
                     playMode === 'audio'
                       ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-[#1a2235] text-[#8b97ad] hover:bg-[#243049] hover:text-white'
+                      : 'glass-card text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
                   }`}
                 >
                   <span className="text-base">♪</span> Audio
@@ -393,7 +394,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
                     playMode === 'video'
                       ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
-                      : 'bg-[#1a2235] text-[#8b97ad] hover:bg-[#243049] hover:text-white'
+                      : 'glass-card text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
                   }`}
                 >
                   <span className="text-base">▶</span> Video
@@ -413,11 +414,11 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="What do you want to listen to?"
-                    className="w-full max-w-md bg-[#1a2235] border border-transparent focus:border-[#3b82f6] rounded-full py-3 pl-12 pr-24 text-white placeholder-[#8b97ad] font-medium text-sm focus:outline-none transition-colors"
+                    className="w-full max-w-md glass-card rounded-full py-3 pl-12 pr-24 text-white placeholder-[#8b97ad] font-medium text-sm focus:outline-none"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     {searchActive && (
-                      <button type="button" onClick={clearSearch} className="px-3 py-1.5 text-xs font-bold text-[#8b97ad] hover:text-white bg-[#243049] rounded-full transition-colors">
+                      <button type="button" onClick={clearSearch} className="px-3 py-1.5 text-xs font-bold glass-card text-[#8b97ad] hover:text-white rounded-full transition-colors">
                         Clear
                       </button>
                     )}
@@ -440,7 +441,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     <button
                       key={i}
                       onClick={() => { setSearchQuery(q); setTimeout(() => handleSubmit({ preventDefault: () => {} } as any), 0); }}
-                      className="px-3 py-1 text-xs font-medium bg-[#1a2235] hover:bg-[#243049] text-[#8b97ad] hover:text-white rounded-full transition-colors"
+                      className="px-3 py-1 text-xs font-medium glass-card text-[#8b97ad] hover:text-white rounded-full transition-colors"
                     >
                       {q}
                     </button>
@@ -462,7 +463,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                         className={`shrink-0 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-200 ${
                           activeGenre === genre.id
                             ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105`
-                            : 'bg-[#1a2235] text-[#8b97ad] hover:bg-[#243049] hover:text-white'
+                            : 'glass-card rounded-full text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
                         }`}
                       >
                         {genre.label}
@@ -487,7 +488,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     <button
                       onClick={() => openGenreModal('mix')}
                       disabled={quickMixLoading}
-                      className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
+                  className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
                     >
                       {quickMixLoading ? (
                         <Clock className="w-5 h-5 animate-spin" />
@@ -499,7 +500,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     <button
                       onClick={() => openGenreModal('popular')}
                       disabled={quickPopularLoading}
-                      className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
+                      className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
                     >
                       {quickPopularLoading ? (
                         <Clock className="w-5 h-5 animate-spin" />
@@ -510,7 +511,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     </button>
                     <button
                       onClick={() => openCreatePlaylist()}
-                      className="flex items-center gap-3 px-4 py-3 bg-[#1a2235] hover:bg-[#243049] border border-slate-700 rounded-xl text-white font-bold text-sm transition-all"
+                      className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all"
                     >
                       <Plus className="w-5 h-5 text-[#3b82f6]" />
                       <span>Create Playlist</span>
@@ -518,7 +519,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     {playlists.length > 0 && (
                       <button
                         onClick={() => { setView('playlists'); }}
-                        className="flex items-center gap-3 px-4 py-3 bg-[#1a2235] hover:bg-[#243049] border border-slate-700 rounded-xl text-white font-bold text-sm transition-all"
+                        className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all"
                       >
                         <ListMusic className="w-5 h-5 text-[#8b5cf6]" />
                         <span>My Playlists ({playlists.length})</span>
@@ -604,7 +605,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     </h2>
                     <button
                       onClick={() => openCreatePlaylist()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#1a2235] hover:bg-[#243049] text-[#8b97ad] hover:text-white rounded-full border border-slate-700 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold glass-card text-[#8b97ad] hover:text-white rounded-full transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" /> New Playlist
                     </button>
@@ -700,9 +701,9 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               ) : catalog ? (
                 <>
                   {/* ── Hero ── */}
-                  <div className="flex flex-col sm:flex-row items-start gap-8 mt-2 mb-12">
+                  <div className="flex flex-col sm:flex-row items-start gap-8 mt-2 mb-12 glass-card rounded-2xl p-6">
                     <img
-                      src={catalog.thumbnail}
+                      src={hdThumb(catalog.thumbnail, 800)}
                       alt={catalog.artist}
                       className="w-52 h-52 rounded-lg object-cover shadow-2xl shrink-0"
                     />
@@ -734,7 +735,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                         </h2>
                         <button
                           onClick={() => openCreatePlaylist(catalog.tracks, `${catalog.artist} · Top Tracks`)}
-                          className="px-4 py-2 text-xs font-bold bg-[#1a2235] hover:bg-[#243049] text-[#8b97ad] hover:text-white rounded-full border border-slate-700 transition-colors flex items-center gap-1.5"
+                          className="px-4 py-2 text-xs font-bold glass-card rounded-full border border-slate-600 transition-colors flex items-center gap-1.5"
                         >
                           <ListMusic className="w-3.5 h-3.5" /> Save to Playlist
                         </button>
@@ -749,7 +750,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
                   {/* ── Albums ── */}
                   {catalog.albums.length > 0 && (
-                    <section className="mb-12">
+                    <section className="mb-12 glass-card rounded-2xl p-5">
                       <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
                         <Disc3 className="w-5 h-5 text-[#3b82f6]" /> Albums
                         <span className="text-xs font-bold text-[#8b97ad]">{catalog.albums.length} albums</span>
@@ -766,7 +767,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
                   {/* ── Singles ── */}
                   {catalog.singles.length > 0 && (
-                    <section className="mb-12">
+                    <section className="mb-12 glass-card rounded-2xl p-5">
                       <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
                         <Disc3 className="w-5 h-5 text-[#8b5cf6]" /> Singles
                         <span className="text-xs font-bold text-[#8b97ad]">{catalog.singles.length} singles</span>
@@ -783,7 +784,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
                   {/* ── Related Artists ── */}
                   {catalog.related.length > 0 && (
-                    <section>
+                    <section className="glass-card rounded-2xl p-5">
                       <h2 className="text-2xl font-black text-white mb-4">Related Artists</h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {catalog.related.map((rel, i) => (
@@ -840,7 +841,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   {/* ── Album Hero ── */}
                   <div className="flex flex-col sm:flex-row items-start gap-8 mt-2 mb-12">
                     <img
-                      src={albumData.thumbnail || albumBackTo?.thumbnail}
+                      src={hdThumb(albumData.thumbnail || albumBackTo?.thumbnail || '', 800)}
                       alt={albumData.title}
                       className="w-52 h-52 rounded-lg object-cover shadow-2xl shrink-0"
                     />
@@ -905,7 +906,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
           className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowGenreModal(false); }}
         >
-          <div className="bg-[#121826] rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl overflow-hidden">
+          <div className="glass-card rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden backdrop-blur-xl bg-[#0f1628]/85">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-white">
@@ -924,7 +925,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   onClick={() => handlePlayGenre(genre.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${
                     genre.id === 'all'
-                      ? 'bg-[#1a2235] hover:bg-[#243049] text-white'
+                      ? 'glass-card rounded-xl hover:bg-blue-900/20 text-white'
                       : `bg-gradient-to-r ${genre.gradient} text-white shadow-md`
                   }`}
                 >
@@ -957,14 +958,14 @@ const TrackList: React.FC<{
   currentVideoId?: string;
   onPlay: (index: number) => void;
 }> = ({ tracks, currentVideoId, onPlay }) => (
-  <div className="bg-[#121826]/60 rounded-lg overflow-hidden border border-[#1a2235]">
+  <div className="glass-card rounded-xl overflow-hidden">
     {tracks.map((track, i) => {
       const isCurrent = !!track.video_id && track.video_id === currentVideoId;
       return (
         <button
           key={track.video_id || `${track.title}-${i}`}
           onClick={() => onPlay(i)}
-          className={`w-full flex items-center gap-4 px-4 py-2.5 text-left transition-colors group hover:bg-[#1a2235] ${isCurrent ? 'bg-[#1a2235]' : ''} ${i > 0 ? 'border-t border-[#1a2235]/50' : ''}`}
+          className={`w-full flex items-center gap-4 px-4 py-2.5 text-left transition-colors group glass-card ${isCurrent ? 'bg-blue-900/30' : 'hover:bg-blue-900/10'} ${i > 0 ? 'border-t border-slate-700/30' : ''}`}
         >
           {/* Index / play */}
           <span className="w-6 text-center shrink-0">
@@ -1012,11 +1013,11 @@ const TrackList: React.FC<{
 const AlbumCard: React.FC<{ album: Album; onClick: () => void }> = ({ album, onClick }) => (
   <button
     onClick={onClick}
-    className="group rounded-lg p-3 transition-all duration-200 text-left w-full bg-[#121826] hover:bg-[#1a2235] hover:shadow-lg hover:shadow-[#3b82f6]/10"
+    className="group rounded-xl p-3 transition-all duration-200 text-left w-full glass-card hover:bg-blue-900/20 hover:shadow-lg hover:shadow-blue-500/10"
   >
     <div className="relative aspect-square rounded-md overflow-hidden mb-3 shadow-lg">
       <img
-        src={album.thumbnail || 'https://via.placeholder.com/600x600/1e293b/475569?text=Album'}
+        src={hdThumb(album.thumbnail || 'https://via.placeholder.com/600x600/1e293b/475569?text=Album', 800)}
         alt={album.title}
         className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
         loading="lazy"
@@ -1053,7 +1054,7 @@ const RevealCard: React.FC<{ children: React.ReactNode; delay?: number }> = ({ c
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
 const SkeletonCard = () => (
-  <div className="rounded-lg p-3 animate-pulse">
+  <div className="rounded-xl p-3 animate-pulse glass-card">
     <div className="aspect-square rounded-md bg-[#1e2a42] mb-3" />
     <div className="h-3 bg-[#1e2a42] rounded w-3/4 mb-1.5" />
     <div className="h-2.5 bg-[#1e2a42]/60 rounded w-1/2" />
@@ -1069,18 +1070,18 @@ const ArtistCard: React.FC<{
 }> = ({ artist, onClick, isActive }) => (
   <button
     onClick={onClick}
-    className={`group rounded-lg p-3 transition-all duration-200 text-left w-full relative ${
+    className={`group rounded-xl p-3 transition-all duration-200 text-left w-full relative glass-card ${
       isActive
-        ? 'bg-[#1a2235] ring-1 ring-[#3b82f6]/40'
-        : 'bg-[#121826] hover:bg-[#1a2235]'
-    } hover:shadow-lg hover:shadow-[#3b82f6]/10`}
+        ? 'ring-1 ring-[#3b82f6]/50 bg-blue-950/30'
+        : 'hover:bg-blue-900/20'
+    } hover:shadow-lg hover:shadow-blue-500/10`}
   >
     {isActive && (
       <div className="absolute top-0 left-3 right-3 h-0.5 bg-[#3b82f6] rounded-full" />
     )}
     <div className="relative aspect-square rounded-md overflow-hidden mb-3 shadow-lg">
       <img
-        src={artist.thumbnail || 'https://via.placeholder.com/300x300/1e293b/475569?text=' + encodeURIComponent(artist.name)}
+        src={hdThumb(artist.thumbnail || 'https://via.placeholder.com/300x300/1e293b/475569?text=' + encodeURIComponent(artist.name), 800)}
         alt={artist.name}
         className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
         loading="lazy"
@@ -1105,11 +1106,11 @@ const PlaylistCard: React.FC<{
   onDelete: () => void;
   onAdd: () => void;
 }> = ({ playlist, onPlay, onDelete, onAdd }) => (
-  <div className="group rounded-lg p-3 transition-all duration-200 text-left w-full bg-[#121826] hover:bg-[#1a2235] hover:shadow-lg hover:shadow-[#8b5cf6]/10">
+  <div className="group rounded-xl p-3 transition-all duration-200 text-left w-full glass-card hover:bg-violet-900/20 hover:shadow-lg hover:shadow-violet-500/10">
     <div className="relative aspect-square rounded-md overflow-hidden mb-3 shadow-lg bg-[#1e2a42]">
       {playlist.tracks.length > 0 ? (
         <img
-          src={playlist.tracks[0].thumbnail || ''}
+          src={hdThumb(playlist.tracks[0].thumbnail || '', 800)}
           alt={playlist.name}
           className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
           loading="lazy"
@@ -1164,7 +1165,7 @@ const PlaylistModal: React.FC<{
   onClose: () => void;
 }> = ({ mode, name, setName, selectedTracks, allTracks, setSelectedTracks, onSave, onClose }) => (
   <div className="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <div className="bg-[#121826] rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl overflow-hidden">
+    <div className="glass-card rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden backdrop-blur-xl bg-[#0f1628]/85">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
         <h3 className="text-lg font-black text-white">
           {mode === 'create' ? 'Create Playlist' : 'Add to Playlist'}
@@ -1180,7 +1181,7 @@ const PlaylistModal: React.FC<{
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Playlist name..."
-            className="w-full bg-[#1a2235] border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm font-medium placeholder-[#8b97ad] focus:outline-none focus:border-[#3b82f6] transition-colors mb-4"
+            className="w-full glass-card rounded-lg px-4 py-2.5 text-white text-sm font-medium placeholder-[#8b97ad] focus:outline-none focus:border-[#3b82f6] transition-colors mb-4"
             autoFocus
           />
         )}
@@ -1199,7 +1200,7 @@ const PlaylistModal: React.FC<{
                   if (checked) next.delete(vid); else next.add(vid);
                   setSelectedTracks(next);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${checked ? 'bg-blue-950/40' : 'hover:bg-[#1a2235]'}`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${checked ? 'glass-card bg-blue-950/40' : 'hover:bg-[#1a2235]/60'}`}
               >
                 <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${checked ? 'bg-[#3b82f6] border-[#3b82f6]' : 'border-slate-600'}`}>
                   {checked && <Check className="w-3 h-3 text-black" />}
@@ -1227,7 +1228,7 @@ const PlaylistModal: React.FC<{
         <button
           onClick={onSave}
           disabled={selectedTracks.size === 0 || (mode === 'create' && !name.trim())}
-          className="px-5 py-2 text-sm font-black bg-[#3b82f6] hover:bg-[#2563eb] disabled:bg-[#243049] disabled:text-[#8b97ad] text-white rounded-lg transition-colors"
+          className="px-5 py-2 text-sm font-black glass-card bg-[#3b82f6]/80 hover:bg-[#2563eb]/80 disabled:bg-[#243049] disabled:text-[#8b97ad] text-white rounded-lg transition-colors"
         >
           {mode === 'create' ? 'Create Playlist' : 'Add Selected'}
         </button>
