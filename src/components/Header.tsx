@@ -31,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   const hlsRef = useRef<Hls | null>(null);
   const [currentBgStream, setCurrentBgStream] = useState<StreamItem | null>(null);
   const [bgReady, setBgReady] = useState(false);
-  const [bgScrolled, setBgScrolled] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
@@ -148,7 +147,17 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Hide bg video when user scrolls down, show when at top
   useEffect(() => {
-    const onScroll = () => setBgScrolled(window.scrollY > 10);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const el = document.querySelector('.bg-video-container') as HTMLElement | null;
+          if (el) el.style.opacity = window.scrollY > 10 ? '0' : '1';
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -189,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Background Live Stream Player — fills header, hidden on scroll */}
-      <div className="fixed top-0 left-0 right-0 z-0 pointer-events-none transition-opacity duration-300" style={{ height: 'var(--header-height, 65px)', overflow: 'hidden' }}>
+      <div className="bg-video-container fixed top-0 left-0 right-0 z-0 pointer-events-none transition-opacity duration-300" style={{ height: 'var(--header-height, 65px)', overflow: 'hidden' }}>
         {/* Video is 2× header height so object-cover always covers width without borders */}
         <video
           ref={videoRef}
