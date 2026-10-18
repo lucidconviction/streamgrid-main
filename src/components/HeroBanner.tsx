@@ -112,14 +112,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   if (!featuredStream) {
     return (
-      <div className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[520px] bg-slate-900 animate-pulse rounded-2xl mb-8" />
+      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[520px] bg-slate-900 animate-pulse rounded-2xl mb-6 sm:mb-8" />
     );
   }
 
   const displayPoster = posterSrc || '/src/assets/images/hero_championship_live_1792048678438.jpg';
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden mb-10 border border-blue-500/20 bg-[#0c1220]">
+    <div className="relative w-full rounded-2xl overflow-hidden mb-6 sm:mb-8 md:mb-10 border border-blue-500/20 bg-[#0c1220]">
       {/* ── Background layer ── */}
       {!videoError && (
         <div className="absolute inset-0 z-0 overflow-hidden">
@@ -172,7 +172,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
       </div>
 
       {/* ── Hero Content — sits above everything ── */}
-      <div className="relative z-10 px-5 sm:px-10 py-10 sm:py-16 max-w-3xl flex flex-col justify-end min-h-[50vh] sm:min-h-[460px] lg:min-h-[520px]">
+      <div className="relative z-10 px-4 sm:px-8 md:px-10 py-8 sm:py-12 md:py-16 max-w-3xl flex flex-col justify-end min-h-[40vh] sm:min-h-[320px] md:min-h-[460px] lg:min-h-[520px]">
         {/* Clean unboxed metadata with separators (Zero-Pill discipline) */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-300 mb-3 tracking-wide">
           <span className="flex items-center gap-1.5 text-blue-400 font-semibold uppercase tracking-wider">

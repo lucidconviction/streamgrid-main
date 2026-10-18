@@ -728,7 +728,7 @@ export default function App() {
               />
 
               {/* Multiview Quick Launcher Strip */}
-              <div className="mb-8 p-5 rounded-xl bg-gradient-to-r from-blue-950/60 via-slate-900 to-[#0f121a] border border-blue-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="mb-6 sm:mb-8 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-blue-950/60 via-slate-900 to-[#0f121a] border border-blue-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-lg bg-blue-600/25 border border-blue-500/50 flex items-center justify-center text-blue-300 shrink-0">
                     <LayoutGrid className="w-6 h-6" />
@@ -742,9 +742,9 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => setCurrentView('multiview')}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/40 whitespace-nowrap transition-transform hover:scale-105 active:scale-95"
+                  className="px-4 py-2 sm:px-5 sm:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/40 whitespace-nowrap transition-transform hover:scale-105 active:scale-95"
                 >
-                  Open Multiview ({activeMultiviewCount} Screens Active)
+                  Multiview ({activeMultiviewCount} active)
                 </button>
               </div>
 
@@ -766,12 +766,12 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex items-stretch gap-5 overflow-x-auto no-scrollbar py-2 px-1">
+                  <div className="flex items-stretch gap-3 sm:gap-5 overflow-x-auto no-scrollbar py-2 px-1">
                     {watchHistory.slice(0, 6).map((item) => (
                       <div
                         key={item.id}
                         onClick={() => handlePlayHistoryItem(item)}
-                        className="w-[240px] sm:w-[280px] md:w-[340px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
+                        className="w-[180px] sm:w-[220px] md:w-[280px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
                       >
                         <div className="relative aspect-video w-full bg-slate-900">
                           <img

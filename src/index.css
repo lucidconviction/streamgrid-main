@@ -67,6 +67,34 @@ html, body {
   min-width: 44px;
 }
 
+/* ── Mobile / Tablet Optimizations ─────────────────────────────── */
+
+/* Disable hover-based interactions on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .group:hover > .group-hover\\:scale-110 { transform: none; }
+  .group:hover > .group-hover\\:opacity-100 { opacity: inherit; }
+}
+
+/* Smooth momentum scrolling on iOS */
+html {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on music player controls */
+.music-player-header,
+.music-player-header * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 640px) {
+  button, a, label {
+    min-height: 44px;
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -369,37 +369,37 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
       {/* ─── Main Content ─── */}
       <main className="flex-1 overflow-y-auto relative bg-gradient-to-b from-[#1a2235] to-[#0a0f1c]">
-        <div className="px-8 pb-32">
+        <div className="px-4 sm:px-5 md:px-8 pb-24 sm:pb-32">
 
           {/* ════════════════ HOME VIEW ════════════════ */}
           {view === 'home' && (
             <>
-              <h1 className="text-3xl font-black text-white mb-6">{getGreeting()}</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-white mb-4 sm:mb-6">{getGreeting()}</h1>
 
               {/* ── Video / Audio Toggle ── */}
-              <div className="mb-6 flex items-center gap-3">
-                <span className="text-xs font-mono uppercase tracking-widest text-[#8b97ad]">Playback</span>
+              <div className="mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3 flex-wrap">
+                <span className="text-xs font-mono uppercase tracking-widest text-[#8b97ad] shrink-0">Playback</span>
                 <button
                   onClick={() => setPlayMode('audio')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                     playMode === 'audio'
                       ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
                       : 'glass-card text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
                   }`}
                 >
-                  <span className="text-base">♪</span> Audio
+                  <span className="text-sm">♪</span> <span className="hidden sm:inline">Audio</span>
                 </button>
                 <button
                   onClick={() => setPlayMode('video')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all ${
                     playMode === 'video'
                       ? 'bg-[#3b82f6] text-white shadow-lg shadow-blue-500/30'
                       : 'glass-card text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
                   }`}
                 >
-                  <span className="text-base">▶</span> Video
+                  <span className="text-sm">▶</span> <span className="hidden sm:inline">Video</span>
                 </button>
-                <span className="text-[10px] text-[#8b97ad] ml-2">
+                <span className="text-[10px] text-[#8b97ad]/70 ml-1 hidden sm:inline">
                   {playMode === 'video' ? 'Video overlay · audio in background' : 'Audio only'}
                 </span>
               </div>
@@ -414,7 +414,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="What do you want to listen to?"
-                    className="w-full max-w-md glass-card rounded-full py-3 pl-12 pr-24 text-white placeholder-[#8b97ad] font-medium text-sm focus:outline-none"
+                    className="w-full max-w-md glass-card rounded-full py-2.5 sm:py-3 pl-12 pr-24 text-white placeholder-[#8b97ad] font-medium text-sm focus:outline-none"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     {searchActive && (
@@ -454,13 +454,13 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
               {/* ── Genre Chips ── */}
               {!searchActive && (
-                <div className="mb-8">
+                <div className="mb-6 sm:mb-8">
                   <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                     {GENRES.map((genre) => (
                       <button
                         key={genre.id}
                         onClick={() => handleGenreSelect(genre.id)}
-                        className={`shrink-0 px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                        className={`shrink-0 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-200 ${
                           activeGenre === genre.id
                             ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105`
                             : 'glass-card rounded-full text-[#8b97ad] hover:bg-blue-900/20 hover:text-white'
@@ -482,47 +482,48 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
               {/* ── Quick Actions ── */}
               {!searchActive && activeGenre === 'all' && (
-                <section className="mb-8">
-                  <h2 className="text-xl font-black text-white mb-4">Quick Play</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <section className="mb-6 sm:mb-8">
+                  <h2 className="text-lg sm:text-xl font-black text-white mb-3 sm:mb-4">Quick Play</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                     <button
                       onClick={() => openGenreModal('mix')}
                       disabled={quickMixLoading}
-                  className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 glass-card rounded-xl text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50"
                     >
                       {quickMixLoading ? (
-                        <Clock className="w-5 h-5 animate-spin" />
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                       ) : (
-                        <Shuffle className="w-5 h-5" />
+                        <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
-                      <span>Mix</span>
+                      <span className="truncate">Mix</span>
                     </button>
                     <button
                       onClick={() => openGenreModal('popular')}
                       disabled={quickPopularLoading}
-                      className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 glass-card rounded-xl text-white font-bold text-xs sm:text-sm transition-all disabled:opacity-50"
                     >
                       {quickPopularLoading ? (
-                        <Clock className="w-5 h-5 animate-spin" />
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                       ) : (
-                        <Flame className="w-5 h-5" />
+                        <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
-                      <span>Popular</span>
+                      <span className="truncate">Popular</span>
                     </button>
                     <button
                       onClick={() => openCreatePlaylist()}
-                      className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 glass-card rounded-xl text-white font-bold text-xs sm:text-sm transition-all"
                     >
-                      <Plus className="w-5 h-5 text-[#3b82f6]" />
-                      <span>Create Playlist</span>
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[#3b82f6]" />
+                      <span className="truncate">New Playlist</span>
                     </button>
                     {playlists.length > 0 && (
                       <button
                         onClick={() => { setView('playlists'); }}
-                        className="flex items-center gap-3 px-4 py-3 glass-card rounded-xl text-white font-bold text-sm transition-all"
+                        className="flex items-center justify-center gap-2 px-3 py-2.5 sm:px-4 sm:py-3 glass-card rounded-xl text-white font-bold text-xs sm:text-sm transition-all"
                       >
-                        <ListMusic className="w-5 h-5 text-[#8b5cf6]" />
-                        <span>My Playlists ({playlists.length})</span>
+                        <ListMusic className="w-4 h-4 sm:w-5 sm:h-5 text-[#8b5cf6]" />
+                        <span className="truncate hidden sm:inline">My Playlists ({playlists.length})</span>
+                        <span className="truncate sm:inline sm:hidden">{playlists.length} PL</span>
                       </button>
                     )}
                   </div>
@@ -538,7 +539,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                     </div>
                   ) : (
                     <div>
-                      <h2 className="text-2xl font-black text-white mb-4">
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-3 sm:mb-4">
                         {artists.length > 0 ? `Results for "${searchQuery}"` : 'No artists found'}
                       </h2>
                       {artists.length > 0 ? (
@@ -565,7 +566,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               {!searchActive && activeGenre !== 'all' && (
                 <section className="mb-10">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-white">
+                    <h2 className="text-xl sm:text-2xl font-black text-white">
                       {GENRES.find(g => g.id === activeGenre)?.label || activeGenre} Artists
                     </h2>
                     <button
@@ -600,7 +601,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               {!searchActive && activeGenre === 'all' && playlists.length > 0 && (
                 <section className="mb-10">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                       <ListMusic className="w-6 h-6 text-[#8b5cf6]" /> My Playlists
                     </h2>
                     <button
@@ -632,7 +633,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               {/* ── Recently Played ── */}
               {!searchActive && activeGenre === 'all' && recentArtists.length > 0 && !isGenreLoading && (
                 <section className="mb-10">
-                  <h2 className="text-xl font-black text-white mb-4">Recently Played</h2>
+                  <h2 className="text-lg sm:text-xl font-black text-white mb-3 sm:mb-4">Recently Played</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {recentArtists.map((artist, i) => (
                       <RevealCard key={`rec-${artist.name}-${i}`} delay={i * 30}>
@@ -647,7 +648,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               {!searchActive && activeGenre === 'all' && (
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-white">Top 100 Artists</h2>
+                    <h2 className="text-xl sm:text-2xl font-black text-white">Top 100 Artists</h2>
                     <span className="text-xs font-bold text-[#8b97ad] uppercase tracking-widest">{top100Artists.length} artists</span>
                   </div>
                   {isGenreLoading || top100Artists.length === 0 ? (
@@ -686,8 +687,8 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
               {catalogLoading ? (
                 <div>
-                  <div className="flex items-end gap-8 mb-10">
-                    <div className="w-52 h-52 rounded-lg bg-[#1e2a42] animate-pulse" />
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-8 mb-8 sm:mb-10">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-52 md:h-52 rounded-lg bg-[#1e2a42] animate-pulse shrink-0" />
                     <div className="pb-4 w-full max-w-sm">
                       <div className="h-3 w-16 bg-[#1e2a42] rounded mb-3 animate-pulse" />
                       <div className="h-10 w-2/3 bg-[#1e2a42] rounded mb-3 animate-pulse" />
@@ -701,25 +702,25 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               ) : catalog ? (
                 <>
                   {/* ── Hero ── */}
-                  <div className="flex flex-col sm:flex-row items-start gap-8 mt-2 mb-12 glass-card rounded-2xl p-6">
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-8 mt-2 mb-8 sm:mb-12 glass-card rounded-2xl p-4 sm:p-5 md:p-6">
                     <img
                       src={hdThumb(catalog.thumbnail, 800)}
                       alt={catalog.artist}
-                      className="w-52 h-52 rounded-lg object-cover shadow-2xl shrink-0"
+                      className="w-28 h-28 sm:w-36 sm:h-36 md:w-52 md:h-52 rounded-lg object-cover shadow-2xl shrink-0"
                     />
-                    <div className="pb-2 min-w-0">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">Artist</p>
-                      <h1 className="text-5xl font-black text-white leading-tight">{catalog.artist}</h1>
-                      <p className="text-[#8b97ad] mt-3">
+                    <div className="pb-2 min-w-0 flex-1">
+                      <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">Artist</p>
+                      <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white leading-tight">{catalog.artist}</h1>
+                      <p className="text-[#8b97ad] mt-2 sm:mt-3 text-xs sm:text-sm">
                         {[catalog.monthly_listeners && `${catalog.monthly_listeners} monthly listeners`, catalog.subscribers].filter(Boolean).join('  ·  ')}
                       </p>
                       {catalog.tracks.length > 0 && (
                         <button
                           onClick={() => playQueue(catalog.tracks, 0, { name: catalog.artist, thumbnail: catalog.thumbnail }, catalog.channel_id)}
-                          className="mt-5 w-14 h-14 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] hover:scale-105 flex items-center justify-center shadow-xl shadow-[#3b82f6]/30 transition-all"
+                          className="mt-4 sm:mt-5 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] hover:scale-105 flex items-center justify-center shadow-xl shadow-[#3b82f6]/30 transition-all"
                           title="Play all"
                         >
-                          <Play className="w-6 h-6 text-white fill-current ml-0.5" />
+                          <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current ml-0.5" />
                         </button>
                       )}
                     </div>
@@ -729,7 +730,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   {catalog.tracks.length > 0 && (
                     <section className="mb-12">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                        <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                           <Music2 className="w-5 h-5 text-[#3b82f6]" /> Top Songs
                           <span className="text-xs font-bold text-[#8b97ad]">{catalog.tracks.length} tracks</span>
                         </h2>
@@ -751,7 +752,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   {/* ── Albums ── */}
                   {catalog.albums.length > 0 && (
                     <section className="mb-12 glass-card rounded-2xl p-5">
-                      <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-3 sm:mb-4 flex items-center gap-2">
                         <Disc3 className="w-5 h-5 text-[#3b82f6]" /> Albums
                         <span className="text-xs font-bold text-[#8b97ad]">{catalog.albums.length} albums</span>
                       </h2>
@@ -768,7 +769,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   {/* ── Singles ── */}
                   {catalog.singles.length > 0 && (
                     <section className="mb-12 glass-card rounded-2xl p-5">
-                      <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-3 sm:mb-4 flex items-center gap-2">
                         <Disc3 className="w-5 h-5 text-[#8b5cf6]" /> Singles
                         <span className="text-xs font-bold text-[#8b97ad]">{catalog.singles.length} singles</span>
                       </h2>
@@ -785,7 +786,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
                   {/* ── Related Artists ── */}
                   {catalog.related.length > 0 && (
                     <section className="glass-card rounded-2xl p-5">
-                      <h2 className="text-2xl font-black text-white mb-4">Related Artists</h2>
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-3 sm:mb-4">Related Artists</h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {catalog.related.map((rel, i) => (
                           <RevealCard key={`rel-${rel.name}-${i}`} delay={Math.min(i * 20, 200)}>
@@ -823,8 +824,8 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
 
               {albumLoading ? (
                 <div>
-                  <div className="flex items-end gap-8 mb-10">
-                    <div className="w-52 h-52 rounded-lg bg-[#1e2a42] animate-pulse" />
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-8 mb-8 sm:mb-10">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-52 md:h-52 rounded-lg bg-[#1e2a42] animate-pulse shrink-0" />
                     <div className="pb-4 w-full max-w-sm">
                       <div className="h-3 w-16 bg-[#1e2a42] rounded mb-3 animate-pulse" />
                       <div className="h-10 w-2/3 bg-[#1e2a42] rounded mb-3 animate-pulse" />
@@ -839,27 +840,27 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
               ) : albumData ? (
                 <>
                   {/* ── Album Hero ── */}
-                  <div className="flex flex-col sm:flex-row items-start gap-8 mt-2 mb-12">
+                  <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-8 mt-2 mb-8 sm:mb-12 glass-card rounded-2xl p-4 sm:p-5 md:p-6">
                     <img
                       src={hdThumb(albumData.thumbnail || albumBackTo?.thumbnail || '', 800)}
                       alt={albumData.title}
-                      className="w-52 h-52 rounded-lg object-cover shadow-2xl shrink-0"
+                      className="w-28 h-28 sm:w-36 sm:h-36 md:w-52 md:h-52 rounded-lg object-cover shadow-2xl shrink-0"
                     />
                     <div className="pb-2 min-w-0">
                       <p className="text-[11px] font-bold uppercase tracking-widest text-[#8b97ad]">
                         {albumBackTo ? 'Album' : 'Playlist'}{albumData.year ? ` · ${albumData.year}` : ''}
                       </p>
-                      <h1 className="text-4xl font-black text-white leading-tight">{albumData.title}</h1>
-                      <p className="text-[#8b97ad] mt-3">{catalog?.artist}  ·  {albumData.tracks.length} tracks</p>
+                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight">{albumData.title}</h1>
+                      <p className="text-[#8b97ad] mt-2 sm:mt-3 text-xs sm:text-sm">{catalog?.artist}  ·  {albumData.tracks.length} tracks</p>
                       <button
                         onClick={() => playQueue(albumData.tracks, 0, {
                           name: catalog?.artist || albumData.title,
                           thumbnail: albumData.thumbnail || albumBackTo?.thumbnail || '',
                         })}
-                        className="mt-5 w-14 h-14 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] hover:scale-105 flex items-center justify-center shadow-xl shadow-[#3b82f6]/30 transition-all"
+                        className="mt-4 sm:mt-5 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] hover:scale-105 flex items-center justify-center shadow-xl shadow-[#3b82f6]/30 transition-all"
                         title="Play album"
                       >
-                        <Play className="w-6 h-6 text-white fill-current ml-0.5" />
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white fill-current ml-0.5" />
                       </button>
                     </div>
                   </div>
@@ -1054,10 +1055,10 @@ const RevealCard: React.FC<{ children: React.ReactNode; delay?: number }> = ({ c
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
 const SkeletonCard = () => (
-  <div className="rounded-xl p-3 animate-pulse glass-card">
-    <div className="aspect-square rounded-md bg-[#1e2a42] mb-3" />
-    <div className="h-3 bg-[#1e2a42] rounded w-3/4 mb-1.5" />
-    <div className="h-2.5 bg-[#1e2a42]/60 rounded w-1/2" />
+  <div className="rounded-xl p-2.5 sm:p-3 animate-pulse glass-card">
+    <div className="aspect-square rounded-md bg-[#1e2a42] mb-2 sm:mb-3" />
+    <div className="h-2.5 sm:h-3 bg-[#1e2a42] rounded w-3/4 mb-1.5" />
+    <div className="h-2 bg-[#1e2a42]/60 rounded w-1/2" />
   </div>
 );
 

@@ -600,7 +600,7 @@ export const FloatingMusicPlayer: React.FC<FloatingMusicPlayerProps> = ({
   return (
     <>
       {/* Mini Player — Spotify style floating bar */}
-      <div className="fixed bottom-6 right-6 z-50 w-80 bg-[#1a2235] rounded-lg shadow-2xl overflow-hidden border border-[#243049]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 w-full sm:w-80 sm:bottom-6 sm:right-6 bg-[#1a2235] rounded-t-lg sm:rounded-lg shadow-2xl overflow-hidden border border-[#243049] sm:border-t-0">
         <div className="flex items-center gap-3 px-4 py-3">
           <img
             src={artistThumbnail || currentTrack.thumbnail || '/hero.png'}

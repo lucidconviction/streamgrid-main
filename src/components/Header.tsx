@@ -220,9 +220,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Header Bar */}
       <header className="sticky top-0 z-50 w-full glass-panel border-b border-blue-500/20 transition-colors" style={{ height: 'var(--header-height, 65px)' }}>
-        <div className="flex items-center justify-between gap-4 px-3 sm:px-4" style={{ height: 'var(--header-height, 65px)' }}>
+        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4" style={{ height: 'var(--header-height, 65px)' }}>
           {/* Left: Logo + Title */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('home')}
               className="flex items-center gap-2 text-left group focus:outline-none"
@@ -243,10 +243,10 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <span className="text-sm font-bold">R</span>
               </div>
-              <span className="text-base font-bold tracking-tight text-white whitespace-nowrap">
+              <span className="text-base sm:text-[13px] font-bold tracking-tight text-white whitespace-nowrap">
                 <span className="text-yellow-400">RdNutz</span>
                 <span className="text-orange-400">TV</span>
-                <span className="text-slate-400 text-sm font-medium ml-0.5">Streams</span>
+                <span className="text-slate-400 text-xs sm:text-sm font-medium ml-0.5 hidden sm:inline">Streams</span>
               </span>
             </button>
           </div>
