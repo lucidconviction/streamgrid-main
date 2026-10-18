@@ -484,6 +484,28 @@ export const Header: React.FC<HeaderProps> = ({
                     ) : (
                       /* ── Jump List ── */
                       <div className="max-h-52 overflow-y-auto no-scrollbar space-y-0.5">
+                        {/* ── Global Search (3rd option) ── */}
+                        {quickJumps.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const allKeywords = quickJumps.flatMap((j) => j.keywords).join(', ');
+                              onSearch?.(allKeywords);
+                              setQjOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left bg-gradient-to-r from-blue-600/20 to-purple-600/10 hover:from-blue-600/30 hover:to-purple-600/20 border border-blue-500/30 transition-colors group"
+                          >
+                            <Search className="w-4 h-4 text-blue-400 shrink-0 group-hover:text-blue-300" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-white group-hover:text-blue-200 truncate">
+                                Global Search
+                              </p>
+                              <p className="text-[9px] text-slate-400 truncate">
+                                {quickJumps.length} jump{quickJumps.length > 1 ? 's' : ''} · {quickJumps.flatMap((j) => j.keywords).length} keywords
+                              </p>
+                            </div>
+                            <span className="text-[9px] font-mono text-blue-400/70 shrink-0">ALL</span>
+                          </button>
+                        )}
                         {quickJumps.map((jump) => (
                           <div key={jump.id} className="group flex items-center gap-1">
                             <button
