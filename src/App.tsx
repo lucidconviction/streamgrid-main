@@ -574,7 +574,6 @@ export default function App() {
           multiviewCount={activeMultiviewCount}
           activeProfile={activeProfile}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
-          onFilterCategory={(cat) => setSelectedSportCategory(cat)}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           onSearch={(query: string) => {

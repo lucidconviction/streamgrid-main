@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Compass,
   Radio,
@@ -10,15 +10,9 @@ import {
   Layers,
   Search,
   X,
-  ChevronRight,
   Music,
-  Plus,
-  Trash2,
-  Edit3,
-  Settings2,
 } from 'lucide-react';
 import { UserProfile } from '../types/stream';
-import { storageService } from '../services/storageService';
 
 interface SidebarProps {
   currentView: string;
@@ -26,7 +20,6 @@ interface SidebarProps {
   multiviewCount: number;
   activeProfile: UserProfile;
   onOpenProfileModal: () => void;
-  onFilterCategory?: (category: string) => void;
   isOpen: boolean;
   onToggle: () => void;
   onSearch?: (query: string) => void;
@@ -38,37 +31,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   multiviewCount,
   activeProfile,
   onOpenProfileModal,
-  onFilterCategory,
   isOpen,
   onToggle,
   onSearch,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  // Quick jump state
-  const [quickJumps, setQuickJumps] = useState<
-    Array<{ id: string; label: string; keywords: string[]; targetView: string }>
-  >([]);
-  const [showQuickJumpEditor, setShowQuickJumpEditor] = useState(false);
-  const [qjEditId, setQjEditId] = useState<string | null>(null);
-  const [qjLabel, setQjLabel] = useState('');
-  const [qjKeywords, setQjKeywords] = useState('');
-  const [qjTarget, setQjTarget] = useState(currentView);
-  const [isAdding, setIsAdding] = useState(false);
-  const profileId = activeProfile.id;
-
-  const VIEW_LABELS: Record<string, string> = {
-    home: 'Explore',
-    sports: 'Live Sports',
-    channels: '24/7 Channels',
-    iptv: 'IPTV Playlists',
-    music: 'Music',
-    multiview: 'Multiview',
-    history: 'Watch History',
-    watchlist: 'Watchlist',
-    smutt: 'Nett Smutt',
-  };
 
   const navItems = [
     { id: 'home', label: 'Explore', icon: Compass },
@@ -81,82 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'multiview', label: 'Multiview Grid', icon: LayoutGrid, count: multiviewCount },
     { id: 'smutt', label: 'Nett Smutt', icon: Flame },
   ];
-
-  const sportsShortcuts = [
-    { label: 'Basketball', category: 'Basketball' },
-    { label: 'Football / Soccer', category: 'Football / Soccer' },
-    { label: 'Motorsport / F1', category: 'Motorsport / F1' },
-    { label: 'Combat / MMA', category: 'Combat / MMA' },
-    { label: 'Tennis', category: 'Tennis' },
-    { label: 'Golf', category: 'Golf' },
-  ];
-
-  // Load quick jumps on mount and when profile changes
-  useEffect(() => {
-    setQuickJumps(storageService.getQuickJumps(profileId));
-  }, [profileId]);
-
-  const handleNavigateAndSearch = (keywords: string[], targetView: string) => {
-    if (targetView && targetView !== currentView) {
-      onNavigate(targetView);
-    }
-    if (onSearch) {
-      // Split comma-separated keywords and search each
-      const allQueries = keywords.flatMap((kw) =>
-        kw.split(',').map((k) => k.trim()).filter(Boolean)
-      );
-      if (allQueries.length === 1) {
-        onSearch(allQueries[0]);
-      } else {
-        // For multi-keyword, search the combined query
-        onSearch(allQueries.join(', '));
-      }
-    }
-    if (window.innerWidth < 1024) onToggle();
-  };
-
-  const startAdd = () => {
-    setQjEditId(null);
-    setQjLabel('');
-    setQjKeywords('');
-    setQjTarget(currentView);
-    setIsAdding(true);
-  };
-
-  const startEdit = (jump: { id: string; label: string; keywords: string[]; targetView: string }) => {
-    setQjEditId(jump.id);
-    setQjLabel(jump.label);
-    setQjKeywords(jump.keywords.join(', '));
-    setQjTarget(jump.targetView);
-    setIsAdding(true);
-  };
-
-  const saveJump = () => {
-    const label = qjLabel.trim();
-    const kws = qjKeywords
-      .split(',')
-      .map((k) => k.trim())
-      .filter(Boolean);
-    if (!label || kws.length === 0) return;
-    if (qjEditId) {
-      storageService.editQuickJump(profileId, qjEditId, label, kws, qjTarget);
-    } else {
-      storageService.addQuickJump(profileId, label, kws, qjTarget);
-    }
-    setQuickJumps(storageService.getQuickJumps(profileId));
-    setIsAdding(false);
-    setShowQuickJumpEditor(false);
-  };
-
-  const deleteJump = (id: string) => {
-    storageService.removeQuickJump(profileId, id);
-    setQuickJumps(storageService.getQuickJumps(profileId));
-  };
-
-  const cancelAdd = () => {
-    setIsAdding(false);
-    setShowQuickJumpEditor(false);
-  };
 
   return (
     <>
@@ -265,154 +157,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               </button>
             </div>
-
-            {/* Categories */}
-            <div className="pt-3 mt-3 border-t border-slate-800/80">
-              <p className="px-3 text-[11px] font-mono uppercase tracking-wider text-slate-300 mb-2">
-                Quick Jump
-              </p>
-              <div className="space-y-0.5">
-                {sportsShortcuts.map((sp) => (
-                  <button
-                    key={sp.category}
-                    onClick={() => {
-                      if (onFilterCategory) onFilterCategory(sp.category);
-                      onNavigate('sports');
-                      if (window.innerWidth < 1024) onToggle();
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-blue-500/10 rounded-lg transition-colors group font-medium"
-                  >
-                    <span className="group-hover:translate-x-0.5 transition-transform">{sp.label}</span>
-                    <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-slate-300" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Quick Jumps */}
-            <div className="pt-2 mt-2 border-t border-slate-800/60">
-              <div className="flex items-center justify-between px-3 mb-1.5">
-                <p className="text-[11px] font-mono uppercase tracking-wider text-blue-400">
-                  Saved Jumps
-                </p>
-                <button
-                  onClick={startAdd}
-                  className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-blue-400 transition-colors"
-                  title="Add quick jump"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Add</span>
-                </button>
-              </div>
-              <div className="space-y-0.5 px-1">
-                {quickJumps.length === 0 ? (
-                  <p className="px-3 py-1.5 text-[11px] text-slate-600 italic">
-                    No saved jumps yet — tap Add to create one
-                  </p>
-                ) : (
-                  quickJumps.map((jump) => (
-                    <div key={jump.id} className="group flex items-center gap-1">
-                      <button
-                        onClick={() => handleNavigateAndSearch(jump.keywords, jump.targetView)}
-                        className="flex-1 flex items-center gap-2 px-2.5 py-1.5 text-left text-xs text-slate-300 hover:text-white hover:bg-blue-500/10 rounded-lg transition-colors"
-                      >
-                        <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-blue-400 shrink-0" />
-                        <span className="truncate font-medium">{jump.label}</span>
-                      </button>
-                      <button
-                        onClick={() => startEdit(jump)}
-                        className="p-1 text-slate-600 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all"
-                        title="Edit"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => deleteJump(jump.id)}
-                        className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Quick Jump Editor Modal */}
-            {isAdding && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-[#12151e] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-                    <p className="text-sm font-bold text-white">
-                      {qjEditId ? 'Edit Quick Jump' : 'Add Quick Jump'}
-                    </p>
-                    <button onClick={cancelAdd} className="text-slate-500 hover:text-white">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="p-5 space-y-4">
-                    <div>
-                      <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 block">
-                        Label
-                      </label>
-                      <input
-                        type="text"
-                        value={qjLabel}
-                        onChange={(e) => setQjLabel(e.target.value)}
-                        placeholder="e.g. My Artists"
-                        autoFocus
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/60"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 block">
-                        Keywords (comma-separated)
-                      </label>
-                      <input
-                        type="text"
-                        value={qjKeywords}
-                        onChange={(e) => setQjKeywords(e.target.value)}
-                        placeholder="e.g. Drake, Taylor Swift, The Weeknd"
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/60"
-                      />
-                      <p className="text-[10px] text-slate-600 mt-1">
-                        Multiple keywords will all be searched when tapped
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 block">
-                        Target View
-                      </label>
-                      <select
-                        value={qjTarget}
-                        onChange={(e) => setQjTarget(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/60 appearance-none"
-                      >
-                        {Object.entries(VIEW_LABELS).map(([id, label]) => (
-                          <option key={id} value={id}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="px-5 py-3 border-t border-slate-800 flex items-center justify-end gap-2">
-                    <button
-                      onClick={cancelAdd}
-                      className="px-3 py-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveJump}
-                      disabled={!qjLabel.trim() || !qjKeywords.trim()}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-lg transition-colors"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </aside>
