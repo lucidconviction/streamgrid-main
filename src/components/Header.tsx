@@ -38,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const bgFailRef = useRef(false);
   const rotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cooldownRef = useRef(false);
   const [retryToken, setRetryToken] = useState(0);
 
   const VIEW_LABELS: Record<string, string> = {
@@ -77,13 +78,23 @@ export const Header: React.FC<HeaderProps> = ({
     }
   }, []);
 
-  // Set up HLS background player — fires immediately on mount
+  // Set up background player — fires immediately on mount
+  // Uses iframe for embed URLs, <video> for direct HLS/video URLs
   const setupBgPlayer = useCallback((stream: StreamItem) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const url = stream.directEmbedUrl || '';
+    const url = stream.bgVideoUrl || stream.directEmbedUrl || '';
     if (!url) { setBgReady(true); return; }
+
+    const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
+    const isHls = url.includes('.m3u8') || url.includes('.ts');
+
+    // If it's an embed URL, we can't use <video> — signal ready so the iframe renders
+    if (isEmbed && !isHls) {
+      setBgReady(true);
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) { setBgReady(true); return; }
 
     // Destroy previous HLS instance
     if (hlsRef.current) {
@@ -103,36 +114,33 @@ export const Header: React.FC<HeaderProps> = ({
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
       bgFailRef.current = true;
       setBgReady(false);
-      setRetryToken((t) => t + 1);
+      if (!cooldownRef.current) {
+        cooldownRef.current = true;
+        setTimeout(() => { cooldownRef.current = false; }, 3000);
+        setRetryToken((t) => t + 1);
+      }
     };
     const onEnded = () => {
-      bgFailRef.current = true;
-      setBgReady(false);
-      setRetryToken((t) => t + 1);
+      // Live streams don't end naturally — only retry if it was a real failure
+      // (network error / fatal HLS error). Don't trigger retry on ended.
     };
     video.onerror = onError;
     video.onended = onEnded;
 
-    if (Hls.isSupported() && url.includes('.m3u8')) {
+    if (isHls && Hls.isSupported()) {
       const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
         maxBufferLength: 16,
         maxMaxBufferLength: 32,
-        startLevel: 0,
-        lowLatencyMode: true,
-        liveDurationInfinity: true,
-        manifestLoadingTimeOut: 3000,
-        levelLoadingTimeOut: 3000,
-        fragLoadingTimeOut: 3000,
       });
+      hlsRef.current = hls;
       hls.loadSource(url);
       hls.attachMedia(video);
-      hlsRef.current = hls;
-
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play().catch(() => {});
+        video.play().catch(() => setBgReady(true));
         setBgReady(true);
       });
-
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
           switch (data.type) {
@@ -147,6 +155,11 @@ export const Header: React.FC<HeaderProps> = ({
               hlsRef.current = null;
               bgFailRef.current = true;
               setBgReady(false);
+              if (!cooldownRef.current) {
+                cooldownRef.current = true;
+                setTimeout(() => { cooldownRef.current = false; }, 3000);
+                setRetryToken((t) => t + 1);
+              }
               break;
           }
         }
@@ -193,6 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     if (liveStreams.length === 0) return;
     if (!bgFailRef.current) return; // only act on failure
+    if (cooldownRef.current) return; // respect cooldown
 
     const available = getPool().filter(
       (s) => s.id !== currentBgStream?.id
@@ -266,6 +280,22 @@ export const Header: React.FC<HeaderProps> = ({
           loop
           preload="auto"
         />
+        {/* Iframe fallback for embed URLs that <video> can't play */}
+        {currentBgStream && (() => {
+          const url = currentBgStream.bgVideoUrl || currentBgStream.directEmbedUrl || '';
+          const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
+          const isHls = url.includes('.m3u8') || url.includes('.ts');
+          return isEmbed && !isHls && url ? (
+            <iframe
+              src={url}
+              className="w-full h-full object-cover scale-175 filter brightness-105"
+              allow="autoplay; encrypted-media; fullscreen"
+              allowFullScreen
+              style={{ border: 'none' }}
+              title="Background stream"
+            />
+          ) : null;
+        })()}
         {/* Gradient overlay — lighter so video shows through and pages are brighter */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
         {!bgReady && (
