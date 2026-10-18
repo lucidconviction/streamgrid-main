@@ -55,31 +55,19 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Pick the best available stream for background
   const pickBgStream = useCallback(() => {
-    // Prefer live streams with bgVideoUrl (direct HLS source)
-    const byVideo = liveStreams.filter((s) => s.bgVideoUrl && s.status === 'live');
-    if (byVideo.length > 0) return byVideo[0];
-    // Then live streams with directEmbedUrl
-    const byEmbed = liveStreams.filter((s) => s.directEmbedUrl && s.status === 'live');
-    if (byEmbed.length > 0) return byEmbed[0];
-    // Fallback to any stream with a URL
+    // Only use bgVideoUrl (raw HLS/direct video) — embed URLs can't play in <video>
+    const withVideo = liveStreams.filter((s) => s.bgVideoUrl && s.status === 'live');
+    if (withVideo.length > 0) return withVideo[0];
     return liveStreams[0] || null;
   }, [liveStreams]);
 
   // Set up the background player for a given stream
   const setupBgPlayer = useCallback((stream: StreamItem) => {
-    const url = stream.bgVideoUrl || stream.directEmbedUrl || '';
+    // Only use bgVideoUrl (raw HLS/video) — embed URLs can't play in <video>
+    const url = stream.bgVideoUrl || '';
     if (!url) { setBgReady(true); return; }
 
-    const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
     const isHls = url.includes('.m3u8') || url.includes('.ts');
-
-    // If it's an embed URL, we can't use <video> — render iframe instead
-    if (isEmbed && !isHls) {
-      setCurrentBgStream(stream);
-      setBgReady(true);
-      return;
-    }
-
     const video = videoRef.current;
     if (!video) { setBgReady(true); return; }
 
@@ -109,7 +97,6 @@ export const Header: React.FC<HeaderProps> = ({
         video.play().catch(() => {});
         setBgReady(true);
       });
-      // On fatal error, try once more with a different stream after 5s
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal && hlsRef.current) {
           hls.destroy();
@@ -127,7 +114,8 @@ export const Header: React.FC<HeaderProps> = ({
       video.src = url;
       video.play().catch(() => {}).finally(() => setBgReady(true));
     } else {
-      setBgReady(true);
+      video.src = url;
+      video.play().catch(() => {}).finally(() => setBgReady(true));
     }
   }, [pickBgStream]);
 
@@ -211,22 +199,6 @@ export const Header: React.FC<HeaderProps> = ({
           loop
           preload="auto"
         />
-        {/* Iframe fallback for embed URLs that <video> can't play */}
-        {currentBgStream && (() => {
-          const url = currentBgStream.bgVideoUrl || currentBgStream.directEmbedUrl || '';
-          const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
-          const isHls = url.includes('.m3u8') || url.includes('.ts');
-          return isEmbed && !isHls && url ? (
-            <iframe
-              src={url}
-              className="w-full h-full object-cover filter brightness-105"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              style={{ border: 'none' }}
-              title="Background stream"
-            />
-          ) : null;
-        })()}
         {/* Gradient overlay — lighter so video shows through and pages are brighter */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#050810]/45 via-[#050810]/30 to-[#050810]/45" />
         {!bgReady && (
