@@ -57,18 +57,34 @@ export const Header: React.FC<HeaderProps> = ({
     // Only use bgVideoUrl (raw HLS/direct video) — embed URLs can't play in <video>
     const withVideo = liveStreams.filter((s) => s.bgVideoUrl && s.status === 'live');
     if (withVideo.length > 0) return withVideo[0];
-    return liveStreams[0] || null;
+    // Fallback: any stream with bgVideoUrl regardless of status
+    const anyWithVideo = liveStreams.filter((s) => s.bgVideoUrl);
+    if (anyWithVideo.length > 0) return anyWithVideo[0];
+    return null;
   }, [liveStreams]);
 
   // Set up the background player for a given stream
   const setupBgPlayer = useCallback((stream: StreamItem) => {
-    // Only use bgVideoUrl (raw HLS/video) — embed URLs can't play in <video>
     const url = stream.bgVideoUrl || '';
-    if (!url) { setBgReady(true); return; }
-
-    const isHls = url.includes('.m3u8') || url.includes('.ts');
     const video = videoRef.current;
     if (!video) { setBgReady(true); return; }
+
+    // If no video URL, fall back to poster image
+    if (!url) {
+      if (stream.poster) {
+        video.removeAttribute('src');
+        video.style.backgroundImage = `url(${stream.poster})`;
+        video.style.backgroundSize = 'cover';
+        video.style.backgroundPosition = 'center';
+      }
+      setBgReady(true);
+      return;
+    }
+
+    // Clear any poster fallback
+    video.style.backgroundImage = '';
+
+    const isHls = url.includes('.m3u8') || url.includes('.ts');
 
     // Destroy previous HLS instance
     if (hlsRef.current) {
@@ -122,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     if (liveStreams.length === 0) return;
     const stream = pickBgStream();
-    if (stream) {
+    if (stream && stream.id !== currentBgStream?.id) {
       setCurrentBgStream(stream);
       setupBgPlayer(stream);
     }
@@ -202,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Video is 2× header height so object-cover always covers width without borders */}
         <video
           ref={videoRef}
-          className="w-full h-[130px] object-cover opacity-55"
+          className="w-full h-[130px] object-cover opacity-55 bg-center bg-cover"
           muted
           playsInline
           autoPlay
