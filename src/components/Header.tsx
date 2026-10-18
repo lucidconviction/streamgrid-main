@@ -192,7 +192,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className={`fixed top-0 left-0 right-0 z-0 pointer-events-none overflow-hidden transition-opacity duration-300 ${bgScrolled ? 'opacity-0' : 'opacity-100'}`} style={{ height: 'var(--header-height, 65px)' }}>
         <video
           ref={videoRef}
-          className="w-full h-full object-cover opacity-55"
+          className="w-full h-full object-cover opacity-55 scale-150"
           muted
           playsInline
           autoPlay
