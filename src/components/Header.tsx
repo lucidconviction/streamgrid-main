@@ -36,7 +36,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState('');
-  const rotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
@@ -50,33 +49,22 @@ export const Header: React.FC<HeaderProps> = ({
     smutt: 'Nett Smutt',
   };
 
-  // ── Bulletproof background player ──────────────────────────────────────
-  // Always has a video playing in the header. On failure, immediately
-  // switches to another stream. Auto-rotates every 10 minutes.
+  // ── Header background player ─────────────────────────────────────────
+  // Pick ONE stream and play it. No rotation. No switching. Simple.
 
-  const getPool = useCallback(() => {
-    // Prefer live streams with embed URLs; fall back to any stream with a URL
-    const live = liveStreams.filter((s) => s.directEmbedUrl && s.status === 'live');
-    if (live.length > 0) return live;
-    return liveStreams.filter((s) => s.directEmbedUrl);
+  // Pick the best available stream for background
+  const pickBgStream = useCallback(() => {
+    // Prefer live streams with bgVideoUrl (direct HLS source)
+    const byVideo = liveStreams.filter((s) => s.bgVideoUrl && s.status === 'live');
+    if (byVideo.length > 0) return byVideo[0];
+    // Then live streams with directEmbedUrl
+    const byEmbed = liveStreams.filter((s) => s.directEmbedUrl && s.status === 'live');
+    if (byEmbed.length > 0) return byEmbed[0];
+    // Fallback to any stream with a URL
+    return liveStreams[0] || null;
   }, [liveStreams]);
 
-  const pickBgStream = useCallback((exclude?: StreamItem | null) => {
-    const pool = getPool();
-    if (pool.length === 0) return null;
-    const filtered = exclude ? pool.filter((s) => s.id !== exclude.id) : pool;
-    return (filtered.length > 0 ? filtered : pool)[Math.floor(Math.random() * (filtered.length > 0 ? filtered.length : pool.length))];
-  }, [getPool]);
-
-  const clearRotationTimer = useCallback(() => {
-    if (rotationTimerRef.current) {
-      clearTimeout(rotationTimerRef.current);
-      rotationTimerRef.current = null;
-    }
-  }, []);
-
-  // Set up background player — fires immediately on mount
-  // Uses iframe for embed URLs, <video> for direct HLS/video URLs
+  // Set up the background player for a given stream
   const setupBgPlayer = useCallback((stream: StreamItem) => {
     const url = stream.bgVideoUrl || stream.directEmbedUrl || '';
     if (!url) { setBgReady(true); return; }
@@ -84,8 +72,9 @@ export const Header: React.FC<HeaderProps> = ({
     const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
     const isHls = url.includes('.m3u8') || url.includes('.ts');
 
-    // If it's an embed URL, we can't use <video> — signal ready so the iframe renders
+    // If it's an embed URL, we can't use <video> — render iframe instead
     if (isEmbed && !isHls) {
+      setCurrentBgStream(stream);
       setBgReady(true);
       return;
     }
@@ -105,10 +94,6 @@ export const Header: React.FC<HeaderProps> = ({
     video.muted = true;
     video.volume = 0;
 
-    // No per-stream error retry — just let the rotation timer handle switching
-    video.onerror = null;
-    video.onended = null;
-
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
@@ -123,13 +108,18 @@ export const Header: React.FC<HeaderProps> = ({
         video.play().catch(() => {});
         setBgReady(true);
       });
-      // Don't handle fatal errors — the rotation timer picks the next stream
+      // On fatal error, try once more with a different stream after 5s
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          // Just destroy; rotation timer will pick next stream automatically
+        if (data.fatal && hlsRef.current) {
           hls.destroy();
           hlsRef.current = null;
-          setBgReady(false);
+          setTimeout(() => {
+            const next = pickBgStream();
+            if (next && next.id !== stream.id) {
+              setCurrentBgStream(next);
+              setupBgPlayer(next);
+            }
+          }, 5000);
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -138,34 +128,17 @@ export const Header: React.FC<HeaderProps> = ({
     } else {
       setBgReady(true);
     }
-  }, []);
+  }, [pickBgStream]);
 
-  // Schedule a periodic rotation — picks a random stream every 30s
-  const scheduleRotation = useCallback(() => {
-    clearRotationTimer();
-    rotationTimerRef.current = setTimeout(() => {
-      const pool = getPool();
-      if (pool.length < 2) return;
-      const next = pool[Math.floor(Math.random() * pool.length)];
-      if (next.id !== currentBgStream?.id) {
-        setCurrentBgStream(next);
-        setupBgPlayer(next);
-      }
-      scheduleRotation(); // reschedule
-    }, 30 * 1000); // 30 seconds
-  }, [getPool, currentBgStream, setupBgPlayer, clearRotationTimer]);
-
-  // Start playing immediately when streams load
+  // Start playing when streams load
   useEffect(() => {
     if (liveStreams.length === 0) return;
     const stream = pickBgStream();
     if (stream) {
       setCurrentBgStream(stream);
       setupBgPlayer(stream);
-      scheduleRotation();
     }
     return () => {
-      clearRotationTimer();
       if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
     };
   }, [liveStreams]); // eslint-disable-line react-hooks/exhaustive-deps

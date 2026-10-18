@@ -12,7 +12,7 @@ import { storageService } from './services/storageService';
 import type { MusicTrack } from './services/musicService';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { HeroSlideshow } from './components/HeroSlideshow';
+import { HeroBanner } from './components/HeroBanner';
 import { StreamCarousel } from './components/StreamCarousel';
 import { SearchResultsView } from './components/SearchResultsView';
 import { PlayerView } from './components/PlayerView';
@@ -716,8 +716,8 @@ export default function App() {
           ) : (
             /* Home / Explore View (Netflix & YouTube Hybrid) */
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
-                {/* Netflix Cinematic Hero Slideshow */}
-              <HeroSlideshow
+                {/* Netflix Cinematic Hero Banner */}
+              <HeroBanner
                 featuredStream={featuredStream}
                 onPlayStream={handlePlayStream}
                 onAddToMultiview={handleAddToMultiview}
