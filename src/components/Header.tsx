@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon, Youtube } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -45,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
     sports: 'Live Sports',
+    youtube: 'Stream Hub',
     channels: '24/7 Channels',
     iptv: 'IPTV Playlists',
     music: 'Music',
@@ -437,7 +438,14 @@ export const Header: React.FC<HeaderProps> = ({
                             : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         }`}
                       >
-                        {label}
+                        {id === 'youtube' ? (
+                          <span className="flex items-center gap-2">
+                            <Youtube className="w-4 h-4" />
+                            {label}
+                          </span>
+                        ) : (
+                          label
+                        )}
                       </button>
                     ))}
                   </div>
