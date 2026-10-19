@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=4207 --host=0.0.0.0",
+    "dev": "python3 scripts/music_server.py & python3 scripts/youtube_server.py & vite --port=4207 --host=0.0.0.0",
     "dev:python": "python3 scripts/music_server.py &",
     "dev:youtube": "python3 scripts/youtube_server.py &",
     "build:youtube": "cd scripts/java_youtube && eval \"$(bash ../find-java.sh)\" && gradle :jar --no-daemon",

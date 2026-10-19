@@ -247,24 +247,19 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
         </div>
       </div>
 
-      {/* ── Featured channels row (6 channels) ── */}
-      <div className="mb-6 overflow-x-auto no-scrollbar pb-2">
-        <div className="flex items-center gap-3 px-1">
-          {FEATURED_CHANNELS.map((ch, idx) => (
+      {/* ── Featured channels row (6 quick-jump channels) ── */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+          {FEATURED_CHANNELS.map((ch) => (
             <button
               key={ch.handle}
               onClick={() => handleChannelOpen(ch.handle)}
-              className="flex-shrink-0 flex flex-col items-center text-center w-[80px] glass-card rounded-xl p-3 hover:border-slate-600 transition-colors touch-manipulation"
+              className="flex-shrink-0 flex flex-col items-center text-center w-[76px] glass-card rounded-xl p-2.5 hover:border-slate-600 transition-colors touch-manipulation"
             >
-              <div className="relative mb-2">
-                <img
-                  src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#${['64748b','3b82f6','10b981','f59e0b','ef4444','8b5cf6'][idx % 6]}"/><stop offset="100%" stop-color="#${['1e293b','1e40af','065f46','92400e','991b1b','5b21b6'][idx % 6]}"/></linearGradient></defs><rect width="128" height="128" fill="url(#a)"/><text x="64" y="75" text-anchor="middle" fill="white" font-size="56" font-family="system-ui,sans-serif" font-weight="bold">${ch.name[0]}</text></svg>`)}`}
-                  alt={ch.name}
-                  className="w-16 h-16 rounded-full border-2 border-slate-600 object-cover"
-                  referrerPolicy="no-referrer"
-                />
+              <div className="relative mb-1.5">
+                <div className="w-12 h-12 rounded-full border-2 border-slate-600 flex items-center justify-center text-lg font-black text-white bg-gradient-to-br from-slate-600 to-slate-800">{ch.name[0]}</div>
               </div>
-              <p className="text-[11px] font-bold text-white truncate w-full">{ch.name}</p>
+              <p className="text-[10px] font-bold text-white truncate w-full">{ch.name}</p>
             </button>
           ))}
         </div>
@@ -345,12 +340,69 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
           )}
         </div>
       ) : (
-        <StreamDeck
-          streams={streams}
-          onOpenStream={handleOpen}
-          reminders={reminders}
-          onToggleReminder={onToggleReminder}
-        />
+        <>
+          <StreamDeck
+            streams={streams}
+            onOpenStream={handleOpen}
+            reminders={reminders}
+            onToggleReminder={onToggleReminder}
+          />
+
+          {/* ─- Channel grid (all 173 real YouTube profiles) ─- */}
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">All Channels</h2>
+              <span className="text-[11px] font-mono text-slate-500">{CHANNELS.length} profiles</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {CHANNELS.map((ch) => {
+                const isSaved = savedChannelIds.includes(ch.youtubeChannelId || ch.id);
+                return (
+                  <div
+                    key={ch.id}
+                    className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation relative group/ch"
+                  >
+                    <button
+                      onClick={() => handleChannelOpen(ch.youtubeChannelId || ch.id)}
+                      className="flex flex-col items-center text-center"
+                    >
+                      <div className="relative">
+                        <img
+                          src={ch.avatar}
+                          alt={ch.name}
+                          className="w-14 h-14 rounded-full border-2 border-slate-700"
+                          referrerPolicy="no-referrer"
+                        />
+                        {ch.verified && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center text-white text-[9px] font-black">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-bold text-white truncate w-full mt-2">{ch.name}</p>
+                      <p className="text-[9px] text-slate-500 font-mono">{ch.subscribers} subs</p>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSavedChannel(ch.youtubeChannelId || ch.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 transition-colors opacity-0 group-hover/ch:opacity-100"
+                      aria-label={isSaved ? 'Unsave channel' : 'Save channel'}
+                      title={isSaved ? 'Unsave channel' : 'Save channel'}
+                    >
+                      {isSaved ? (
+                        <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <Bookmark className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
