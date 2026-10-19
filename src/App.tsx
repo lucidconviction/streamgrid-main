@@ -560,7 +560,6 @@ export default function App() {
           setSearchPanelQuery(query);
           setSearchPanelOpen(true);
         }}
-        savedSearches={storageService.getSavedSearches(activeProfile.id)}
         activeProfileId={activeProfile.id}
         onQuickJump={(jump) => {
           if (jump.targetView === '__global__') {

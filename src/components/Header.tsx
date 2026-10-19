@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, Star, X, Trash2, Bookmark, Zap, Flame as QuickJumpIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -12,7 +12,6 @@ interface HeaderProps {
   onPlayStream: (stream: StreamItem) => void;
   currentPage?: string;
   onSearch?: (query: string) => void;
-  savedSearches?: string[];
   activeProfileId?: string;
   onQuickJump?: (jump: { keywords: string[]; targetView: string }) => void;
 }
@@ -25,7 +24,6 @@ export const Header: React.FC<HeaderProps> = ({
   onPlayStream,
   currentPage,
   onSearch,
-  savedSearches = [],
   activeProfileId = 'profile-alex',
   onQuickJump,
 }) => {
@@ -35,9 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [bgReady, setBgReady] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
   const pageDropdownRef = useRef<HTMLDivElement>(null);
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
-  const searchDropdownRef = useRef<HTMLDivElement>(null);
-  const [searchInput, setSearchInput] = useState('');
   const [qjOpen, setQjOpen] = useState(false);
   const qjRef = useRef<HTMLDivElement>(null);
   const quickJumps = storageService.getQuickJumps(activeProfileId);
@@ -163,17 +158,6 @@ export const Header: React.FC<HeaderProps> = ({
       if (pageDropdownRef.current && !pageDropdownRef.current.contains(e.target as Node)) {
         setPageDropdownOpen(false);
       }
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
-        setSearchDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  // Close quick jump dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
       if (qjRef.current && !qjRef.current.contains(e.target as Node)) {
         setQjOpen(false);
       }
@@ -198,39 +182,6 @@ export const Header: React.FC<HeaderProps> = ({
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const handleSaveSearch = () => {
-    const trimmed = searchInput.trim();
-    if (!trimmed) return;
-    storageService.addSavedSearch(activeProfileId, trimmed);
-    // Multi-keyword: split by comma and search each, showing merged results
-    const queries = trimmed.split(',').map((q) => q.trim()).filter(Boolean);
-    if (queries.length === 1) {
-      if (onSearch) onSearch(queries[0]);
-    } else {
-      // Combine all for a single search that returns results for each
-      if (onSearch) onSearch(trimmed);
-    }
-    setSearchInput('');
-    setSearchDropdownOpen(false);
-  };
-
-  const handleLoadSearch = (query: string) => {
-    // Support comma-separated keywords
-    const queries = query.split(',').map((q) => q.trim()).filter(Boolean);
-    if (queries.length === 1 && onSearch) {
-      onSearch(queries[0]);
-    } else {
-      // Multi-keyword: show the combined query
-      if (onSearch) onSearch(query);
-    }
-    setSearchDropdownOpen(false);
-  };
-
-  const handleRemoveSearch = (e: React.MouseEvent, query: string) => {
-    e.stopPropagation();
-    storageService.removeSavedSearch(activeProfileId, query);
-  };
 
   return (
     <>
@@ -288,103 +239,9 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Saved Searches + Page Dropdown + Sidebar Toggle */}
+          {/* Right: Quick Search + Page Dropdown + Sidebar Toggle */}
           <div className="flex items-center gap-2">
-            {/* Saved Searches Dropdown */}
-            <div className="relative" ref={searchDropdownRef}>
-              <button
-                onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
-                title="Saved Searches"
-              >
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Searches</span>
-                <span className="sm:hidden">🔍</span>
-                {searchDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-              {searchDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-44 bg-[#0f172a]/92 backdrop-blur-2xl border border-blue-500/25 rounded-2xl shadow-2xl shadow-blue-900/50 z-50 overflow-hidden animate-slideDown">
-                  {/* Top: Save Input */}
-                  <div className="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-950/40 to-transparent">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Zap className="w-3.5 h-3.5 text-blue-400" />
-                      <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">
-                        Save
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveSearch();
-                        }}
-                        placeholder="Press Enter..."
-                        autoFocus
-                        className="flex-1 bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/60 transition-colors"
-                      />
-                      <button
-                        onClick={handleSaveSearch}
-                        disabled={!searchInput.trim()}
-                        className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all touch-manipulation hover:scale-105 active:scale-95"
-                      >
-                        <Star className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Bottom: Saved List */}
-                  <div className="max-h-56 overflow-y-auto no-scrollbar">
-                    {savedSearches.length === 0 ? (
-                      <div className="p-5 text-center">
-                        <Bookmark className="w-6 h-6 text-slate-700 mx-auto mb-2" />
-                        <p className="text-xs text-slate-500">No saves yet</p>
-                        <p className="text-[9px] text-slate-600 mt-0.5">Type + Enter to save</p>
-                      </div>
-                    ) : (
-                      <div className="p-1.5">
-                        <div className="flex items-center justify-between px-2 pb-1.5 mb-1">
-                          <span className="text-[9px] font-mono uppercase tracking-widest text-slate-500">
-                            {savedSearches.length} Saved
-                          </span>
-                          <button
-                            onClick={() => storageService.clearSavedSearches(activeProfileId)}
-                            className="text-[9px] text-slate-600 hover:text-red-400 transition-colors"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                        <div className="space-y-0.5">
-                          {savedSearches.map((query, i) => (
-                            <div key={i} className="group flex items-center rounded-lg transition-all hover:bg-blue-500/10">
-                              <button
-                                onClick={() => handleLoadSearch(query)}
-                                className="flex-1 flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 text-left touch-manipulation"
-                              >
-                                <Search className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300 transition-colors" />
-                                <span className="text-xs text-slate-300 group-hover:text-white truncate">
-                                  {query}
-                                </span>
-                              </button>
-                              <button
-                                onClick={(e) => handleRemoveSearch(e, query)}
-                                className="p-1.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all touch-manipulation"
-                                title="Remove"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Jump Dropdown */}
+            {/* Quick Search Dropdown (replaces Saved Searches) */}
             <div className="relative" ref={qjRef}>
               <button
                 onClick={() => setQjOpen(!qjOpen)}
@@ -392,7 +249,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Quick Jumps"
               >
                 <QuickJumpIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Jumps</span>
+                <span className="hidden sm:inline">Quick Search</span>
                 {quickJumps.length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-blue-600/30 text-blue-400 text-[10px] font-black">
                     {quickJumps.length}
