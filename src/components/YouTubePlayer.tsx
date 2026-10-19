@@ -142,10 +142,6 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     setInputChat('');
   };
 
-  const handleSubscribe = () => {
-    onBack();
-  };
-
   const handleCopyShare = () => {
     navigator.clipboard.writeText(stream.embedUrl);
   };
@@ -341,15 +337,8 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             <p className="text-sm text-slate-400 mt-2 leading-relaxed">{stream.description}</p>
           </div>
 
-          {/* ── Action buttons ── */}
+          {/* ── Actions ── */}
           <div className="flex items-center gap-2 mt-4 flex-wrap">
-            <button
-              onClick={handleSubscribe}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black transition-colors touch-manipulation"
-            >
-              <Radio className="w-3.5 h-3.5" />
-              Subscribe on YouTube
-            </button>
             {isUpcoming && (
               <button
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-colors"
@@ -362,7 +351,7 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-colors"
             >
               <Bookmark className="w-3.5 h-3.5" />
-              Save
+              Save to Watchlist
             </button>
           </div>
 

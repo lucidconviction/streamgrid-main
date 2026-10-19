@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  StreamItem,
-  UserProfile,
-  WatchHistoryEntry,
-  MultiviewSlot,
-  MultiviewLayout,
-  MultiviewPreset,
-} from './types/stream';
+import { StreamItem, UserProfile, WatchHistoryEntry, MultiviewSlot, MultiviewLayout, MultiviewPreset, YouTubeStream, SavedChannelWithVideos } from './types/stream';
 import { streamService, purgeExpiredScreenshots } from './services/streamService';
 import { storageService } from './services/storageService';
 import type { MusicTrack } from './services/musicService';
@@ -24,7 +17,6 @@ import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
 import { YouTubeHub } from './components/YouTubeHub';
-import { SavedChannel, SavedChannelWithVideos } from './types/stream';
 import { SavedChannelsRow } from './components/SavedChannelsRow';
 import { CHANNELS, fetchChannelVideos } from './services/youtubeService';
 
@@ -76,6 +68,7 @@ export default function App() {
     storageService.getSavedChannels(activeProfile.id)
   );
   const [savedChannelData, setSavedChannelData] = useState<SavedChannelWithVideos[]>([]);
+  const [pendingYtVideo, setPendingYtVideo] = useState<YouTubeStream | null>(null);
 
   // Load latest video for each saved channel via NewPipe
   useEffect(() => {
@@ -941,15 +934,11 @@ export default function App() {
               <SavedChannelsRow
                 channels={savedChannelData}
                 onRemoveChannel={(handle) => handleToggleSavedChannel(handle)}
-                onOpenVideo={(stream) =>
-                  handlePlayStream({
-                    ...stream,
-                    poster: stream.thumbnail,
-                    provider: 'streamed' as StreamItem['provider'],
-                    status: (stream.status === 'shorts' ? 'live' : stream.status) as StreamItem['status'],
-                    directEmbedUrl: stream.embedUrl,
-                  })
-                }
+                onOpenVideo={(stream) => {
+                  // Open YouTube videos in-app (YouTubeHub theater-mode player)
+                  setPendingYtVideo(stream);
+                  setCurrentView('youtube');
+                }}
                 onOpenChannel={onOpenYouTubeChannel}
               />
 

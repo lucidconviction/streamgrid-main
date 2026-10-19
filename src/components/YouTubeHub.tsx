@@ -10,8 +10,19 @@ import {
   loadEngineStreams,
   engineSearch,
   engineToStream,
+  fetchChannelVideos,
   fmtDuration,
 } from '../services/youtubeService';
+
+// 6 featured channels for the header (handles only, no subs logic)
+const FEATURED_CHANNELS = [
+  { handle: '@ufc', name: 'UFC' },
+  { handle: '@MrBallen', name: 'MrBallen' },
+  { handle: '@TheDailyShow', name: 'The Daily Show' },
+  { handle: '@Fireship', name: 'Fireship' },
+  { handle: '@Complex', name: 'Complex' },
+  { handle: '@Jubilee', name: 'Jubilee' },
+];
 
 interface YouTubeHubProps {
   watchlistIds: string[];
@@ -22,6 +33,8 @@ interface YouTubeHubProps {
   savedChannelIds: string[];
   onToggleSavedChannel: (handle: string) => void;
   onOpenChannel: (handle: string) => void;
+  pendingVideo?: YouTubeStream | null;
+  onPendingVideoConsumed?: () => void;
 }
 
 export const YouTubeHub: React.FC<YouTubeHubProps> = ({
@@ -33,6 +46,8 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   savedChannelIds,
   onToggleSavedChannel,
   onOpenChannel,
+  pendingVideo,
+  onPendingVideoConsumed,
 }) => {
   const [selected, setSelected] = useState<YouTubeStream | null>(null);
   const [playing, setPlaying] = useState<YouTubeStream | null>(null);
@@ -44,7 +59,17 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const [searchResults, setSearchResults] = useState<YouTubeStream[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [channelVideos, setChannelVideos] = useState<{ handle: string; videos: YouTubeStream[] } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTokenRef = useRef(0);
+
+  // Check for pending video from home carousel
+  useEffect(() => {
+    if (pendingVideo) {
+      setPlaying(pendingVideo);
+      onPendingVideoConsumed?.();
+    }
+  }, [pendingVideo]);
 
   // Check for pending channel to open (from sessionStorage)
   useEffect(() => {
@@ -55,23 +80,26 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
     }
   }, []);
 
-  const handleChannelOpen = (handle: string) => {
+  const handleChannelOpen = async (handle: string) => {
     setQuery(handle);
+    setChannelVideos({ handle, videos: [] });
     setSearching(true);
-    setTimeout(async () => {
-      try {
-        const res = await engineSearch(handle, 24);
-        if (res.results?.length) {
-          setSearchResults(res.results.map((r) => engineToStream(r)));
-        } else {
-          onShowToast(`No videos found for ${handle}`, 'info');
-        }
-      } catch {
-        onShowToast(`Search unavailable for ${handle}`, 'warning');
-      } finally {
-        setSearching(false);
+    setSearchError(null);
+    try {
+      const videos = await fetchChannelVideos(handle, 24);
+      if (videos.length > 0) {
+        setChannelVideos({ handle, videos });
+        setSearchResults(videos);
+      } else {
+        setSearchError(`No videos found for ${handle}`);
+        onShowToast(`No videos found for ${handle}`, 'info');
       }
-    }, 0);
+    } catch (e) {
+      setSearchError(String(e));
+      onShowToast(`Search unavailable`, 'warning');
+    } finally {
+      setSearching(false);
+    }
   };
 
   useEffect(() => {
@@ -86,6 +114,7 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const handleQueryChange = (value: string) => {
     setQuery(value);
     setSearchError(null);
+    setChannelVideos(null);
     if (searchTimer.current) clearTimeout(searchTimer.current);
 
     const q = value.trim();
@@ -95,35 +124,29 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
       return;
     }
     setSearching(true);
+    const token = ++searchTokenRef.current;
     searchTimer.current = setTimeout(async () => {
+      if (token !== searchTokenRef.current) return;
       try {
         const res = await engineSearch(q, 24);
-        if (!cancelledRef.current && res.results?.length) {
-          setSearchResults(res.results.map((r) => engineToStream(r)));
-        } else {
-          // Local fallback: match against loaded streams + catalog
-          const pool = searchResults ? streams : streams;
-          const lower = q.toLowerCase();
-          const local = pool.filter(
-            (s) =>
-              s.title.toLowerCase().includes(lower) ||
-              s.channel.name.toLowerCase().includes(lower) ||
-              (s.category || '').toLowerCase().includes(lower)
-          );
-          setSearchResults(local.length ? local : null);
+        if (token !== searchTokenRef.current) return;
+        if (res.error) {
+          throw new Error(res.error);
         }
-      } catch {
-        // Engine unavailable — local fallback
-        const lower = q.toLowerCase();
-        const local = streams.filter(
-          (s) =>
-            s.title.toLowerCase().includes(lower) ||
-            s.channel.name.toLowerCase().includes(lower) ||
-            (s.category || '').toLowerCase().includes(lower)
-        );
-        setSearchResults(local.length ? local : null);
+        if (res.results?.length) {
+          setSearchResults(res.results.map((r) => engineToStream(r)));
+          setSearchError(null);
+        } else {
+          setSearchError('No results from YouTube engine');
+          onShowToast('No YouTube results for that query', 'info');
+        }
+      } catch (e: any) {
+        if (token !== searchTokenRef.current) return;
+        setSearchError(e.message || 'YouTube search unavailable — start the engine (npm run dev:youtube)');
+        onShowToast(e.message || 'YouTube search unavailable', 'warning');
+        setSearchResults(null);
       } finally {
-        setSearching(false);
+        if (token === searchTokenRef.current) setSearching(false);
       }
     }, 450);
   };
@@ -153,6 +176,7 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const clearSearch = () => {
     setQuery('');
     setSearchResults(null);
+    setChannelVideos(null);
     setSearchError(null);
   };
 
@@ -223,23 +247,46 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
         </div>
       </div>
 
-      {showSearchResults ? (
+      {/* ── Featured channels row (6 channels) ── */}
+      <div className="mb-6 overflow-x-auto no-scrollbar pb-2">
+        <div className="flex items-center gap-3 px-1">
+          {FEATURED_CHANNELS.map((ch, idx) => (
+            <button
+              key={ch.handle}
+              onClick={() => handleChannelOpen(ch.handle)}
+              className="flex-shrink-0 flex flex-col items-center text-center w-[80px] glass-card rounded-xl p-3 hover:border-slate-600 transition-colors touch-manipulation"
+            >
+              <div className="relative mb-2">
+                <img
+                  src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><defs><linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#${['64748b','3b82f6','10b981','f59e0b','ef4444','8b5cf6'][idx % 6]}"/><stop offset="100%" stop-color="#${['1e293b','1e40af','065f46','92400e','991b1b','5b21b6'][idx % 6]}"/></linearGradient></defs><rect width="128" height="128" fill="url(#a)"/><text x="64" y="75" text-anchor="middle" fill="white" font-size="56" font-family="system-ui,sans-serif" font-weight="bold">${ch.name[0]}</text></svg>`)}`}
+                  alt={ch.name}
+                  className="w-16 h-16 rounded-full border-2 border-slate-600 object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <p className="text-[11px] font-bold text-white truncate w-full">{ch.name}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {showSearchResults || channelVideos ? (
         /* ── Search results grid ── */
         <div className="animate-fadeIn">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-white">
-              {searchResults && searchResults.length > 0
-                ? `${searchResults.length} results for “${query.trim()}”`
+              {channelVideos
+                ? `${channelVideos.videos.length} videos from ${channelVideos.handle.replace(/^@/, '')}`
+                : searchResults && searchResults.length > 0
+                ? `${searchResults.length} results for "${query.trim()}"`
                 : 'No results found'}
             </h2>
-            {searchResults && searchResults.length > 0 && (
-              <button
-                onClick={clearSearch}
-                className="text-xs font-bold text-slate-400 hover:text-red-400 transition-colors"
-              >
-                ← Back to streams
-              </button>
-            )}
+            <button
+              onClick={clearSearch}
+              className="text-xs font-bold text-slate-400 hover:text-red-400 transition-colors"
+            >
+              ← Back to streams
+            </button>
           </div>
           {searchError && (
             <p className="text-xs text-amber-400 mb-3 font-mono">⚠ {searchError}</p>
@@ -283,7 +330,6 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
                         referrerPolicy="no-referrer"
                       />
                       <span className="text-[10px] text-slate-400 truncate flex-1">{s.channel.name}</span>
-                      <span className="text-[9px] font-mono text-slate-600">{s.channel.subscribers}</span>
                     </div>
                   </div>
                 </button>
@@ -299,69 +345,12 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
           )}
         </div>
       ) : (
-        <>
-          <StreamDeck
-            streams={streams}
-            onOpenStream={handleOpen}
-            reminders={reminders}
-            onToggleReminder={onToggleReminder}
-          />
-
-          {/* ── Channel grid (real YouTube profiles) ── */}
-          <div className="mt-10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white">Channels</h2>
-              <span className="text-[11px] font-mono text-slate-500">{CHANNELS.length} profiles</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {CHANNELS.map((ch) => {
-                const isSaved = savedChannelIds.includes(ch.youtubeChannelId || ch.id);
-                return (
-                  <div
-                    key={ch.id}
-                    className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation relative group/ch"
-                  >
-                    <button
-                      onClick={() => onOpenChannel(ch.youtubeChannelId || ch.id)}
-                      className="flex flex-col items-center text-center"
-                    >
-                      <div className="relative">
-                        <img
-                          src={ch.avatar}
-                          alt={ch.name}
-                          className="w-14 h-14 rounded-full border-2 border-slate-700"
-                          referrerPolicy="no-referrer"
-                        />
-                        {ch.verified && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center text-white text-[9px] font-black">
-                            ✓
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] font-bold text-white truncate w-full mt-2">{ch.name}</p>
-                      <p className="text-[9px] text-slate-500 font-mono">{ch.subscribers} subs</p>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleSavedChannel(ch.youtubeChannelId || ch.id);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 transition-colors opacity-0 group-hover/ch:opacity-100"
-                      aria-label={isSaved ? 'Unsave channel' : 'Save channel'}
-                      title={isSaved ? 'Unsave channel' : 'Save channel'}
-                    >
-                      {isSaved ? (
-                        <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <Bookmark className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
+        <StreamDeck
+          streams={streams}
+          onOpenStream={handleOpen}
+          reminders={reminders}
+          onToggleReminder={onToggleReminder}
+        />
       )}
     </div>
   );

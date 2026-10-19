@@ -684,7 +684,12 @@ async function cachedFetch<T>(key: string, fn: () => Promise<T>): Promise<T> {
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json() as Promise<T>;
+  const json = await res.json();
+  // NewPipeExtractor returns errors as HTTP 200 with { error: "..." }
+  if (json && typeof json === 'object' && 'error' in json && json.error) {
+    throw new Error(String(json.error));
+  }
+  return json as T;
 }
 
 export interface EngineStreamData {
@@ -834,7 +839,7 @@ export async function engineFetchPlaylist(playlistId: string): Promise<EnginePla
   );
 }
 
-export async function engineSearch(query: string, limit = 10): Promise<{ query: string; results: EngineStreamData[] }> {
+export async function engineSearch(query: string, limit = 10): Promise<{ query: string; results: EngineStreamData[]; error?: string }> {
   return cachedFetch(`search:${query}:${limit}`, () =>
     fetchJson(`${YOUTUBE_BACKEND}/search?q=${encodeURIComponent(query)}&limit=${limit}`)
   );
