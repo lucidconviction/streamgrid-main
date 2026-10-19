@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon, Youtube, Home, Radio, LayoutGrid, Music, ListVideo, History, Bookmark, Film, Layers } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame, Flame as QuickJumpIcon, Youtube, Compass, Radio, Tv, Layers, Music, History, Bookmark, LayoutGrid } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -56,16 +56,16 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const VIEW_ICONS: Record<string, React.ReactNode> = {
-    home: <Home className="w-4 h-4" />,
+    home: <Compass className="w-4 h-4" />,
     sports: <Radio className="w-4 h-4" />,
     youtube: <Youtube className="w-4 h-4" />,
-    channels: <LayoutGrid className="w-4 h-4" />,
-    iptv: <ListVideo className="w-4 h-4" />,
+    channels: <Tv className="w-4 h-4" />,
+    iptv: <Layers className="w-4 h-4" />,
     music: <Music className="w-4 h-4" />,
-    multiview: <Layers className="w-4 h-4" />,
     history: <History className="w-4 h-4" />,
     watchlist: <Bookmark className="w-4 h-4" />,
-    smutt: <Film className="w-4 h-4" />,
+    multiview: <LayoutGrid className="w-4 h-4" />,
+    smutt: <Flame className="w-4 h-4" />,
   };
 
   // ── Header background player ─────────────────────────────────────────
