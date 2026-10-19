@@ -489,8 +489,7 @@ export const Header: React.FC<HeaderProps> = ({
                         {quickJumps.length > 0 && (
                           <button
                             onClick={() => {
-                              const allKeywords = quickJumps.flatMap((j) => j.keywords).join(', ');
-                              onSearch?.(allKeywords);
+                              onSearch?.(''); // empty query → show ALL available streams
                               setQjOpen(false);
                             }}
                             className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left bg-gradient-to-r from-blue-600/20 to-purple-600/10 hover:from-blue-600/30 hover:to-purple-600/20 border border-blue-500/30 transition-colors group"
@@ -501,7 +500,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 Global Search
                               </p>
                               <p className="text-[9px] text-slate-400 truncate">
-                                {quickJumps.length} jump{quickJumps.length > 1 ? 's' : ''} · {quickJumps.flatMap((j) => j.keywords).length} keywords
+                                Browse every stream across all sections
                               </p>
                             </div>
                             <span className="text-[9px] font-mono text-blue-400/70 shrink-0">ALL</span>
@@ -512,8 +511,7 @@ export const Header: React.FC<HeaderProps> = ({
                             <button
                               onClick={() => {
                                 if (jump.targetView === '__global__') {
-                                  const allKeywords = quickJumps.flatMap((j) => j.keywords).join(', ');
-                                  onSearch?.(allKeywords);
+                                  onSearch?.(''); // empty query → show all streams
                                 } else {
                                   onQuickJump?.(jump);
                                 }

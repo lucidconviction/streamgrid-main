@@ -564,11 +564,11 @@ export default function App() {
         activeProfileId={activeProfile.id}
         onQuickJump={(jump) => {
           if (jump.targetView === '__global__') {
-            // Global Search: search all keywords from all jumps
+            // Global Search: show ALL available streams (empty query = no filter)
             const allJumps = storageService.getQuickJumps(activeProfile.id);
             const allKeywords = allJumps.flatMap((j) => j.keywords).join(', ');
             setSearchQuery(allKeywords);
-            setSearchPanelQuery(allKeywords);
+            setSearchPanelQuery(''); // empty query → show all streams
             setSearchPanelOpen(true);
             return;
           }
