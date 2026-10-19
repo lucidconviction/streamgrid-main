@@ -326,7 +326,10 @@ export default function App() {
       setNextStream(idx < allAvailable.length - 1 ? allAvailable[idx + 1] : null);
     }
 
-    // Record into history
+    // Record into history — skip smutt/eporner (adult content)
+    if (stream.provider === 'smutt' || stream.provider === 'eporner') {
+      return;
+    }
     const entry = storageService.addToHistory(activeProfile.id, {
       streamId: stream.id,
       title: stream.title,
