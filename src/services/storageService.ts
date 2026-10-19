@@ -4,6 +4,7 @@ const PROFILES_KEY = 'streamgrid_profiles';
 const ACTIVE_PROFILE_KEY = 'streamgrid_active_profile_id';
 const HISTORY_PREFIX = 'streamgrid_history_';
 const WATCHLIST_PREFIX = 'streamgrid_watchlist_';
+const SAVED_CHANNELS_PREFIX = 'streamgrid_saved_channels_';
 const PRESETS_PREFIX = 'streamgrid_presets_';
 const SEARCH_PREFIX = 'streamgrid_saved_searches_';
 const QUICKJUMP_PREFIX = 'streamgrid_quickjumps_';
@@ -212,6 +213,32 @@ export const storageService = {
 
   isInWatchlist(profileId: string, streamId: string): boolean {
     return this.getWatchlist(profileId).includes(streamId);
+  },
+
+  // Saved Channels per Profile (YouTube handles, e.g. "@ufc")
+  getSavedChannels(profileId: string): string[] {
+    try {
+      const data = localStorage.getItem(`${SAVED_CHANNELS_PREFIX}${profileId}`);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  toggleSavedChannel(profileId: string, handle: string): boolean {
+    const list = this.getSavedChannels(profileId);
+    const exists = list.includes(handle);
+    const updated = exists ? list.filter((h) => h !== handle) : [...list, handle];
+    try {
+      localStorage.setItem(`${SAVED_CHANNELS_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update saved channels', e);
+    }
+    return !exists;
+  },
+
+  isSavedChannel(profileId: string, handle: string): boolean {
+    return this.getSavedChannels(profileId).includes(handle);
   },
 
   // Multiview Presets per Profile

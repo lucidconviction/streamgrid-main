@@ -152,3 +152,12 @@ export interface YouTubePlaylist {
   videoCount: number;
   streamIds: string[];
 }
+
+export interface SavedChannel {
+  handle: string;
+  name: string;
+  subscribers: string;
+  avatar: string;
+  verified: boolean;
+  savedAt: number;
+}

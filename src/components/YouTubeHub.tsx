@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Play, Clock, Loader2 } from 'lucide-react';
+import { Search, X, Play, Clock, Loader2, Bookmark, BookmarkCheck } from 'lucide-react';
 import { StreamDeck } from './StreamDeck';
 import { StreamDetail } from './StreamDetail';
 import YouTubePlayer from './YouTubePlayer';
@@ -19,6 +19,9 @@ interface YouTubeHubProps {
   onShowToast: (text: string, type?: 'success' | 'info' | 'warning') => void;
   reminders: string[];
   onToggleReminder: (streamId: string) => void;
+  savedChannelIds: string[];
+  onToggleSavedChannel: (handle: string) => void;
+  onOpenChannel: (handle: string) => void;
 }
 
 export const YouTubeHub: React.FC<YouTubeHubProps> = ({
@@ -27,6 +30,9 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   onShowToast,
   reminders,
   onToggleReminder,
+  savedChannelIds,
+  onToggleSavedChannel,
+  onOpenChannel,
 }) => {
   const [selected, setSelected] = useState<YouTubeStream | null>(null);
   const [playing, setPlaying] = useState<YouTubeStream | null>(null);
@@ -280,47 +286,51 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
               <span className="text-[11px] font-mono text-slate-500">{CHANNELS.length} profiles</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {CHANNELS.map((ch) => (
-                <button
-                  key={ch.id}
-                  onClick={() => {
-                    setQuery(ch.name);
-                    // Trigger search via the query handler
-                    setSearching(true);
-                    setTimeout(async () => {
-                      try {
-                        const res = await engineSearch(ch.name, 12);
-                        if (res.results?.length) {
-                          setSearchResults(res.results.map((r) => engineToStream(r)));
-                        } else {
-                          onShowToast(`No videos found for ${ch.name}`, 'info');
-                        }
-                      } catch {
-                        onShowToast(`Search unavailable for ${ch.name}`, 'warning');
-                      } finally {
-                        setSearching(false);
-                      }
-                    }, 0);
-                  }}
-                  className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation"
-                >
-                  <div className="relative">
-                    <img
-                      src={ch.avatar}
-                      alt={ch.name}
-                      className="w-14 h-14 rounded-full border-2 border-slate-700"
-                      referrerPolicy="no-referrer"
-                    />
-                    {ch.verified && (
-                      <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center text-white text-[9px] font-black">
-                        ✓
-                      </span>
-                    )}
+              {CHANNELS.map((ch) => {
+                const isSaved = savedChannelIds.includes(ch.youtubeChannelId || ch.id);
+                return (
+                  <div
+                    key={ch.id}
+                    className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation relative group/ch"
+                  >
+                    <button
+                      onClick={() => onOpenChannel(ch.youtubeChannelId || ch.id)}
+                      className="flex flex-col items-center text-center"
+                    >
+                      <div className="relative">
+                        <img
+                          src={ch.avatar}
+                          alt={ch.name}
+                          className="w-14 h-14 rounded-full border-2 border-slate-700"
+                          referrerPolicy="no-referrer"
+                        />
+                        {ch.verified && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-blue-500 border-2 border-slate-900 flex items-center justify-center text-white text-[9px] font-black">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-bold text-white truncate w-full mt-2">{ch.name}</p>
+                      <p className="text-[9px] text-slate-500 font-mono">{ch.subscribers} subs</p>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSavedChannel(ch.youtubeChannelId || ch.id);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 transition-colors opacity-0 group-hover/ch:opacity-100"
+                      aria-label={isSaved ? 'Unsave channel' : 'Save channel'}
+                      title={isSaved ? 'Unsave channel' : 'Save channel'}
+                    >
+                      {isSaved ? (
+                        <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <Bookmark className="w-3.5 h-3.5" />
+                      )}
+                    </button>
                   </div>
-                  <p className="text-[11px] font-bold text-white truncate w-full mt-2">{ch.name}</p>
-                  <p className="text-[9px] text-slate-500 font-mono">{ch.subscribers} subs</p>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </>

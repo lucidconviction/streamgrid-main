@@ -3,6 +3,7 @@ import {
   YouTubeChannel,
   YouTubePlaylist,
   YouTubeChapter,
+  SavedChannel,
 } from '../types/stream';
 
 // ── Thumbnail generator (no external assets needed) ─────────────────────────
@@ -721,7 +722,8 @@ export interface EngineChannelData {
   verified: boolean;
   subscriberCount: number;
   avatars: Array<{ url: string }>;
-  banners: Array<{ url: string }>;
+  banners?: Array<{ url: string }>;
+  thumbnails: Array<{ url: string }>;
   videos: EngineStreamData[];
 }
 
@@ -764,6 +766,63 @@ export async function engineFetchChannelByHandle(handle: string): Promise<Engine
   return cachedFetch(`channel:${handle}`, () =>
     fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(handle)}`)
   );
+}
+
+/** Fetch a channel's recent videos as YouTubeStream objects. */
+export async function fetchChannelVideos(
+  handle: string,
+  limit = 12
+): Promise<YouTubeStream[]> {
+  try {
+    const res = await cachedFetch(`channel-videos:${handle}:${limit}`, () =>
+      fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(handle)}`)
+    );
+    const items = (res.videos || []).slice(0, limit);
+    const channel: EngineChannelData = {
+      id: res.id || handle,
+      name: res.name,
+      url: res.url,
+      description: res.description,
+      verified: res.verified,
+      subscriberCount: res.subscriberCount,
+      avatars: res.avatars || [],
+      thumbnails: res.thumbnails || [],
+      videos: [],
+    };
+    return items.map((v) => engineToStream(v as EngineStreamData, channel));
+  } catch (e) {
+    console.warn(`[youtube] channel videos failed for ${handle}:`, (e as Error).message);
+    return [];
+  }
+}
+
+/** Build a SavedChannel entry from a known profile (used when saving a channel). */
+export function savedChannelFromProfile(profile: {
+  handle: string;
+  name: string;
+  subscribers: string;
+  avatar: string;
+  verified: boolean;
+}): SavedChannel {
+  return {
+    handle: profile.handle,
+    name: profile.name,
+    subscribers: profile.subscribers,
+    avatar: profile.avatar,
+    verified: profile.verified,
+    savedAt: Date.now(),
+  };
+}
+
+export function profileToSavedChannel(ch: YouTubeChannel): SavedChannel {
+  return {
+    handle: ch.youtubeChannelId || ch.id,
+    name: ch.name,
+    subscribers: ch.subscribers,
+    avatar: ch.avatar,
+    verified: ch.verified,
+    savedAt: Date.now(),
+  };
 }
 
 export async function engineFetchPlaylist(playlistId: string): Promise<EnginePlaylistData> {

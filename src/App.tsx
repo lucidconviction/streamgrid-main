@@ -24,6 +24,8 @@ import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
 import { YouTubeHub } from './components/YouTubeHub';
+import { SavedChannelsRow } from './components/SavedChannelsRow';
+import { CHANNELS } from './services/youtubeService';
 
 import { MusicDirectory } from './components/MusicDirectory';
 import { ProfileModal } from './components/ProfileModal';
@@ -67,6 +69,11 @@ export default function App() {
   const [watchHistory, setWatchHistory] = useState<WatchHistoryEntry[]>([]);
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
   const [presets, setPresets] = useState<MultiviewPreset[]>([]);
+
+  // Saved YouTube channels (NewPipe-backed)
+  const [savedChannels, setSavedChannels] = useState<string[]>(
+    storageService.getSavedChannels(activeProfile.id)
+  );
 
   // Multiview State
   const [multiviewLayout, setMultiviewLayout] = useState<MultiviewLayout>('quad');
@@ -396,6 +403,29 @@ export default function App() {
       added ? `Added "${stream.title}" to Watchlist` : `Removed "${stream.title}" from Watchlist`,
       'success'
     );
+  };
+
+  // Saved YouTube Channels Toggle
+  const handleToggleSavedChannel = (handle: string): boolean => {
+    const saved = storageService.toggleSavedChannel(activeProfile.id, handle);
+    setSavedChannels(storageService.getSavedChannels(activeProfile.id));
+    return saved;
+  };
+
+  // Open a YouTube channel (via handle search)
+  const onOpenYouTubeChannel = (handle: string) => {
+    setCurrentView('youtube');
+    // Use a small delay to let the view render before triggering search
+    setTimeout(() => {
+      const input = document.querySelector('input[placeholder*="Search YouTube"]') as HTMLInputElement;
+      if (input) {
+        const handler = Object.getOwnPropertyDescriptor(window, 'query')?.get;
+        if (!handler) {
+          input.value = handle;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    }, 100);
   };
 
   // Multiview Slot Management
@@ -736,6 +766,9 @@ export default function App() {
                  const updated = storageService.toggleStreamReminder(activeProfile.id, streamId);
                  showToast(updated.includes(streamId) ? 'Reminder set' : 'Reminder removed', 'success');
                }}
+               savedChannelIds={savedChannels}
+               onToggleSavedChannel={handleToggleSavedChannel}
+               onOpenChannel={onOpenYouTubeChannel}
              />
           ) : currentView === 'music' ? (
             <MusicDirectory
@@ -851,6 +884,43 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* YouTube Saved Channels Carousel (NewPipe-backed) */}
+              <SavedChannelsRow
+                savedChannels={savedChannels.map((h) => {
+                  const ch = CHANNELS.find(
+                    (c) => c.youtubeChannelId === h || c.id === h.toLowerCase()
+                  );
+                  return ch
+                    ? {
+                        handle: ch.youtubeChannelId || ch.id,
+                        name: ch.name,
+                        subscribers: ch.subscribers,
+                        avatar: ch.avatar,
+                        verified: ch.verified,
+                        savedAt: Date.now(),
+                      }
+                    : null;
+                }).filter(Boolean) as {
+                  handle: string;
+                  name: string;
+                  subscribers: string;
+                  avatar: string;
+                  verified: boolean;
+                  savedAt: number;
+                }[]}
+                onRemoveChannel={(handle) => handleToggleSavedChannel(handle)}
+                onOpenVideo={(stream) =>
+                  handlePlayStream({
+                    ...stream,
+                    poster: stream.thumbnail,
+                    provider: 'streamed' as StreamItem['provider'],
+                    status: (stream.status === 'shorts' ? 'live' : stream.status) as StreamItem['status'],
+                    directEmbedUrl: stream.embedUrl,
+                  })
+                }
+                onOpenChannel={onOpenYouTubeChannel}
+              />
 
               {/* Row 1: Live Sports Matches */}
               <StreamCarousel
