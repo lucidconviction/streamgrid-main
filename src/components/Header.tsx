@@ -442,6 +442,7 @@ export const Header: React.FC<HeaderProps> = ({
                           onChange={(e) => setQjNewTarget(e.target.value)}
                           className="w-full bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/60 appearance-none"
                         >
+                          <option value="__global__">🌐 Global Search (all jumps)</option>
                           {Object.entries(VIEW_LABELS).map(([id, label]) => (
                             <option key={id} value={id}>{label}</option>
                           ))}
@@ -510,18 +511,27 @@ export const Header: React.FC<HeaderProps> = ({
                           <div key={jump.id} className="group flex items-center gap-1">
                             <button
                               onClick={() => {
-                                onQuickJump?.(jump);
+                                if (jump.targetView === '__global__') {
+                                  const allKeywords = quickJumps.flatMap((j) => j.keywords).join(', ');
+                                  onSearch?.(allKeywords);
+                                } else {
+                                  onQuickJump?.(jump);
+                                }
                                 setQjOpen(false);
                               }}
                               className="flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-blue-500/10 transition-colors"
                             >
-                              <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300" />
+                              {jump.targetView === '__global__' ? (
+                                <Search className="w-3.5 h-3.5 text-purple-400 shrink-0 group-hover:text-purple-300" />
+                              ) : (
+                                <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400 shrink-0 group-hover:text-blue-300" />
+                              )}
                               <div className="flex-1 min-w-0">
                                 <p className="text-[11px] font-bold text-slate-200 group-hover:text-white truncate">{jump.label}</p>
                                 <p className="text-[9px] text-slate-500 truncate">{jump.keywords.slice(0, 2).join(', ')}</p>
                               </div>
                               <span className="text-[9px] font-mono text-slate-600 group-hover:text-slate-400 shrink-0">
-                                {VIEW_LABELS[jump.targetView] || jump.targetView}
+                                {jump.targetView === '__global__' ? 'GLOBAL' : (VIEW_LABELS[jump.targetView] || jump.targetView)}
                               </span>
                             </button>
                             <button

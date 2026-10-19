@@ -563,6 +563,15 @@ export default function App() {
         savedSearches={storageService.getSavedSearches(activeProfile.id)}
         activeProfileId={activeProfile.id}
         onQuickJump={(jump) => {
+          if (jump.targetView === '__global__') {
+            // Global Search: search all keywords from all jumps
+            const allJumps = storageService.getQuickJumps(activeProfile.id);
+            const allKeywords = allJumps.flatMap((j) => j.keywords).join(', ');
+            setSearchQuery(allKeywords);
+            setSearchPanelQuery(allKeywords);
+            setSearchPanelOpen(true);
+            return;
+          }
           if (jump.targetView && jump.targetView !== currentView) {
             setCurrentView(jump.targetView as any);
             window.scrollTo({ top: 0, behavior: 'smooth' });
