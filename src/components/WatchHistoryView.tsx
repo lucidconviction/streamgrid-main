@@ -20,13 +20,19 @@ export const WatchHistoryView: React.FC<WatchHistoryViewProps> = ({
   const [search, setSearch] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
 
+  // Never show smutt/eporner entries — adult content stays private
+  const safeHistory = useMemo(
+    () => history.filter((h) => h.provider !== 'smutt' && h.provider !== 'eporner'),
+    [history]
+  );
+
   const filteredHistory = useMemo(() => {
-    return history.filter(
+    return safeHistory.filter(
       (h) =>
         h.title.toLowerCase().includes(search.toLowerCase()) ||
         h.category.toLowerCase().includes(search.toLowerCase())
     );
-  }, [history, search]);
+  }, [safeHistory, search]);
 
   const formatWatchedTime = (timestamp: number) => {
     const deltaMs = Date.now() - timestamp;
