@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   Play,
@@ -122,7 +122,22 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   // Real channel videos from the NewPipe engine (when the channel handle/ID is known)
   const [realChannelVideos, setRealChannelVideos] = useState<YouTubeStream[]>([]);
   const ytChannelId = stream.channel.youtubeChannelId || '';
-  const channelHandle = ytChannelId.startsWith('@') ? ytChannelId : (!ytChannelId.startsWith('UC') && ytChannelId ? `@${ytChannelId}` : '');
+
+  // Resolve a handle usable by fetchChannelVideos: prefer @handle, fall back to extracting from channel.id
+  const resolveChannelHandle = useCallback((): string => {
+    if (ytChannelId.startsWith('@')) return ytChannelId;
+    if (ytChannelId.startsWith('UC')) return `@${ytChannelId}`; // engine doesn't always give UC→handle mapping, try it anyway
+    // Try extracting from channel.id (might be a URL or bare handle)
+    const raw = stream.channel.id || '';
+    const h = raw.match(/\/@([A-Za-z0-9_.-]+)/);
+    if (h) return `@${h[1]}`;
+    const c = raw.match(/\/channel\/([A-Za-z0-9_-]+)/);
+    if (c) return `@${c[1]}`;
+    if (raw && !raw.startsWith('http')) return raw.startsWith('@') ? raw : `@${raw}`;
+    return '';
+  }, [ytChannelId, stream.channel.id]);
+
+  const channelHandle = resolveChannelHandle();
   useEffect(() => {
     if (!channelHandle) {
       setRealChannelVideos([]);

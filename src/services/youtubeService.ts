@@ -894,19 +894,32 @@ export function engineToStream(data: EngineStreamData, channel?: EngineChannelDa
     || data.uploaderAvatars?.[0]?.url
     || '';
   const vid = parseVideoId(data.videoId || data.id);
+
+  // Extract a clean channel handle/ID from uploaderUrl (e.g. https://www.youtube.com/@ufc or https://www.youtube.com/channel/UC...)
+  const cleanChannelId = (() => {
+    const url = data.uploaderUrl || '';
+    if (!url) return undefined;
+    const handleMatch = url.match(/\/@([A-Za-z0-9_.-]+)/);
+    if (handleMatch) return `@${handleMatch[1]}`;
+    const channelMatch = url.match(/\/channel\/([A-Za-z0-9_-]+)/);
+    if (channelMatch) return channelMatch[1];
+    return url; // fall back to raw value
+  })();
+
+  const chId = channel?.id || data.channel?.id || cleanChannelId || '';
   return {
     id: vid,
     title: data.title,
     description: data.description || '',
     thumbnail: thumb,
     channel: {
-      id: channel?.id || data.channel?.id || data.uploaderUrl || '',
+      id: chId,
       name: channel?.name || data.channel?.name || data.uploaderName || '',
       avatar,
       subscribers: formatSubscriberCount(channel?.subscriberCount || data.channel?.subscriberCount || data.uploaderSubscriberCount || 0),
       verified: channel?.verified || data.channel?.verified || false,
       bio: channel?.description || '',
-      youtubeChannelId: channel?.id || data.channel?.id || undefined,
+      youtubeChannelId: cleanChannelId || (chId.startsWith('UC') ? chId : undefined),
       socialLinks: undefined,
     },
     status: data.status as YouTubeStream['status'],
@@ -927,7 +940,18 @@ export async function loadEngineStreams(): Promise<YouTubeStream[]> {
   );
 
   const enrich = (stream: YouTubeStream): YouTubeStream => {
-    const cid = stream.channel.id?.toLowerCase();
+    // Normalize channel id: strip protocol+host to get just @handle or UC...
+    const rawId = stream.channel.id || '';
+    let cid = rawId.toLowerCase();
+    // If it's a full URL, extract the handle/ID part
+    if (cid.startsWith('http')) {
+      const h = cid.match(/\/@([A-Za-z0-9_.-]+)/);
+      if (h) cid = `@${h[1]}`.toLowerCase();
+      else {
+        const c = cid.match(/\/channel\/([A-Za-z0-9_-]+)/);
+        if (c) cid = c[1].toLowerCase();
+      }
+    }
     const cat = channelById.get(cid);
     if (cat) {
       return {
