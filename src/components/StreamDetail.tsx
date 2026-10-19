@@ -91,10 +91,6 @@ export const StreamDetail: React.FC<StreamDetailProps> = ({
   const related = useMemo(() => getRelated(stream), [stream]);
   const playlists = useMemo(() => getPlaylistsFor(stream), [stream]);
 
-  const handleSubscribe = () => {
-    onShowToast(`Subscribed to ${stream.channel.name} (simulated)`, 'success');
-  };
-
   const handleCopyShare = () => {
     navigator.clipboard.writeText(stream.embedUrl);
     onShowToast('Share link copied to clipboard', 'success');
@@ -218,12 +214,6 @@ export const StreamDetail: React.FC<StreamDetailProps> = ({
               {stream.channel.subscribers} subscribers
             </p>
           </div>
-          <button
-            onClick={handleSubscribe}
-            className="ml-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black transition-colors touch-manipulation"
-          >
-            Subscribe
-          </button>
         </div>
 
         <div className="flex items-center gap-2 sm:ml-auto">

@@ -1,15 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ChevronLeft,
-  MessageSquare,
+  Play,
   Bookmark,
+  MessageSquare,
   Maximize2,
   Minimize2,
   X,
   Bell,
   BellRing,
   ListVideo,
-  Share2,
   Eye,
   Radio,
   CalendarClock,
@@ -21,6 +21,8 @@ import {
   fmtViews,
   getRelated,
   getStreamsByChannel,
+  parseVideoId,
+  fetchChannelVideos,
 } from '../services/youtubeService';
 import { useLiveViewers } from '../hooks/useLiveViewers';
 import { ChannelBadge } from './StreamDeck';
@@ -29,6 +31,7 @@ interface YouTubePlayerProps {
   stream: YouTubeStream;
   onBack: () => void;
   onOpenStream: (stream: YouTubeStream) => void;
+  onPlayNext?: (stream: YouTubeStream) => void;
   isTheater: boolean;
   onToggleTheater: (v: boolean) => void;
 }
@@ -83,6 +86,7 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   stream,
   onBack,
   onOpenStream,
+  onPlayNext,
   isTheater,
   onToggleTheater,
 }) => {
@@ -100,6 +104,10 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const chatRef = useRef<HTMLDivElement>(null);
   const [activeChapter, setActiveChapter] = useState(0);
   const [hoverChapter, setHoverChapter] = useState<YouTubeStream['chapters'][number] | null>(null);
+  const playerRef = useRef<any>(null);
+  const playerDivRef = useRef<HTMLDivElement>(null);
+  const [nextCountdown, setNextCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const liveViewers = useLiveViewers(stream.viewers ?? 12000);
   const related = useMemo(() => getRelated(stream), [stream]);
@@ -110,6 +118,141 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
   const duration = stream.durationSeconds ?? 7200;
   const isLive = stream.status === 'live';
   const isUpcoming = stream.status === 'upcoming';
+
+  // Real channel videos from the NewPipe engine (when the channel handle/ID is known)
+  const [realChannelVideos, setRealChannelVideos] = useState<YouTubeStream[]>([]);
+  const ytChannelId = stream.channel.youtubeChannelId || '';
+  const channelHandle = ytChannelId.startsWith('@') ? ytChannelId : (!ytChannelId.startsWith('UC') && ytChannelId ? `@${ytChannelId}` : '');
+  useEffect(() => {
+    if (!channelHandle) {
+      setRealChannelVideos([]);
+      return;
+    }
+    let cancelled = false;
+    fetchChannelVideos(channelHandle, 12)
+      .then((vids) => {
+        if (!cancelled) setRealChannelVideos(vids.filter((v) => v.id !== stream.id).slice(0, 10));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [channelHandle, stream.id]);
+
+  // "More from this channel" — prefer real engine videos, fall back to local catalog
+  const effectiveChannelStreams = realChannelVideos.length > 0 ? realChannelVideos : channelStreams;
+
+  // Auto-play-next queue: channel streams first, then related
+  const upNextQueue = useMemo(() => {
+    const q = effectiveChannelStreams.length > 0 ? effectiveChannelStreams : related;
+    return q.filter((s) => s.id !== stream.id);
+  }, [effectiveChannelStreams, related, stream.id]);
+
+  // YouTube IFrame API — listen for ENDED to auto-advance
+  useEffect(() => {
+    if (!playerDivRef.current) return;
+    let cancelled = false;
+
+    const loadApi = () => {
+      const w = window as any;
+      if (w.YT && w.YT.Player) return w.YT.Player;
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+      return null;
+    };
+
+    const init = () => {
+      const w = window as any;
+      const YT = w.YT;
+      if (!YT || !YT.Player || !playerDivRef.current) {
+        // Retry once after a short delay
+        setTimeout(init, 500);
+        return;
+      }
+      const vid = parseVideoId(stream.embedUrl);
+      if (playerRef.current) {
+        try { playerRef.current.loadVideoById(vid); } catch {}
+        return;
+      }
+      playerRef.current = new YT.Player(playerDivRef.current, {
+        videoId: vid,
+        playerVars: {
+          autoplay: 1,
+          rel: 0,
+          fs: 1,
+          iv_load_policy: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onReady: (e: any) => {
+            if (isLive) e.target.play();
+          },
+          onStateChange: (e: any) => {
+            const st = e.target.getState?.();
+            if (st === w.YT.PlayerState.ENDED && !cancelled && upNextQueue.length > 0) {
+              startCountdown();
+            }
+          },
+        },
+      });
+    };
+
+    const existing = (window as any).onYouTubeIframeAPIReady;
+    (window as any).onYouTubeIframeAPIReady = () => {
+      existing?.();
+      init();
+    };
+    if ((window as any).YT && (window as any).YT.Player) {
+      init();
+    } else {
+      loadApi();
+      // Fallback: poll for the API
+      const poll = setInterval(() => {
+        if ((window as any).YT && (window as any).YT.Player) {
+          clearInterval(poll);
+          init();
+        }
+      }, 500);
+      setTimeout(() => clearInterval(poll), 15000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+      }
+      stopCountdown();
+    };
+  }, [stream.id, upNextQueue.length]);
+
+  const startCountdown = () => {
+    if (nextCountdown !== null) return;
+    setNextCountdown(5);
+    let n = 5;
+    countdownRef.current = setInterval(() => {
+      n--;
+      if (n <= 0) {
+        stopCountdown();
+        playNext();
+      } else {
+        setNextCountdown(n);
+      }
+    }, 1000);
+  };
+
+  const stopCountdown = () => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setNextCountdown(null);
+  };
+
+  const playNext = () => {
+    if (upNextQueue.length === 0) return;
+    const next = upNextQueue[0];
+    onPlayNext?.(next);
+  };
 
   // Simulated chat feed
   useEffect(() => {
@@ -197,75 +340,31 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       <div className={`grid gap-4 ${isTheater ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-4'}`}>
         {/* ── Left: player + info ── */}
         <div className={isTheater ? '' : 'lg:col-span-3'}>
-          {/* Player embed */}
+          {/* Player embed (YouTube IFrame API for auto-play-next) */}
           <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-black aspect-video">
-            {/* Simulated player — use embed if available */}
-            <iframe
-              src={stream.embedUrl}
-              title={stream.title}
-              className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-
-            {/* Top-right quick actions */}
-            <div className="absolute top-3 right-3 flex items-center gap-2">
-              <button
-                onClick={() => setShowChat(!showChat)}
-                className={`p-2 rounded-lg backdrop-blur-md border transition-colors ${
-                  showChat
-                    ? 'bg-red-600/80 border-red-500/60 text-white'
-                    : 'bg-black/60 border-white/25 text-white/80 hover:text-white'
-                }`}
-                title={showChat ? 'Hide Live Chat' : 'Show Live Chat'}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setShowChapters(!showChapters)}
-                className={`p-2 rounded-lg backdrop-blur-md border transition-colors ${
-                  showChapters
-                    ? 'bg-red-600/80 border-red-500/60 text-white'
-                    : 'bg-black/60 border-white/25 text-white/80 hover:text-white'
-                }`}
-                title={showChapters ? 'Hide Chapters' : 'Show Chapters'}
-              >
-                <ListVideo className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleCopyShare}
-                className="p-2 rounded-lg bg-black/60 border border-white/25 text-white/80 hover:text-white backdrop-blur-md transition-colors"
-                title="Copy Share Link"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Floating social card */}
-            <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-              {stream.channel.socialLinks?.discord && (
-                <button
-                  className="p-2 rounded-lg bg-black/60 backdrop-blur-md border border-white/25 text-indigo-300 hover:text-indigo-200 transition-colors"
-                  title="Discord"
-                >
-                  <span className="text-xs font-black">D</span>
-                </button>
-              )}
-              {stream.channel.socialLinks?.twitter && (
-                <button
-                  className="p-2 rounded-lg bg-black/60 backdrop-blur-md border border-white/25 text-sky-300 hover:text-sky-200 transition-colors"
-                  title="Twitter / X"
-                >
-                  <span className="text-xs font-black">𝕏</span>
-                </button>
-              )}
-              <button
-                className="p-2 rounded-lg bg-black/60 backdrop-blur-md border border-white/25 text-red-400 hover:text-red-300 transition-colors"
-                title="YouTube Channel"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            </div>
+            <div ref={playerDivRef} className="absolute inset-0 w-full h-full" />
+            {nextCountdown !== null && upNextQueue.length > 0 && (
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+                <p className="text-2xl font-black text-white">Next in {nextCountdown}s</p>
+                <p className="text-sm text-slate-300 mt-1 truncate max-w-[80%]">
+                  {upNextQueue[0].title}
+                </p>
+                <div className="flex items-center gap-3 mt-4">
+                  <button
+                    onClick={playNext}
+                    className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-black transition-colors"
+                  >
+                    Play Now
+                  </button>
+                  <button
+                    onClick={stopCountdown}
+                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Chapter pins along the progress bar ── */}
@@ -353,15 +452,24 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               <Bookmark className="w-3.5 h-3.5" />
               Save to Watchlist
             </button>
+            {upNextQueue.length > 0 && (
+              <button
+                onClick={playNext}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black transition-colors touch-manipulation"
+              >
+                <Play className="w-3.5 h-3.5" />
+                Play Next
+              </button>
+            )}
           </div>
 
           {/* ── Upcoming / related streams below the player ── */}
           <div className="mt-8">
             <h3 className="text-sm font-bold text-white mb-3">
-              {channelStreams.length > 0 ? 'More from this channel' : 'Related Streams'}
+              {effectiveChannelStreams.length > 0 ? 'More from this channel' : 'Related Streams'}
             </h3>
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-              {(channelStreams.length > 0 ? channelStreams : related).map((r) => (
+              {(effectiveChannelStreams.length > 0 ? effectiveChannelStreams : related).map((r) => (
                 <button
                   key={r.id}
                   onClick={() => onOpenStream(r)}

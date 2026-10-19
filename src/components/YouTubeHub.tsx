@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Play, Clock, Loader2, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Search, X, Clock, Loader2, Bookmark, BookmarkCheck } from 'lucide-react';
 import { StreamDeck } from './StreamDeck';
 import { StreamDetail } from './StreamDetail';
 import YouTubePlayer from './YouTubePlayer';
@@ -11,18 +11,9 @@ import {
   engineSearch,
   engineToStream,
   fetchChannelVideos,
+  engineFetchChannelByHandle,
   fmtDuration,
 } from '../services/youtubeService';
-
-// 6 featured channels for the header (handles only, no subs logic)
-const FEATURED_CHANNELS = [
-  { handle: '@ufc', name: 'UFC' },
-  { handle: '@MrBallen', name: 'MrBallen' },
-  { handle: '@TheDailyShow', name: 'The Daily Show' },
-  { handle: '@Fireship', name: 'Fireship' },
-  { handle: '@Complex', name: 'Complex' },
-  { handle: '@Jubilee', name: 'Jubilee' },
-];
 
 interface YouTubeHubProps {
   watchlistIds: string[];
@@ -53,6 +44,76 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const [playing, setPlaying] = useState<YouTubeStream | null>(null);
   const [isTheater, setIsTheater] = useState(false);
   const [streams, setStreams] = useState<YouTubeStream[]>(YOUTUBE_STREAMS);
+
+  // Real YouTube avatars fetched lazily from the engine (cached in localStorage)
+  const [channelAvatars, setChannelAvatars] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem('streamgrid_yt_channel_avatars');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const avatarQueueRef = useRef<string[]>([]);
+  const avatarInFlightRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('streamgrid_yt_channel_avatars', JSON.stringify(channelAvatars));
+    } catch { /* ignore */ }
+  }, [channelAvatars]);
+
+  // Lazy-load real YouTube channel avatars for visible grid cards (bounded concurrency)
+  useEffect(() => {
+    const gridRoot = document.getElementById('channel-grid-root');
+    if (!gridRoot) return;
+    const targets: string[] = [];
+    const cards = gridRoot.querySelectorAll<HTMLElement>('[data-channel-handle]');
+    const visible = Array.from(cards).filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top < window.innerHeight + 200 && r.bottom > -200;
+    });
+    for (const el of visible) {
+      const handle = el.dataset.channelHandle;
+      if (handle && !channelAvatars[handle] && !avatarInFlightRef.current.has(handle)) {
+        targets.push(handle);
+      }
+    }
+    if (!targets.length) return;
+    avatarQueueRef.current.push(...targets);
+    // Drain the queue with bounded concurrency (4 at a time)
+    let active = 0;
+    const tick = () => {
+      while (active < 4 && avatarQueueRef.current.length) {
+        const handle = avatarQueueRef.current.shift()!;
+        if (avatarInFlightRef.current.has(handle) || channelAvatars[handle]) continue;
+        avatarInFlightRef.current.add(handle);
+        active++;
+        engineFetchChannelByHandle(handle)
+          .then((res) => {
+            const url = res.avatars?.[res.avatars.length - 1]?.url
+              || res.avatars?.[0]?.url
+              || res.thumbnails?.[res.thumbnails.length - 1]?.url
+              || '';
+            if (url) {
+              setChannelAvatars((prev) => ({ ...prev, [handle]: url }));
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            avatarInFlightRef.current.delete(handle);
+            active--;
+            tick();
+          });
+      }
+    };
+    tick();
+    const onScroll = () => requestAnimationFrame(tick);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [channelAvatars]);
 
   // Search state
   const [query, setQuery] = useState('');
@@ -186,6 +247,7 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
         stream={playing}
         onBack={() => setPlaying(null)}
         onOpenStream={handleOpen}
+        onPlayNext={(s) => setPlaying(s)}
         isTheater={isTheater}
         onToggleTheater={setIsTheater}
       />
@@ -247,23 +309,65 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
         </div>
       </div>
 
-      {/* ── Featured channels row (6 quick-jump channels) ── */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-          {FEATURED_CHANNELS.map((ch) => (
-            <button
-              key={ch.handle}
-              onClick={() => handleChannelOpen(ch.handle)}
-              className="flex-shrink-0 flex flex-col items-center text-center w-[76px] glass-card rounded-xl p-2.5 hover:border-slate-600 transition-colors touch-manipulation"
-            >
-              <div className="relative mb-1.5">
-                <div className="w-12 h-12 rounded-full border-2 border-slate-600 flex items-center justify-center text-lg font-black text-white bg-gradient-to-br from-slate-600 to-slate-800">{ch.name[0]}</div>
-              </div>
-              <p className="text-[10px] font-bold text-white truncate w-full">{ch.name}</p>
-            </button>
-          ))}
+      {/* ── My Saved Channels (fast access + removal) ── */}
+      {savedChannelIds.length > 0 && (
+        <div className="mb-6 p-3 rounded-2xl glass-card border border-slate-800">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+              <Bookmark className="w-3.5 h-3.5 text-amber-400" />
+              Saved Channels ({savedChannelIds.length})
+            </span>
+            <span className="text-[10px] text-slate-500 font-mono">Synced to profile</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {savedChannelIds.map((handle) => {
+              const ch = CHANNELS.find(
+                (c) => (c.youtubeChannelId || '').toLowerCase() === handle.toLowerCase() || c.id === handle.toLowerCase()
+              );
+              const displayName = ch?.name || handle.replace(/^@/, '');
+              const avatar = ch?.avatar || '';
+              return (
+                <div
+                  key={handle}
+                  className="flex-shrink-0 flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-full bg-slate-900 border border-slate-700/80 hover:border-slate-600 transition-colors group"
+                >
+                  <button
+                    onClick={() => handleChannelOpen(handle)}
+                    className="flex items-center gap-1.5 text-left"
+                  >
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt=""
+                        className="w-5 h-5 rounded-full border border-slate-700"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">
+                        {displayName[0]}
+                      </div>
+                    )}
+                    <span className="text-[11px] font-bold text-white truncate max-w-[100px]">
+                      {displayName}
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSavedChannel(handle);
+                    }}
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    aria-label={`Remove ${displayName} from saved`}
+                    title="Remove"
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {showSearchResults || channelVideos ? (
         /* ── Search results grid ── */
@@ -349,26 +453,29 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
           />
 
           {/* ─- Channel grid (all 173 real YouTube profiles) ─- */}
-          <div className="mt-10">
+          <div className="mt-10" id="channel-grid-root">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-white">All Channels</h2>
               <span className="text-[11px] font-mono text-slate-500">{CHANNELS.length} profiles</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {CHANNELS.map((ch) => {
-                const isSaved = savedChannelIds.includes(ch.youtubeChannelId || ch.id);
+                const handle = ch.youtubeChannelId || ch.id;
+                const isSaved = savedChannelIds.includes(handle);
+                const realAvatar = channelAvatars[handle] || ch.avatar;
                 return (
                   <div
                     key={ch.id}
-                    className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation relative group/ch"
+                    data-channel-handle={handle}
+                    className="glass-card rounded-xl p-3 flex flex-col items-center text-center hover:border-slate-600 transition-colors touch-manipulation relative"
                   >
                     <button
-                      onClick={() => handleChannelOpen(ch.youtubeChannelId || ch.id)}
+                      onClick={() => handleChannelOpen(handle)}
                       className="flex flex-col items-center text-center"
                     >
                       <div className="relative">
                         <img
-                          src={ch.avatar}
+                          src={realAvatar}
                           alt={ch.name}
                           className="w-14 h-14 rounded-full border-2 border-slate-700"
                           referrerPolicy="no-referrer"
@@ -385,9 +492,9 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleSavedChannel(ch.youtubeChannelId || ch.id);
+                        onToggleSavedChannel(handle);
                       }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 transition-colors opacity-0 group-hover/ch:opacity-100"
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-800/80 text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 transition-colors"
                       aria-label={isSaved ? 'Unsave channel' : 'Save channel'}
                       title={isSaved ? 'Unsave channel' : 'Save channel'}
                     >

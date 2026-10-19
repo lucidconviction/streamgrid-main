@@ -814,6 +814,8 @@ export default function App() {
                savedChannelIds={savedChannels}
                onToggleSavedChannel={handleToggleSavedChannel}
                onOpenChannel={onOpenYouTubeChannel}
+               pendingVideo={pendingYtVideo}
+               onPendingVideoConsumed={() => setPendingYtVideo(null)}
              />
           ) : currentView === 'music' ? (
             <MusicDirectory
