@@ -2,11 +2,11 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
-import {bintvProxyPlugin, watchPartyPlugin} from './vite.plugins';
+import {bintvProxyPlugin, watchPartyPlugin, localM3UPlugin} from './vite.plugins';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin()],
+    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin(), localM3UPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

@@ -5,6 +5,43 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import net from 'net';
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomBytes } from 'crypto';
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+
+const M3U_SRC_DIR = resolve(process.cwd(), 'M3U SRC');
+
+export function localM3UPlugin(): Plugin {
+  return {
+    name: 'local-m3u-src',
+    configureServer(server) {
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        const url = new URL(req.url || '', 'http://localhost');
+        const m = url.pathname.match(/^\/api\/iptv\/local\/([^/]+)$/);
+        if (!m) return next();
+        const filename = decodeURIComponent(m[1]);
+        const filePath = resolve(M3U_SRC_DIR, filename);
+        // Prevent directory traversal
+        if (!filePath.startsWith(M3U_SRC_DIR) || !existsSync(filePath)) {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not found');
+          return;
+        }
+        try {
+          const data = readFileSync(filePath);
+          res.writeHead(200, {
+            'Content-Type': 'application/vnd.apple.mpegurl',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache',
+          });
+          res.end(data);
+        } catch (e: any) {
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Read error: ' + e.message);
+        }
+      });
+    },
+  };
+}
 
 export function bintvProxyPlugin(): Plugin {
   return {

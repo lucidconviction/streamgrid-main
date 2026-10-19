@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StreamItem, UserProfile, WatchHistoryEntry, MultiviewSlot, MultiviewLayout, MultiviewPreset, YouTubeStream, SavedChannelWithVideos } from './types/stream';
 import { streamService, purgeExpiredScreenshots } from './services/streamService';
+import { iptvService } from './services/iptvService';
 import { storageService } from './services/storageService';
 import type { MusicTrack } from './services/musicService';
 import { Header } from './components/Header';
@@ -194,6 +195,12 @@ export default function App() {
   const loadStreams = async (forceRefresh = false) => {
     if (forceRefresh) setIsRefreshing(true);
     else setIsLoadingStreams(true);
+
+    // When forcing a refresh, drop the IPTV M3U cache too so the next read
+    // re-parses the local M3U SRC files (or falls back to remote).
+    if (forceRefresh) {
+      iptvService.invalidateCache();
+    }
 
     try {
       const all = await streamService.fetchAllStreams(forceRefresh);
@@ -839,7 +846,11 @@ export default function App() {
               onTogglePiP={handleTogglePiP}
               watchlistIds={watchlistIds}
               multiviewStreamIds={multiviewStreamIds}
-              onRefresh={() => loadStreams(true)}
+              onRefresh={async () => {
+                iptvService.invalidateCache();
+                iptvLoadedRef.current = false;
+                await loadIptvStreams();
+              }}
               isRefreshing={isRefreshing}
             />
           ) : (

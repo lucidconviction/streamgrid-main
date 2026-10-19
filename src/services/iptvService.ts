@@ -1,7 +1,7 @@
 import { StreamItem } from '../types/stream';
 
 export interface IptvPlaylistSource {
-  id: 'fast' | 'rdtv' | 'combined';
+  id: string;
   name: string;
   url: string;
   proxyUrl: string;
@@ -10,25 +10,32 @@ export interface IptvPlaylistSource {
 
 export const IPTV_PLAYLISTS: IptvPlaylistSource[] = [
   {
-    id: 'fast',
+    id: 'local-fast',
     name: 'FAST Combined (Samsung TV Plus)',
     url: 'https://iptv.rdnutz.us/fast_combined.m3u',
-    proxyUrl: '/api/iptv/fast_combined.m3u',
-    description: '650+ FAST cable channels from Samsung TV Plus, CloudFront & Akamai HLS',
+    proxyUrl: '/api/iptv/local/fast_combined.m3u',
+    description: '650+ FAST cable channels from Samsung TV Plus, CloudFront & Akamai HLS (served from the local M3U SRC directory; falls back to remote if the file is missing)',
   },
   {
-    id: 'rdtv',
+    id: 'local-rdtv',
     name: 'RDTV (US, UK & Canada Live)',
     url: 'https://iptv.rdnutz.us/RDTV_us_uk_ca.m3u',
-    proxyUrl: '/api/iptv/RDTV_us_uk_ca.m3u',
-    description: 'Validated live broadcast cable & network channels across US, UK & Canada',
+    proxyUrl: '/api/iptv/local/RDTV_us_uk_ca.m3u',
+    description: 'Validated live broadcast cable & network channels across US, UK & Canada (local M3U SRC, falls back to remote)',
   },
   {
-    id: 'combined',
+    id: 'local-combined',
     name: 'All Resources (PPV, DAZN & Premium)',
     url: 'https://iptv.rdnutz.us/All_Resources_Combined_English.m3u',
-    proxyUrl: '/api/iptv/All_Resources_Combined_English.m3u',
-    description: 'Special events, DAZN sports, HBO, Prime PPV and English entertainment feeds',
+    proxyUrl: '/api/iptv/local/All_Resources_Combined_English.m3u',
+    description: 'Special events, DAZN sports, HBO, Prime PPV and English entertainment feeds (local M3U SRC, falls back to remote)',
+  },
+  {
+    id: 'local-all',
+    name: 'All Resources (full, incl. non-English)',
+    url: 'https://iptv.rdnutz.us/All_Resources_Combined.m3u',
+    proxyUrl: '/api/iptv/local/All_Resources_Combined.m3u',
+    description: 'Complete combined feed including non-English channels — largest playlist (local M3U SRC, falls back to remote)',
   },
 ];
 
@@ -156,6 +163,11 @@ function isPopularIptv(name: string, group: string): boolean {
 export const iptvService = {
   getPlaylists(): IptvPlaylistSource[] {
     return IPTV_PLAYLISTS;
+  },
+
+  /** Drop the in-memory M3U cache so the next fetch re-reads from disk/remote. */
+  invalidateCache(): void {
+    playlistCache.clear();
   },
 
   async fetchPlaylist(playlist: IptvPlaylistSource): Promise<StreamItem[]> {
