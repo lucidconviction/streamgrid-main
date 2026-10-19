@@ -95,3 +95,59 @@ export interface MultiviewPreset {
   streamIds: string[];
   createdAt: number;
 }
+
+// ── YouTube Hub Types ──────────────────────────────────────────────────────
+
+export type YouTubeStreamStatus = 'live' | 'upcoming' | 'vod' | 'shorts';
+
+export interface YouTubeChannel {
+  id: string;
+  name: string;
+  avatar: string;
+  subscribers: string;
+  verified: boolean;
+  bio: string;
+  socialLinks?: {
+    discord?: string;
+    twitter?: string;
+    youtube?: string;
+  };
+}
+
+export interface YouTubeChapter {
+  id: string;
+  title: string;
+  timeSeconds: number;
+  description: string;
+  thumbnail: string;
+}
+
+export interface YouTubeStream {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  channel: YouTubeChannel;
+  status: YouTubeStreamStatus;
+  category: string;
+  tags: string[];
+  viewers?: number;
+  durationSeconds?: number;
+  scheduledAt?: number;
+  publishedAt?: number;
+  chapters: YouTubeChapter[];
+  playlistId?: string;
+  playlistTitle?: string;
+  playlistIndex?: number;
+  embedUrl: string;
+  isMemberOnly?: boolean;
+}
+
+export interface YouTubePlaylist {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  videoCount: number;
+  streamIds: string[];
+}

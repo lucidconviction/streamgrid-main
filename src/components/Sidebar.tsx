@@ -11,6 +11,7 @@ import {
   Search,
   X,
   Music,
+  Youtube,
 } from 'lucide-react';
 import { UserProfile } from '../types/stream';
 
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'home', label: 'Explore', icon: Compass },
     { id: 'sports', label: 'Live Sports', icon: Radio },
+    { id: 'youtube', label: 'Stream Hub', icon: Youtube },
     { id: 'channels', label: '24/7 Channels', icon: Tv },
     { id: 'iptv', label: 'IPTV Playlists', icon: Layers },
     { id: 'music', label: 'Music', icon: Music },

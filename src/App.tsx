@@ -23,6 +23,7 @@ import { ChannelDirectory } from './components/ChannelDirectory';
 import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
+import { YouTubeHub } from './components/YouTubeHub';
 
 import { MusicDirectory } from './components/MusicDirectory';
 import { ProfileModal } from './components/ProfileModal';
@@ -34,7 +35,7 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube' | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -717,6 +718,25 @@ export default function App() {
               multiviewStreamIds={multiviewStreamIds}
               onSetStreams={setSmuttStreams}
             />
+          ) : currentView === 'youtube' ? (
+             <YouTubeHub
+               watchlistIds={watchlistIds}
+               onToggleWatchlist={(ytStream) =>
+                 handleToggleWatchlist({
+                   id: ytStream.id,
+                   title: ytStream.title,
+                   category: ytStream.category,
+                   provider: 'streamed',
+                   poster: ytStream.thumbnail,
+                 })
+               }
+               onShowToast={showToast}
+               reminders={storageService.getStreamReminders(activeProfile.id)}
+               onToggleReminder={(streamId) => {
+                 const updated = storageService.toggleStreamReminder(activeProfile.id, streamId);
+                 showToast(updated.includes(streamId) ? 'Reminder set' : 'Reminder removed', 'success');
+               }}
+             />
           ) : currentView === 'music' ? (
             <MusicDirectory
               onPlayStream={handlePlayStream}
@@ -731,7 +751,7 @@ export default function App() {
               onSetPlayMode={setMusicPlayMode}
             />
           ) : currentView === 'iptv' ? (
-            <IptvDirectory
+              <IptvDirectory
               iptvStreams={iptvStreams}
               onPlayStream={handlePlayStream}
               onAddToMultiview={handleAddToMultiview}

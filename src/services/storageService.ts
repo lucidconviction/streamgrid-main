@@ -7,6 +7,7 @@ const WATCHLIST_PREFIX = 'streamgrid_watchlist_';
 const PRESETS_PREFIX = 'streamgrid_presets_';
 const SEARCH_PREFIX = 'streamgrid_saved_searches_';
 const QUICKJUMP_PREFIX = 'streamgrid_quickjumps_';
+const STREAMREMINDER_PREFIX = 'streamgrid_streamreminders_';
 
 export const DEFAULT_PROFILES: UserProfile[] = [
   {
@@ -359,6 +360,29 @@ export const storageService = {
       localStorage.setItem(`${QUICKJUMP_PREFIX}${profileId}`, JSON.stringify(updated));
     } catch (e) {
       console.error('Failed to edit quick jump', e);
+    }
+    return updated;
+  },
+
+  // ── Stream Reminders (upcoming YouTube streams) ────────────────────────
+  getStreamReminders(profileId: string): string[] {
+    try {
+      const data = localStorage.getItem(`${STREAMREMINDER_PREFIX}${profileId}`);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  toggleStreamReminder(profileId: string, streamId: string): string[] {
+    const current = this.getStreamReminders(profileId);
+    const updated = current.includes(streamId)
+      ? current.filter((id) => id !== streamId)
+      : [streamId, ...current].slice(0, 50);
+    try {
+      localStorage.setItem(`${STREAMREMINDER_PREFIX}${profileId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save stream reminders', e);
     }
     return updated;
   }
