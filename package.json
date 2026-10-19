@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --port=4207 --host=0.0.0.0",
     "dev:python": "python3 scripts/music_server.py &",
+    "dev:youtube": "python3 scripts/youtube_server.py &",
+    "build:youtube": "cd scripts/java_youtube && JAVA_HOME=/usr/local/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home gradle :jar --no-daemon",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

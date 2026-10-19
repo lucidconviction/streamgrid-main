@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+!scripts/java_youtube/build/libs/
+scripts/java_youtube/.gradle/
+scripts/java_youtube/build/classes/
+scripts/java_youtube/build/tmp/
+scripts/java_youtube/build/reports/

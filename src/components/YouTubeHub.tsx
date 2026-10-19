@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StreamDeck } from './StreamDeck';
 import { StreamDetail } from './StreamDetail';
 import YouTubePlayer from './YouTubePlayer';
 import { YouTubeStream } from '../types/stream';
-import { YOUTUBE_STREAMS, getStreamById } from '../services/youtubeService';
+import { YOUTUBE_STREAMS, loadEngineStreams } from '../services/youtubeService';
 
 interface YouTubeHubProps {
   watchlistIds: string[];
@@ -23,8 +23,15 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const [selected, setSelected] = useState<YouTubeStream | null>(null);
   const [playing, setPlaying] = useState<YouTubeStream | null>(null);
   const [isTheater, setIsTheater] = useState(false);
+  const [streams, setStreams] = useState<YouTubeStream[]>(YOUTUBE_STREAMS);
 
-  const streams = useMemo(() => YOUTUBE_STREAMS, []);
+  useEffect(() => {
+    let cancelled = false;
+    loadEngineStreams().then((s) => {
+      if (!cancelled && s.length) setStreams(s);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleOpen = (stream: YouTubeStream) => {
     setSelected(stream);

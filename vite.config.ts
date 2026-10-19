@@ -55,6 +55,11 @@ export default defineConfig(() => {
           secure: false,
           rewrite: (path) => path.replace(/^\/api\/music/, '/api/music'),
         },
+        '/api/youtube': {
+          target: 'http://localhost:8766',
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };

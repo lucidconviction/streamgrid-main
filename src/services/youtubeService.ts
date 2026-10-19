@@ -132,6 +132,10 @@ export function fmtViews(n: number): string {
   return String(n);
 }
 
+function formatSubscriberCount(n: number): string {
+  return fmtViews(n);
+}
+
 // ── Stream catalog ──────────────────────────────────────────────────────────
 
 const LIVES = [
@@ -441,28 +445,43 @@ export const YOUTUBE_PLAYLISTS: YouTubePlaylist[] = [
 
 // ── Query API ───────────────────────────────────────────────────────────────
 
+/** Live pool of real streams fetched from the NewPipe engine (populated by loadEngineStreams). */
+let _enginePool: YouTubeStream[] = [];
+export function setEnginePool(streams: YouTubeStream[]): void {
+  _enginePool = streams;
+}
+
+/** All streams: engine (real) first, then mock catalog. */
+function allKnownStreams(): YouTubeStream[] {
+  if (_enginePool.length === 0) return YOUTUBE_STREAMS;
+  const seen = new Set<string>(_enginePool.map((s) => s.id));
+  return [..._enginePool, ...YOUTUBE_STREAMS.filter((s) => !seen.has(s.id))];
+}
+
 export function getStreamsByStatus(status: string): YouTubeStream[] {
-  if (status === 'all') return YOUTUBE_STREAMS;
-  if (status === 'live') return YOUTUBE_STREAMS.filter((s) => s.status === 'live');
-  if (status === 'upcoming') return YOUTUBE_STREAMS.filter((s) => s.status === 'upcoming');
-  if (status === 'vod') return YOUTUBE_STREAMS.filter((s) => s.status === 'vod' || s.status === 'shorts');
-  if (status === 'shorts') return YOUTUBE_STREAMS.filter((s) => s.status === 'shorts');
-  if (status === 'playlists') return YOUTUBE_STREAMS.filter((s) => s.playlistId);
-  return YOUTUBE_STREAMS;
+  if (status === 'all') return allKnownStreams();
+  if (status === 'live') return allKnownStreams().filter((s) => s.status === 'live');
+  if (status === 'upcoming') return allKnownStreams().filter((s) => s.status === 'upcoming');
+  if (status === 'vod') return allKnownStreams().filter((s) => s.status === 'vod' || s.status === 'shorts');
+  if (status === 'shorts') return allKnownStreams().filter((s) => s.status === 'shorts');
+  if (status === 'playlists') return allKnownStreams().filter((s) => s.playlistId);
+  return allKnownStreams();
 }
 
 export function getStreamById(id: string): YouTubeStream | undefined {
-  return YOUTUBE_STREAMS.find((s) => s.id === id);
+  return allKnownStreams().find((s) => s.id === id);
 }
 
 export function getStreamsByChannel(channelId: string): YouTubeStream[] {
-  return YOUTUBE_STREAMS.filter((s) => s.channel.id === channelId);
+  return allKnownStreams().filter((s) => s.channel.id === channelId);
 }
 
 export function getRelated(stream: YouTubeStream): YouTubeStream[] {
-  return YOUTUBE_STREAMS.filter(
+  const pool = allKnownStreams();
+  const fromPool = pool.filter(
     (s) => s.id !== stream.id && (s.category === stream.category || s.channel.id === stream.channel.id)
-  ).slice(0, 6);
+  );
+  return fromPool.length > 0 ? fromPool.slice(0, 6) : pool.filter((s) => s.id !== stream.id).slice(0, 6);
 }
 
 export function getPlaylistsFor(stream: YouTubeStream): YouTubePlaylist[] {
@@ -473,4 +492,174 @@ export function getPlaylistsFor(stream: YouTubeStream): YouTubePlaylist[] {
 export function driftViewers(base: number): number {
   const jitter = Math.floor((Math.random() - 0.45) * base * 0.04);
   return Math.max(100, base + jitter);
+}
+
+// ── NewPipeExtractor engine (real YouTube data) ──────────────────────────────
+
+const YOUTUBE_BACKEND = '/api/youtube';
+const _cache: Record<string, { data: unknown; ts: number }> = {};
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes (matches Java server)
+
+async function cachedFetch<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  if (_cache[key] && now - _cache[key].ts < CACHE_TTL) {
+    return _cache[key].data as T;
+  }
+  const data = await fn();
+  _cache[key] = { data, ts: now };
+  return data;
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+export interface EngineStreamData {
+  id: string;
+  title: string;
+  description: string;
+  durationSeconds: number;
+  viewCount: number;
+  likeCount: number;
+  uploadDate?: string;
+  category?: string;
+  tags: string[];
+  thumbnails: Array<{ url: string; width: number; height: number }>;
+  hlsUrl: string;
+  dashMpdUrl: string;
+  streamType: string;
+  contentAvailability: string;
+  status: string;
+  embedUrl: string;
+  url: string;
+  channel: { id: string; name: string; verified: boolean; subscriberCount: number; avatars: Array<{ url: string }> };
+  isShortFormContent: boolean;
+}
+
+export interface EngineChannelData {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+  verified: boolean;
+  subscriberCount: number;
+  avatars: Array<{ url: string }>;
+  banners: Array<{ url: string }>;
+  videos: EngineStreamData[];
+}
+
+export interface EnginePlaylistData {
+  id: string;
+  title: string;
+  description: string;
+  videoCount: number;
+  thumbnails: Array<{ url: string }>;
+  uploaderName: string;
+  uploaderUrl: string;
+  items: EngineStreamData[];
+}
+
+export interface EngineComment {
+  id: string;
+  text: string;
+  authorName: string;
+  authorUrl: string;
+  authorAvatar: Array<{ url: string }>;
+  publishedAt: string;
+  likeCount: number;
+  replyCount: number;
+  isLikedByUploader: boolean;
+}
+
+export async function engineFetchStream(videoId: string): Promise<EngineStreamData> {
+  return cachedFetch(`stream:${videoId}`, () =>
+    fetchJson<EngineStreamData>(`${YOUTUBE_BACKEND}/stream?id=${encodeURIComponent(videoId)}`)
+  );
+}
+
+export async function engineFetchChannel(channelId: string): Promise<EngineChannelData> {
+  return cachedFetch(`channel:${channelId}`, () =>
+    fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(channelId)}`)
+  );
+}
+
+export async function engineFetchPlaylist(playlistId: string): Promise<EnginePlaylistData> {
+  return cachedFetch(`playlist:${playlistId}`, () =>
+    fetchJson<EnginePlaylistData>(`${YOUTUBE_BACKEND}/playlist?id=${encodeURIComponent(playlistId)}`)
+  );
+}
+
+export async function engineSearch(query: string, limit = 10): Promise<{ query: string; results: EngineStreamData[] }> {
+  return cachedFetch(`search:${query}:${limit}`, () =>
+    fetchJson(`${YOUTUBE_BACKEND}/search?q=${encodeURIComponent(query)}&limit=${limit}`)
+  );
+}
+
+export async function engineTrending(): Promise<{ kiosk: string; items: EngineStreamData[] }> {
+  return cachedFetch('trending', () =>
+    fetchJson(`${YOUTUBE_BACKEND}/trending`)
+  );
+}
+
+export async function engineLive(): Promise<{ kiosk: string; items: EngineStreamData[] }> {
+  return cachedFetch('live', () =>
+    fetchJson(`${YOUTUBE_BACKEND}/live`)
+  );
+}
+
+export async function engineComments(videoId: string, limit = 20): Promise<EngineComment[]> {
+  return cachedFetch(`comments:${videoId}`, () =>
+    fetchJson<{ comments: EngineComment[] }>(`${YOUTUBE_BACKEND}/comments?id=${encodeURIComponent(videoId)}&limit=${limit}`)
+      .then(r => r.comments)
+  );
+}
+
+/** Convert an engine stream to the UI's YouTubeStream shape. */
+export function engineToStream(data: EngineStreamData, channel?: EngineChannelData): YouTubeStream {
+  const thumb = data.thumbnails?.[data.thumbnails.length - 1]?.url || data.thumbnails?.[0]?.url || '';
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description || '',
+    thumbnail: thumb,
+    channel: {
+      id: channel?.id || data.channel?.id || '',
+      name: channel?.name || data.channel?.name || '',
+      avatar: channel?.avatars?.[0]?.url || data.channel?.avatars?.[0]?.url || '',
+      subscribers: formatSubscriberCount(channel?.subscriberCount || data.channel?.subscriberCount || 0),
+      verified: channel?.verified || data.channel?.verified || false,
+      bio: channel?.description || '',
+      socialLinks: undefined,
+    },
+    status: data.status as YouTubeStream['status'],
+    category: data.category || 'General',
+    tags: data.tags || [],
+    viewers: data.status === 'live' ? data.viewCount : undefined,
+    durationSeconds: data.durationSeconds,
+    chapters: [],
+    embedUrl: data.embedUrl,
+    isMemberOnly: data.contentAvailability === 'MEMBERSHIP',
+  };
+}
+
+/** Load all streams from the engine (live + trending), falling back to mock catalog. */
+export async function loadEngineStreams(): Promise<YouTubeStream[]> {
+  try {
+    const [live, trending] = await Promise.all([engineLive(), engineTrending()]);
+    const seen = new Set<string>();
+    const streams: YouTubeStream[] = [];
+    const add = (data: EngineStreamData) => {
+      if (!data || seen.has(data.id)) return;
+      seen.add(data.id);
+      streams.push(engineToStream(data));
+    };
+    for (const s of live.items || []) add(s);
+    for (const s of trending.items || []) add(s);
+    setEnginePool(streams);
+    return streams;
+  } catch {
+    return YOUTUBE_STREAMS; // fallback to mock catalog
+  }
 }
