@@ -161,3 +161,8 @@ export interface SavedChannel {
   verified: boolean;
   savedAt: number;
 }
+
+export interface SavedChannelWithVideos extends SavedChannel {
+  videos: YouTubeStream[];
+  loading: boolean;
+}

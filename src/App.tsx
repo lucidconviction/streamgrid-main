@@ -24,8 +24,9 @@ import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
 import { YouTubeHub } from './components/YouTubeHub';
+import { SavedChannel, SavedChannelWithVideos } from './types/stream';
 import { SavedChannelsRow } from './components/SavedChannelsRow';
-import { CHANNELS } from './services/youtubeService';
+import { CHANNELS, fetchChannelVideos } from './services/youtubeService';
 
 import { MusicDirectory } from './components/MusicDirectory';
 import { ProfileModal } from './components/ProfileModal';
@@ -74,6 +75,65 @@ export default function App() {
   const [savedChannels, setSavedChannels] = useState<string[]>(
     storageService.getSavedChannels(activeProfile.id)
   );
+  const [savedChannelData, setSavedChannelData] = useState<SavedChannelWithVideos[]>([]);
+
+  // Load latest video for each saved channel via NewPipe
+  useEffect(() => {
+    if (savedChannels.length === 0) {
+      setSavedChannelData([]);
+      return;
+    }
+    const load = (h: string) => {
+      const cat = CHANNELS.find(
+        (c) => (c.youtubeChannelId || '').toLowerCase() === h.toLowerCase() || c.id === h.toLowerCase()
+      );
+      return {
+        handle: h,
+        name: cat?.name || h.replace(/^@/, '').replace(/[-_]/g, ' '),
+        subscribers: cat?.subscribers || '…',
+        avatar: cat?.avatar || '',
+        verified: cat?.verified || false,
+        savedAt: Date.now(),
+        videos: [],
+        loading: true,
+      };
+    };
+    setSavedChannelData(savedChannels.map(load));
+
+    Promise.all(
+      savedChannels.map(async (h) => {
+        try {
+          const vids = await fetchChannelVideos(h, 2);
+          if (vids.length > 0) {
+            const meta = vids[0].channel;
+            setSavedChannelData((prev) =>
+              prev.map((c) =>
+                c.handle === h
+                  ? {
+                      ...c,
+                      videos: vids,
+                      loading: false,
+                      name: meta.name || c.name,
+                      subscribers: meta.subscribers || c.subscribers,
+                      avatar: meta.avatar || c.avatar,
+                      verified: meta.verified || c.verified,
+                    }
+                  : c
+              )
+            );
+          } else {
+            setSavedChannelData((prev) =>
+              prev.map((c) => (c.handle === h ? { ...c, loading: false } : c))
+            );
+          }
+        } catch {
+          setSavedChannelData((prev) =>
+            prev.map((c) => (c.handle === h ? { ...c, loading: false } : c))
+          );
+        }
+      })
+    ).catch(() => {});
+  }, [savedChannels]);
 
   // Multiview State
   const [multiviewLayout, setMultiviewLayout] = useState<MultiviewLayout>('quad');
@@ -413,19 +473,11 @@ export default function App() {
   };
 
   // Open a YouTube channel (via handle search)
+  // Open a YouTube channel — navigate to youtube view and trigger search for that channel
   const onOpenYouTubeChannel = (handle: string) => {
     setCurrentView('youtube');
-    // Use a small delay to let the view render before triggering search
-    setTimeout(() => {
-      const input = document.querySelector('input[placeholder*="Search YouTube"]') as HTMLInputElement;
-      if (input) {
-        const handler = Object.getOwnPropertyDescriptor(window, 'query')?.get;
-        if (!handler) {
-          input.value = handle;
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }
-    }, 100);
+    // Store the handle to search for in sessionStorage; YouTubeHub will pick it up on mount
+    sessionStorage.setItem('youtube_open_channel', handle);
   };
 
   // Multiview Slot Management
@@ -887,28 +939,7 @@ export default function App() {
 
               {/* YouTube Saved Channels Carousel (NewPipe-backed) */}
               <SavedChannelsRow
-                savedChannels={savedChannels.map((h) => {
-                  const ch = CHANNELS.find(
-                    (c) => c.youtubeChannelId === h || c.id === h.toLowerCase()
-                  );
-                  return ch
-                    ? {
-                        handle: ch.youtubeChannelId || ch.id,
-                        name: ch.name,
-                        subscribers: ch.subscribers,
-                        avatar: ch.avatar,
-                        verified: ch.verified,
-                        savedAt: Date.now(),
-                      }
-                    : null;
-                }).filter(Boolean) as {
-                  handle: string;
-                  name: string;
-                  subscribers: string;
-                  avatar: string;
-                  verified: boolean;
-                  savedAt: number;
-                }[]}
+                channels={savedChannelData}
                 onRemoveChannel={(handle) => handleToggleSavedChannel(handle)}
                 onOpenVideo={(stream) =>
                   handlePlayStream({

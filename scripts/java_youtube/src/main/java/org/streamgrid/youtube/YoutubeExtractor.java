@@ -191,7 +191,23 @@ public class YoutubeExtractor {
     static JsonObject itemToJsonObject(StreamInfoItem item) {
         JsonObject obj = new JsonObject();
         try {
-            obj.addProperty("id", item.getUrl());
+            String url = item.getUrl();
+            obj.addProperty("id", url);
+            // Extract clean video ID for player lookups
+            try {
+                java.net.URI uri = new java.net.URI(url);
+                if ("youtu.be".equals(uri.getHost())) {
+                    obj.addProperty("videoId", uri.getPath().substring(1));
+                } else {
+                    String v = uri.getQuery() != null ? java.net.URLDecoder.decode(uri.getQuery(), "UTF-8") : "";
+                    for (String param : v.split("&")) {
+                        if (param.startsWith("v=")) {
+                            obj.addProperty("videoId", param.substring(2));
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
             obj.addProperty("title", item.getName());
             obj.addProperty("durationSeconds", item.getDuration());
             obj.addProperty("viewCount", item.getViewCount());

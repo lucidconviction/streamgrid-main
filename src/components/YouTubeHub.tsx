@@ -46,6 +46,34 @@ export const YouTubeHub: React.FC<YouTubeHubProps> = ({
   const [searchError, setSearchError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Check for pending channel to open (from sessionStorage)
+  useEffect(() => {
+    const pending = sessionStorage.getItem('youtube_open_channel');
+    if (pending) {
+      sessionStorage.removeItem('youtube_open_channel');
+      handleChannelOpen(pending);
+    }
+  }, []);
+
+  const handleChannelOpen = (handle: string) => {
+    setQuery(handle);
+    setSearching(true);
+    setTimeout(async () => {
+      try {
+        const res = await engineSearch(handle, 24);
+        if (res.results?.length) {
+          setSearchResults(res.results.map((r) => engineToStream(r)));
+        } else {
+          onShowToast(`No videos found for ${handle}`, 'info');
+        }
+      } catch {
+        onShowToast(`Search unavailable for ${handle}`, 'warning');
+      } finally {
+        setSearching(false);
+      }
+    }, 0);
+  };
+
   useEffect(() => {
     let cancelled = false;
     loadEngineStreams().then((s) => {

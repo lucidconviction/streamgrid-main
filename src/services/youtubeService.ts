@@ -707,11 +707,12 @@ export interface EngineStreamData {
   url: string;
   channel: { id: string; name: string; verified: boolean; subscriberCount: number; avatars: Array<{ url: string }> };
   isShortFormContent: boolean;
-  // Search-item fields (alternate shape)
+  // Search-item / channel-item fields (alternate shape)
   uploaderName?: string;
   uploaderUrl?: string;
   uploaderAvatars?: Array<{ url: string }>;
   uploaderSubscriberCount?: number;
+  videoId?: string; // extracted video ID from watch URL
 }
 
 export interface EngineChannelData {
@@ -774,8 +775,10 @@ export async function fetchChannelVideos(
   limit = 12
 ): Promise<YouTubeStream[]> {
   try {
-    const res = await cachedFetch(`channel-videos:${handle}:${limit}`, () =>
-      fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(handle)}`)
+    // Normalize: ensure leading @ for handle URLs
+    const normalized = handle.startsWith('@') ? handle : `@${handle}`;
+    const res = await cachedFetch(`channel-videos:${normalized}:${limit}`, () =>
+      fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(normalized)}`)
     );
     const items = (res.videos || []).slice(0, limit);
     const channel: EngineChannelData = {
@@ -885,7 +888,7 @@ export function engineToStream(data: EngineStreamData, channel?: EngineChannelDa
     || data.uploaderAvatars?.[data.uploaderAvatars.length - 1]?.url
     || data.uploaderAvatars?.[0]?.url
     || '';
-  const vid = parseVideoId(data.id);
+  const vid = parseVideoId(data.videoId || data.id);
   return {
     id: vid,
     title: data.title,
