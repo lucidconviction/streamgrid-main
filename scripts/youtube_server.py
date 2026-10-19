@@ -36,6 +36,24 @@ def run_java(args: list[str], timeout: int = 30) -> dict:
         return {"error": str(e)}
 
 
+def _normalize_items(d: dict) -> dict:
+    """Normalize a response that uses `results` (search) to the `items` shape used elsewhere."""
+    if not isinstance(d, dict) or "error" in d:
+        return d
+    if "items" not in d and "results" in d:
+        d["items"] = d.pop("results")
+    return d
+
+
+def run_java_or_fallback(args: list[str], fallback_args: list[str],
+                          timeout: int = 30) -> dict:
+    """Run the Java CLI; if it fails, try a fallback command."""
+    result = run_java(args, timeout=timeout)
+    if "error" in result and fallback_args:
+        return run_java(fallback_args, timeout=timeout)
+    return result
+
+
 def cached(key: str, factory):
     now = time.time()
     if key in _cache and now - _cache_time[key] < CACHE_TTL:
@@ -96,7 +114,8 @@ class Handler(BaseHTTPRequestHandler):
             cache_key = f"search:{query}:{limit}"
             self._send_json(cached(cache_key, lambda: run_java(["search", query, limit])))
         elif parsed.path == "/api/youtube/trending":
-            self._send_json(cached("trending", lambda: run_java(["trending"])))
+            self._send_json(cached("trending", lambda: _normalize_items(run_java_or_fallback(
+                ["trending"], ["search", "trending", "20"], timeout=45))))
         elif parsed.path == "/api/youtube/live":
             self._send_json(cached("live", lambda: run_java(["live"])))
         elif parsed.path == "/api/youtube/comments":

@@ -41,55 +41,225 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;');
 }
 
-// ── Channels ────────────────────────────────────────────────────────────────
+// ── Channels (real YouTube profiles) ────────────────────────────────────────
 
-export const CHANNELS: YouTubeChannel[] = [
-  {
-    id: 'ch-nova',
-    name: 'NovaPlay',
-    avatar: makeThumb('NP', 'Gaming Network', 0),
-    subscribers: '4.2M',
-    verified: true,
-    bio: 'Competitive gaming streams, esports watch-alongs and behind-the-scenes dev content.',
-    socialLinks: { discord: '#', twitter: '#', youtube: '#' },
-  },
-  {
-    id: 'ch-mesh',
-    name: 'TechMesh',
-    avatar: makeThumb('TM', 'Hardware Lab', 5),
-    subscribers: '1.8M',
-    verified: true,
-    bio: 'Hands-on tech reviews, deep dives and daily hardware news.',
-    socialLinks: { discord: '#', twitter: '#', youtube: '#' },
-  },
-  {
-    id: 'ch-arena',
-    name: 'ArenaCast',
-    avatar: makeThumb('AC', 'Esports Hub', 1),
-    subscribers: '8.7M',
-    verified: true,
-    bio: 'Official esports watch-parties for every major league and tournament.',
-    socialLinks: { discord: '#', twitter: '#', youtube: '#' },
-  },
-  {
-    id: 'ch-loom',
-    name: 'LoomTalks',
-    avatar: makeThumb('LT', 'Podcast Studio', 3),
-    subscribers: '920K',
-    verified: false,
-    bio: 'Weekly creator economy, streamer culture and interview podcasts.',
-    socialLinks: { twitter: '#', youtube: '#' },
-  },
-  {
-    id: 'ch-pulse',
-    name: 'GamePulse Shorts',
-    avatar: makeThumb('GP', 'Clips & Shorts', 6),
-    subscribers: '2.3M',
-    verified: true,
-    bio: 'The fastest clips, highlights and Shorts from the gaming world.',
-    socialLinks: { twitter: '#', youtube: '#' },
-  },
+const AVATAR_PALETTES: Array<[string, string]> = [
+  ['#ef4444', '#7f1d1d'],
+  ['#3b82f6', '#1e3a8a'],
+  ['#22c55e', '#14532d'],
+  ['#a855f7', '#581c87'],
+  ['#f59e0b', '#78350f'],
+  ['#0ea5e9', '#0c4a6e'],
+  ['#ec4899', '#831843'],
+  ['#64748b', '#1e293b'],
 ];
+
+function makeAvatar(name: string, index: number): string {
+  const initials = name
+    .replace(/[^\p{L}\p{N} ]/gu, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+  const [c0, c1] = AVATAR_PALETTES[index % AVATAR_PALETTES.length];
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>` +
+    `<defs><linearGradient id='a' x1='0' y1='0' x2='1' y2='1'>` +
+    `<stop offset='0' stop-color='${c0}'/><stop offset='1' stop-color='${c1}'/>` +
+    `</linearGradient></defs>` +
+    `<rect width='128' height='128' fill='url(#a)'/>` +
+    `<text x='64' y='78' text-anchor='middle' font-family='Arial Black, Arial' font-size='44' font-weight='900' fill='white' opacity='0.95'>${escapeXml(initials)}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** [name, youtubeHandle, subscribers, verified] */
+const REAL_PROFILES: Array<[string, string, string, boolean]> = [
+  ['UFC', 'ufc', '22.9M', true],
+  ['WORLDSTARHIPHOP', 'worldstarhiphop', '27.7M', true],
+  ['The Diary Of A CEO', 'TheDiaryOfACEO', '19.3M', true],
+  ['NFL', 'NFL', '16.5M', true],
+  ['ESPN', 'espn', '14.5M', true],
+  ['The Daily Show', 'TheDailyShow', '14M', true],
+  ['NPR Music', 'nprmusic', '12.9M', true],
+  ['MrBallen', 'MrBallen', '11.2M', true],
+  ['Jubilee', 'jubilee', '11M', true],
+  ['VICE News', 'VICENews', '9.3M', true],
+  ['Complex', 'Complex', '6.98M', true],
+  ['djvlad', 'vladtv', '6.43M', true],
+  ['Candace Owens', 'RealCandaceO', '6.08M', true],
+  ['StarTalk', 'StarTalk', '5.88M', true],
+  ['BETNetworks', 'BETNetworks', '5.42M', true],
+  ['No Jumper', 'NoJumper', '4.97M', true],
+  ['All Def', 'Alldef', '4.61M', true],
+  ['Netflix Is A Joke', 'netflixisajoke', '4.58M', true],
+  ['STREETBEEFS', 'STREETBEEFS_', '4.49M', true],
+  ['Piers Morgan Uncensored', 'PiersMorganUncensored', '4.46M', true],
+  ['Fireship', 'Fireship', '4.26M', true],
+  ['Mighty Car Mods', 'mightycarmods', '3.98M', true],
+  ['ALTER', 'WatchALTER', '3.87M', true],
+  ['T Pain', 'tpain', '3.89M', true],
+  ['Smokin\' & Grillin with AB', 'SmokinandGrillinwithAB', '3.79M', true],
+  ['Absolute History', 'AbsoluteHistory', '3.69M', true],
+  ['Danny Kim', 'DannyGrubs', '3.34M', true],
+  ['REVOLT', 'revolt', '3.33M', true],
+  ['The Andrew Schulz', 'TheAndrewSchulz', '2.99M', true],
+  ['The 85 South Comedy Show', 'The85SouthShow', '2.83M', true],
+  ['Ed Bassmaster', 'edbassmaster', '2.83M', true],
+  ['Hayls World', 'HaylsWorld', '2.72M', true],
+  ['Coin Bureau', 'CoinBureau', '2.73M', true],
+  ['Paul Barron Network', 'PaulBarronNetwork', '2.63M', true],
+  ['Speakeasy', 'speakeasy', '2.6M', true],
+  ['STRELKA STREET FIGHTS', 'Tronmma', '2.52M', true],
+  ['Amala Ekpunobi', 'TheAmalaEkpunobi', '2.5M', true],
+  ['The Trading Parrot', 'TheTradingParrot', '2.52K', false],
+  ['Roland S. Martin', 'rolandsmartin', '1.95M', true],
+  ['African Diaspora News Channel', 'AfricanDiasporaNews', '1.93M', true],
+  ['Kevin Samuels', 'byKevinSamuels', '1.92M', true],
+  ['The Majority Report w/ Sam Seder', 'TheMajorityReport', '2.09M', true],
+  ['Flossy Carter', 'FlossyCarter', '2.14M', true],
+  ['Real Crime', 'RealCrime', '2.17M', true],
+  ['Ross Cameron - Warrior Trading', 'DaytradeWarrior', '2.1M', true],
+  ['Trilogy Media', 'TrilogyMedia', '1.84M', true],
+  ['Shane Hummus', 'ShaneHummus', '1.68M', true],
+  ['Shout! Studios', 'ShoutStudios', '1.35M', true],
+  ['Joe Budden TV', 'joebuddentv', '1.63M', true],
+  ['The Fumble', 'thefumble', '1.59M', true],
+  ['Anton Daniels', 'AntonDaniels', '1.52M', true],
+  ['Daym Drops', 'DaymDrops', '1.73M', true],
+  ['SJohnsonVoiceOvers', 'SJohnsonVoiceOvers', '1.74M', true],
+  ['NOT ANOTHER COOKING SHOW', 'NOTANOTHERCOOKINGSHOW', '1.41M', true],
+  ['Stalekracker Official', 'stalekrackerofficial4240', '1.41M', false],
+  ['Stephen A. Smith', 'MrStephenASmith', '1.4M', true],
+  ['Android Developers', 'AndroidDevelopers', '1.43M', true],
+  ['Discover Crypto', 'DiscoverCrypto_', '1.38M', true],
+  ['Omma', 'Omma', '1.37M', true],
+  ['Gary Owen', 'garyowencom', '1.37M', true],
+  ['Mr.ChimeTime', 'mr.chimetime', '1.25M', true],
+  ['4biddenknowledge Podcast Network', '4biddenKnowledgePodcast', '1.24M', true],
+  ['Kimmy\'s Kreations', 'kimmyskreations1', '1.12M', true],
+  ['Electrical MD', 'ElectricalMD', '1.12M', true],
+  ['The Art Of Dialogue', 'TheArtOfDialogue', '1.12M', true],
+  ['McQueen On Air', 'McQueenOnAir', '1.03M', true],
+  ['LATRYGUY', 'LATRYGUY', '1.02M', true],
+  ['FLAGRANT CLIPS', 'flagrantclips', '1.04M', true],
+  ['DeVory Darkins', 'DeVoryDarkins', '1.14M', true],
+  ['MrLboyd Reacts', 'MrLboydReacts', '1.14M', true],
+  ['Matt Wolfe', 'mreflow', '1M', true],
+  ['Nate Herk | AI Automation', 'nateherk', '978K', true],
+  ['Kenan Grace', 'KenanGrace', '977K', true],
+  ['Demons Row', 'DemonsRow', '982K', true],
+  ['Bounty Tank', 'BountyTank', '908K', true],
+  ['Crank Lucas', 'cranklucas', '863K', true],
+  ['The Angryman', 'TheAngrymanChannel', '835K', false],
+  ['UNINTERRUPTED', 'UNINTERRUPTED', '797K', true],
+  ['Custom Offsets', 'CustomOffsetsTV', '750K', true],
+  ['Futurepedia', 'futurepedia_io', '746K', false],
+  ['Stock Moe', 'StockMoe', '722K', false],
+  ['AI Search', 'theAIsearch', '724K', true],
+  ['Mark Stache', 'Mark_Stache', '710K', false],
+  ['Hes Kicks', 'heskicks', '687K', false],
+  ['allthingsbbq', 'allthingsbbq', '662K', false],
+  ['The Trey King Show', 'TheTreyKingShow', '658K', false],
+  ['Lil Poudii', 'LilPoudii', '642K', false],
+  ['Nice Kicks', 'nicekicks', '642K', false],
+  ['Matthew Berman', 'matthew_berman', '632K', true],
+  ['Mark J Kohler', 'MarkJKohler', '616K', false],
+  ['Social Proof', 'RealSocialProof', '615K', false],
+  ['KINGDOM REACTS', 'KINGDOMREACTS', '586K', false],
+  ['The AI Daily Brief: AI News', 'AIDailyBrief', '585K', false],
+  ['The Dr. Phil Podcast', 'DrPhilPodcast', '583K', true],
+  ['Eddie Griffin', 'EddieGriffinTV', '553K', false],
+  ['FUNarios', 'FUNarios', '565K', false],
+  ['Derrick Grace II', 'DerrickGracetwo', '208K', false],
+  ['Millionaire Morning Show', 'MillionaireMorningShow', '455K', true],
+  ['The Ariel Helwani Show', 'ArielHelwani', '457K', false],
+  ['Sabby Sabs', 'SabbySabs', '420K', false],
+  ['Julian Goldie SEO', 'JulianGoldieSEO', '422K', false],
+  ['Poetik Flakko', 'PoetikFlakko', '438K', false],
+  ['Mother Jones', 'MotherJones', '359K', true],
+  ['The Kwak Brothers', 'TheKwakBrothers', '347K', false],
+  ['Wes Roth', 'WesRoth', '326K', false],
+  ['Mecum Auctions', 'mecum', '319K', true],
+  ['Trading Fraternity', 'Thetradingfraternity', '310K', false],
+  ['Killer Mike', 'KillerMikeGTO', '296K', true],
+  ['Helena Liu', 'HELENA-LIU', '286K', true],
+  ['The Saint', 'TheSaintandTheSinner', '263K', false],
+  ['ScottieDTV', 'ScottieDTV', '263K', false],
+  ['WorldofAI', 'intheworldofai', '235K', false],
+  ['Alex Finn', 'AlexFinnOfficial', '233K', false],
+  ['Prompt Engineering', 'engineerprompt', '246K', false],
+  ['The_Perseverance', 'The_Perseverance', '257K', false],
+  ['Full Value Dan', 'FullValueDan', '224K', false],
+  ['GabeTrades', 'GabeTrades', '211K', false],
+  ['The Bleu Channel', 'thebleuchannel', '212K', false],
+  ['LNSPLTBLVD', 'LNSPLTBLVD', '210K', false],
+  ['Duncan Rogoff | Learn Claude Code', 'duncanrogoff', '85.9K', false],
+  ['World Of Fuush', 'Worldoffuush', '71.8K', false],
+  ['60MvTv', '60mvtv', '35K', false],
+  ['CoinDesk', 'CoinDesk', '195K', true],
+  ['Holley', 'HolleyPerformance', '176K', true],
+  ['MylesG Investments', 'MylesGInvestments', '166K', false],
+  ['Zubair Trabzada | AI Workshop', 'AI-GPTWorkshop', '158K', false],
+  ['MustangMedic', 'MustangMedic', '157K', false],
+  ['Her Patriot Voice', 'HerPatriotVoice', '163K', false],
+  ['G Rich', 'GRich01', '163K', false],
+  ['Big Brandoh', 'BigBrandoh', '142K', false],
+  ['Sav Says', 'SavSays', '143K', false],
+  ['The Conscious Lee', 'TheConsciousLee', '138K', false],
+  ['Industry Secrets', 'Industry-Secrets', '128K', false],
+  ['Smoke N\' Scan', 'SmokeNScan', '126K', false],
+  ['Koh', 'KCryptoYT', '113K', false],
+  ['Hannibal Is Hungry', 'hannibalishungry', '187K', false],
+  ['newtech', 'firesticksetup', '185K', false],
+  ['corbin', 'Corbin_Brown', '185K', false],
+  ['Detour Shirts', 'DetourShirts', '186K', false],
+  ['Timeless Barbers', 'TimelessBarbers', '180K', false],
+  ['Be The Boss Of Your Motorcycle!', 'BeTheBossOfYourMotorcycle', '197K', false],
+  ['The Dawgfatha\'s BBQ', 'TheDawgfathasBBQ', '201K', false],
+  ['The Officer Tatum', 'TheOfficerTatum', '3.84M', false],
+  ['Cocoa Butter', 'CocoaButter', '1.32M', false],
+  ['The Next New Thing', 'TheNextNewThingAI', '49.8K', false],
+  ['MattVidPro', 'MattVidPro', '304K', false],
+  ['TheFigCo', 'TheFigCo', '67.9K', false],
+  ['The Clever Millionaire', 'TheCleverMillionaire', '71.6K', false],
+  ['ManuAGI - AutoGPT Tutorials', 'ManuAGI', '42K', false],
+  ['TheAIGRID', 'TheAiGrid', '398K', false],
+  ['HYPE+', 'HypePlusTV', '1.09M', false],
+  ['BULLRUNNERS', 'Bullrunners', '395K', false],
+  ['AIQUEST', 'AIQuestAcademy', '26.5K', false],
+  ['Tech-Practice', 'tech-practice9805', '8.73K', false],
+  ['9CHINO2CHING5', 'chinoching-topic', '227', false],
+  ['Tyrin Barney', 'TyrinBarneyAI', '3.32K', false],
+  ['Rob The AI Guy', 'realrobtheaiguy', '96.4K', false],
+  ['Everything Kevo', 'EverythingKevo', '89.5K', false],
+  ['Dennis Kirk, Inc.', 'DennisKirk', '53K', false],
+  ['AshandtheChaos', 'AshandtheChaos', '86.7K', false],
+  ['Yaad Life\'s Good', 'YaadLifesGood', '93.9K', false],
+  ['All Your Tech AI', 'allyourtechai', '27.7K', false],
+  ['FHO ATLANTA, GA.', 'FHOHNIC', '31.8K', false],
+  ['AXS TV', 'AXSTV', '487K', true],
+  ['Breakfast Club Power 105.1 FM', 'BreakfastClubPower1051FM', '6.04M', true],
+  ['HOT 97', 'hot97', '4M', true],
+  ['URBAN POLITICIANS TV', 'urbanpoliticianstv4115', '415K', false],
+  ['Hip Hop News Uncensored', 'HipHopNewsUncensored', '911K', false],
+  ['The B Hayes Show', 'StockPlug_', '38.9K', false],
+  ['Jay Williams Let\'s Live Life', 'Jaywilliamsletslivelife', '385K', false],
+];
+
+export const CHANNELS: YouTubeChannel[] = REAL_PROFILES.map(
+  ([name, handle, subscribers, verified], i) => ({
+    id: handle.toLowerCase(),
+    name,
+    avatar: makeAvatar(name, i),
+    subscribers,
+    verified,
+    bio: `@${handle} • ${subscribers} subscribers`,
+    youtubeChannelId: handle,
+    socialLinks: { youtube: `https://www.youtube.com/@${handle}` },
+  })
+);
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -536,6 +706,11 @@ export interface EngineStreamData {
   url: string;
   channel: { id: string; name: string; verified: boolean; subscriberCount: number; avatars: Array<{ url: string }> };
   isShortFormContent: boolean;
+  // Search-item fields (alternate shape)
+  uploaderName?: string;
+  uploaderUrl?: string;
+  uploaderAvatars?: Array<{ url: string }>;
+  uploaderSubscriberCount?: number;
 }
 
 export interface EngineChannelData {
@@ -585,6 +760,12 @@ export async function engineFetchChannel(channelId: string): Promise<EngineChann
   );
 }
 
+export async function engineFetchChannelByHandle(handle: string): Promise<EngineChannelData> {
+  return cachedFetch(`channel:${handle}`, () =>
+    fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(handle)}`)
+  );
+}
+
 export async function engineFetchPlaylist(playlistId: string): Promise<EnginePlaylistData> {
   return cachedFetch(`playlist:${playlistId}`, () =>
     fetchJson<EnginePlaylistData>(`${YOUTUBE_BACKEND}/playlist?id=${encodeURIComponent(playlistId)}`)
@@ -616,21 +797,49 @@ export async function engineComments(videoId: string, limit = 20): Promise<Engin
   );
 }
 
+/** Extract a YouTube video ID from a watch URL, ID, or handle. */
+export function parseVideoId(s: string): string {
+  if (!s) return '';
+  if (/^https?:\/\//.test(s)) {
+    try {
+      const u = new URL(s);
+      if (u.hostname === 'youtu.be') return u.pathname.split('/')[0] || '';
+      const v = u.searchParams.get('v');
+      if (v) return v;
+      const parts = u.pathname.split('/');
+      if (parts.length >= 2 && parts[1] === 'watch') return parts[parts.length - 1];
+    } catch { /* fall through */ }
+    const m = s.match(/[?&]v=([\w-]{6,})/);
+    if (m) return m[1];
+  }
+  return s;
+}
+
 /** Convert an engine stream to the UI's YouTubeStream shape. */
 export function engineToStream(data: EngineStreamData, channel?: EngineChannelData): YouTubeStream {
   const thumb = data.thumbnails?.[data.thumbnails.length - 1]?.url || data.thumbnails?.[0]?.url || '';
+  // Prefer real YouTube channel avatar when available
+  const avatar = channel?.avatars?.[channel.avatars.length - 1]?.url
+    || channel?.avatars?.[0]?.url
+    || data.channel?.avatars?.[data.channel.avatars.length - 1]?.url
+    || data.channel?.avatars?.[0]?.url
+    || data.uploaderAvatars?.[data.uploaderAvatars.length - 1]?.url
+    || data.uploaderAvatars?.[0]?.url
+    || '';
+  const vid = parseVideoId(data.id);
   return {
-    id: data.id,
+    id: vid,
     title: data.title,
     description: data.description || '',
     thumbnail: thumb,
     channel: {
-      id: channel?.id || data.channel?.id || '',
-      name: channel?.name || data.channel?.name || '',
-      avatar: channel?.avatars?.[0]?.url || data.channel?.avatars?.[0]?.url || '',
-      subscribers: formatSubscriberCount(channel?.subscriberCount || data.channel?.subscriberCount || 0),
+      id: channel?.id || data.channel?.id || data.uploaderUrl || '',
+      name: channel?.name || data.channel?.name || data.uploaderName || '',
+      avatar,
+      subscribers: formatSubscriberCount(channel?.subscriberCount || data.channel?.subscriberCount || data.uploaderSubscriberCount || 0),
       verified: channel?.verified || data.channel?.verified || false,
       bio: channel?.description || '',
+      youtubeChannelId: channel?.id || data.channel?.id || undefined,
       socialLinks: undefined,
     },
     status: data.status as YouTubeStream['status'],
@@ -639,27 +848,71 @@ export function engineToStream(data: EngineStreamData, channel?: EngineChannelDa
     viewers: data.status === 'live' ? data.viewCount : undefined,
     durationSeconds: data.durationSeconds,
     chapters: [],
-    embedUrl: data.embedUrl,
+    embedUrl: data.embedUrl || `https://www.youtube.com/embed/${vid}`,
     isMemberOnly: data.contentAvailability === 'MEMBERSHIP',
   };
 }
 
-/** Load all streams from the engine (live + trending), falling back to mock catalog. */
+/** Load all streams from the engine (live + trending), enriching with real channel avatars. */
 export async function loadEngineStreams(): Promise<YouTubeStream[]> {
+  const channelById = new Map<string, YouTubeChannel>(
+    CHANNELS.map((c) => [c.youtubeChannelId?.toLowerCase() || c.id, c])
+  );
+
+  const enrich = (stream: YouTubeStream): YouTubeStream => {
+    const cid = stream.channel.id?.toLowerCase();
+    const cat = channelById.get(cid);
+    if (cat) {
+      return {
+        ...stream,
+        channel: {
+          ...stream.channel,
+          avatar: cat.avatar,
+          subscribers: cat.subscribers,
+          verified: cat.verified,
+          bio: cat.bio,
+          youtubeChannelId: cat.youtubeChannelId,
+          socialLinks: cat.socialLinks,
+        },
+      };
+    }
+    return stream;
+  };
+
+  const tryFetch = async (
+    fn: () => Promise<{ items: EngineStreamData[] }>,
+    label: string
+  ): Promise<EngineStreamData[]> => {
+    try {
+      const r = await fn();
+      return r.items || [];
+    } catch (e) {
+      console.warn(`[youtube] ${label} failed:`, (e as Error).message);
+      return [];
+    }
+  };
+
   try {
-    const [live, trending] = await Promise.all([engineLive(), engineTrending()]);
+    const [liveItems, trendingItems] = await Promise.all([
+      tryFetch(engineLive, 'live'),
+      tryFetch(engineTrending, 'trending'),
+    ]);
+
     const seen = new Set<string>();
     const streams: YouTubeStream[] = [];
     const add = (data: EngineStreamData) => {
       if (!data || seen.has(data.id)) return;
       seen.add(data.id);
-      streams.push(engineToStream(data));
+      streams.push(enrich(engineToStream(data)));
     };
-    for (const s of live.items || []) add(s);
-    for (const s of trending.items || []) add(s);
+    for (const s of liveItems) add(s);
+    for (const s of trendingItems) add(s);
+
+    if (streams.length === 0) return YOUTUBE_STREAMS; // fallback to mock catalog
     setEnginePool(streams);
     return streams;
-  } catch {
+  } catch (e) {
+    console.warn('[youtube] engine load failed:', (e as Error).message);
     return YOUTUBE_STREAMS; // fallback to mock catalog
   }
 }

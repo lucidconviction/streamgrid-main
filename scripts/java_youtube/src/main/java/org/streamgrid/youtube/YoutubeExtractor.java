@@ -243,7 +243,15 @@ public class YoutubeExtractor {
 
     static JsonObject cmdChannel(String channelId) {
         try {
-            String url = "https://www.youtube.com/channel/" + channelId;
+            String url = channelId;
+            if (!channelId.startsWith("http://") && !channelId.startsWith("https://")) {
+                // bare channel ID or @handle
+                if (channelId.startsWith("@")) {
+                    url = "https://www.youtube.com/" + channelId;
+                } else {
+                    url = "https://www.youtube.com/channel/" + channelId;
+                }
+            }
             ListLinkHandler lh = YoutubeChannelLinkHandlerFactory.getInstance().fromUrl(url);
             ChannelExtractor ex = YOUTUBE_SERVICE.getChannelExtractor(lh);
             ex.fetchPage();

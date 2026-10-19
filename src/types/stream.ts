@@ -107,6 +107,7 @@ export interface YouTubeChannel {
   subscribers: string;
   verified: boolean;
   bio: string;
+  youtubeChannelId?: string; // real YouTube channel ID or @handle
   socialLinks?: {
     discord?: string;
     twitter?: string;
