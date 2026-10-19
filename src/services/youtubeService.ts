@@ -393,7 +393,7 @@ function finalize(
     const isLive = s.status === 'live';
     const isShort = s.status === 'shorts';
     const thumbLabel = s.title.split('—')[0].split(':')[0].trim().slice(0, 18).toUpperCase();
-    const thumbSub = isLive ? '🔴 LIVE NOW' : s.status === 'upcoming' ? 'UPCOMING' : s.category;
+    const thumbSub = isShort ? '⚡ SHORT' : isLive ? '🔴 LIVE NOW' : s.status === 'upcoming' ? 'UPCOMING' : s.category;
     return {
       description: s.description || '',
       status: isLive ? 'live' : isShort ? 'shorts' : s.status === 'upcoming' ? 'upcoming' : 'vod',
@@ -409,7 +409,7 @@ export const YOUTUBE_STREAMS: YouTubeStream[] = [
   ...finalize(LIVES, 0).map((s) => ({ ...s, status: 'live' as const, viewers: s.viewers ?? Math.floor(5000 + Math.random() * 120000) })),
   ...finalize(UPCOMING, 8).map((s) => ({ ...s, status: 'upcoming' as const })),
   ...finalize(VODS, 12),
-  ...finalize(SHORTS, 16),
+  ...finalize(SHORTS, 16).map((s) => ({ ...s, status: 'shorts' as const })),
 ];
 
 export const YOUTUBE_PLAYLISTS: YouTubePlaylist[] = [

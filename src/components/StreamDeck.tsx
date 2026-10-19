@@ -67,10 +67,11 @@ export const StreamDeck: React.FC<StreamDeckProps> = ({
   // Deck rotation: position cards around the active index in a 3D arc
   const deckItems = useMemo(() => {
     if (filtered.length === 0) return [];
-    const span = 5; // cards visible on each side of the focus
+    const span = 3; // cards visible on each side of the focus
     const items: Array<{ stream: YouTubeStream; offset: number }> = [];
     for (let off = -span; off <= span; off++) {
-      const idx = (safeIdx + off + filtered.length) % filtered.length;
+      // Proper positive modulo (JS % returns negatives for negative dividends)
+      const idx = ((safeIdx + off) % filtered.length + filtered.length) % filtered.length;
       items.push({ stream: filtered[idx], offset: off });
     }
     return items;

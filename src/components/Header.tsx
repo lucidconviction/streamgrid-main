@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon, Youtube } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame as QuickJumpIcon, Youtube, Home, Radio, LayoutGrid, Music, ListVideo, History, Bookmark, Film, Layers } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -53,6 +53,19 @@ export const Header: React.FC<HeaderProps> = ({
     history: 'Watch History',
     watchlist: 'Watchlist',
     smutt: 'Nett Smutt',
+  };
+
+  const VIEW_ICONS: Record<string, React.ReactNode> = {
+    home: <Home className="w-4 h-4" />,
+    sports: <Radio className="w-4 h-4" />,
+    youtube: <Youtube className="w-4 h-4" />,
+    channels: <LayoutGrid className="w-4 h-4" />,
+    iptv: <ListVideo className="w-4 h-4" />,
+    music: <Music className="w-4 h-4" />,
+    multiview: <Layers className="w-4 h-4" />,
+    history: <History className="w-4 h-4" />,
+    watchlist: <Bookmark className="w-4 h-4" />,
+    smutt: <Film className="w-4 h-4" />,
   };
 
   // ── Header background player ─────────────────────────────────────────
@@ -421,6 +434,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
               >
+                {VIEW_ICONS[currentPage || 'home']}
                 <span className="hidden sm:inline">{VIEW_LABELS[currentPage || 'home']}</span>
                 <span className="sm:hidden">{(VIEW_LABELS[currentPage || 'home'] || 'Home').charAt(0)}</span>
                 {pageDropdownOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -432,20 +446,14 @@ export const Header: React.FC<HeaderProps> = ({
                       <button
                         key={id}
                         onClick={() => { onNavigate(id); setPageDropdownOpen(false); }}
-                        className={`w-full text-left px-4 py-3 min-h-11 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
+                        className={`w-full text-left px-4 py-3 min-h-11 rounded-lg text-sm font-medium transition-colors touch-manipulation flex items-center gap-2.5 ${
                           currentPage === id
                             ? 'bg-blue-600 text-white'
                             : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                         }`}
                       >
-                        {id === 'youtube' ? (
-                          <span className="flex items-center gap-2">
-                            <Youtube className="w-4 h-4" />
-                            {label}
-                          </span>
-                        ) : (
-                          label
-                        )}
+                        {VIEW_ICONS[id]}
+                        <span>{label}</span>
                       </button>
                     ))}
                   </div>
