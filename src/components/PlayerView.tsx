@@ -421,20 +421,21 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           <span>TV GUIDE</span>
         </button>
 
-        {/* LAST CH */}
-        <button
-          onClick={() => {
-            const list = activePlaylist;
-            const idx = list.findIndex((s) => s.id === stream.id);
-            const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
-            if (prev) onPlayStream(prev);
-          }}
-          className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
-          title="Previous channel"
-        >
-          <ChevronUp className="w-5 h-5" />
-          <span>LAST CH</span>
-        </button>
+        {/* LAST CH + NEXT CH — side by side, 50% less wide, right side */}
+        <div className="flex gap-2 ml-auto shrink-0">
+          <button
+            onClick={() => {
+              const list = activePlaylist;
+              const idx = list.findIndex((s) => s.id === stream.id);
+              const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
+              if (prev) onPlayStream(prev);
+            }}
+            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
+            title="Previous channel"
+          >
+            <ChevronUp className="w-4 h-4 shrink-0" />
+            <span>LAST CH</span>
+          </button>
 
         {/* History Dropdown */}
         <div className="relative flex-1">
@@ -540,20 +541,20 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           )}
         </div>
 
-        {/* NEXT CH */}
-        <button
-          onClick={() => {
-            const list = activePlaylist;
-            const idx = list.findIndex((s) => s.id === stream.id);
-            const next = idx < list.length - 1 ? list[idx + 1] : list[0];
-            if (next) onPlayStream(next);
-          }}
-          className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
-          title="Next channel"
-        >
-          <span>NEXT CH</span>
-          <ChevronDown className="w-5 h-5" />
-        </button>
+          <button
+            onClick={() => {
+              const list = activePlaylist;
+              const idx = list.findIndex((s) => s.id === stream.id);
+              const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+              if (next) onPlayStream(next);
+            }}
+            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
+            title="Next channel"
+          >
+            <span>NEXT CH</span>
+            <ChevronDown className="w-4 h-4 shrink-0" />
+          </button>
+        </div>
       </div>
 
       {/* Sources Toolbar */}
