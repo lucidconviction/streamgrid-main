@@ -627,6 +627,5 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         </div>
       </div>
     </div>
-    </div>
   );
 };
