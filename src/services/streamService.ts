@@ -1,5 +1,13 @@
 import { StreamItem, StreamSource } from '../types/stream';
 import { iptvService } from './iptvService';
+import {
+  fetchDaddyLiveEvents,
+  fetchEmbedSportexEvents,
+  fetchWeStreamEvents,
+  fetchSportSRCEvents,
+  SportsApiEvent,
+  EmbedSportexEvent,
+} from './sportsApiService';
 
 const STREAMED_BASE = 'https://streamed.pk';
 const WESTREAM_BASE = 'https://westream.su';
@@ -301,6 +309,135 @@ async function fetchCinevidStreams(
   }
 }
 
+// ── DaddyLive → StreamItem ─────────────────────────────────────────────────
+async function fetchDaddyLiveIntegration(
+  aggregated: StreamItem[],
+  stableId: (prefix: string, name: string, fallback?: string) => string,
+): Promise<void> {
+  try {
+    const events = await fetchDaddyLiveEvents();
+    for (const ev of events) {
+      const matchName = ev.event || ev.source || 'Sports';
+      const category = mapCategory(matchName.split(/[:\s]+/).slice(-2).join(' ') || matchName);
+      const firstUrl = ev.channels?.[0]?.url || '';
+      if (!firstUrl) continue;
+      aggregated.push({
+        id: stableId('daddylive', ev.event || ev.source || 'event', ev.event || ev.source || 'event'),
+        title: ev.event || 'Live Sports',
+        name: ev.event,
+        category,
+        status: ev.time === 'Live' ? 'live' : 'upcoming',
+        provider: 'daddylive',
+        streamType: 'embed',
+        popular: ev.time === 'Live',
+        directEmbedUrl: firstUrl,
+        bgVideoUrl: firstUrl,
+        viewers: ev.time === 'Live' ? Math.floor(Math.random() * 8000) + 500 : 0,
+        streams: (ev.channels || []).map((ch, idx) => ({
+          streamNo: idx + 1,
+          name: ch.name || `Stream ${idx + 1}`,
+          embedUrl: ch.url,
+        })),
+      });
+    }
+  } catch (e) {
+    console.warn('DaddyLive integration failed:', e);
+  }
+}
+
+// ── EmbedSportex → StreamItem ──────────────────────────────────────────────
+async function fetchEmbedSportexIntegration(
+  aggregated: StreamItem[],
+  stableId: (prefix: string, name: string, fallback?: string) => string,
+): Promise<void> {
+  try {
+    const events = await fetchEmbedSportexEvents();
+    for (const ev of events) {
+      const tag = ev.tag || ev.league || 'Sports';
+      const category = mapCategory(tag);
+      const firstUrl = ev.iframes?.[0]?.url || '';
+      aggregated.push({
+        id: stableId('embsportex', ev.tag || ev.slug, ev.slug),
+        title: ev.tag || tag,
+        name: ev.tag,
+        category,
+        status: 'live', // events with iframes are considered live
+        poster: ev.poster || '',
+        provider: 'embsportex',
+        streamType: 'embed',
+        popular: true,
+        directEmbedUrl: firstUrl,
+        bgVideoUrl: firstUrl,
+        viewers: Math.floor(Math.random() * 6000) + 300,
+        streams: (ev.iframes || []).map((fr, idx) => ({
+          streamNo: idx + 1,
+          name: fr.server || `Stream ${idx + 1}`,
+          embedUrl: fr.url,
+        })),
+      });
+    }
+  } catch (e) {
+    console.warn('EmbedSportex integration failed:', e);
+  }
+}
+
+// ── WeStream → StreamItem ──────────────────────────────────────────────────
+async function fetchWeStreamIntegration(
+  aggregated: StreamItem[],
+  stableId: (prefix: string, name: string, fallback?: string) => string,
+): Promise<void> {
+  try {
+    const matches = await fetchWeStreamEvents();
+    for (const m of matches) {
+      const firstSource = m.sources?.[0];
+      const defaultEmbed = firstSource
+        ? `${WESTREAM_BASE}/embed/${firstSource.source}/${firstSource.id}/1`
+        : undefined;
+      if (!defaultEmbed) continue;
+      aggregated.push({
+        id: m.id || stableId('westream', m.title || ''),
+        title: m.title || 'Live Match',
+        name: m.title,
+        category: mapCategory(m.category || 'Sports'),
+        status: m.popular ? 'live' : 'upcoming',
+        poster: m.poster || '',
+        provider: 'westream',
+        sources: m.sources || [],
+        directEmbedUrl: defaultEmbed,
+        bgVideoUrl: defaultEmbed,
+        viewers: Math.floor(Math.random() * 4000) + 800,
+      });
+    }
+  } catch (e) {
+    console.warn('WeStream integration failed:', e);
+  }
+}
+
+// ── SportSRC → StreamItem (requires API key) ───────────────────────────────
+async function fetchSportSRCIntegration(
+  aggregated: StreamItem[],
+  stableId: (prefix: string, name: string, fallback?: string) => string,
+): Promise<void> {
+  try {
+    const matches = await fetchSportSRCEvents();
+    for (const m of matches) {
+      aggregated.push({
+        id: stableId('sportsrc', m.home_team?.name || m.away_team?.name || m.competition?.name || '', m.match_id),
+        title: m.tag || `${m.home_team?.name} vs ${m.away_team?.name}` || 'Live Match',
+        name: m.tag || '',
+        category: mapCategory(m.competition?.name || 'Sports'),
+        status: m.is_live || m.status === 'inprogress' ? 'live' : 'upcoming',
+        poster: m.cover?.thumb || m.cover?.banner || '',
+        provider: 'sportsrc',
+        popular: m.is_live ?? false,
+        viewers: m.is_live ? Math.floor(Math.random() * 10000) + 500 : 0,
+      });
+    }
+  } catch (e) {
+    console.warn('SportSRC integration failed:', e);
+  }
+}
+
 export const streamService = {
   async fetchAllStreams(forceRefresh = false): Promise<StreamItem[]> {
     const now = Date.now();
@@ -413,6 +550,18 @@ export const streamService = {
 
     // 2. Fetch from Cinevid (sports events with HLS resolution)
     await fetchCinevidStreams(aggregated, stableId);
+
+    // 3. Fetch from DaddyLive (sports embed events)
+    await fetchDaddyLiveIntegration(aggregated, stableId);
+
+    // 4. Fetch from EmbedSportex (sports iframe events)
+    await fetchEmbedSportexIntegration(aggregated, stableId);
+
+    // 5. Fetch from WeStream (matches with sources)
+    await fetchWeStreamIntegration(aggregated, stableId);
+
+    // 6. Fetch from SportSRC (requires API key)
+    await fetchSportSRCIntegration(aggregated, stableId);
 
     // 3. Fetch from streamed.pk (matches/all)
     try {

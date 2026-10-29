@@ -18,7 +18,7 @@ export interface StreamItem {
   poster?: string;
   popular?: boolean;
   status?: 'live' | 'upcoming' | 'offline' | '24/7';
-  provider: 'streamed' | 'bintv' | 'westream' | 'cinevid' | 'daddylive' | 'iptv' | 'smutt' | 'eporner' | 'anime';
+  provider: 'streamed' | 'bintv' | 'westream' | 'cinevid' | 'daddylive' | 'iptv' | 'smutt' | 'eporner' | 'anime' | 'embsportex' | 'sportsrc';
   streamType?: 'hls' | 'embed';
   m3uSource?: string;
   groupTitle?: string;
