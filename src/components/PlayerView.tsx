@@ -402,7 +402,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </div>
         </div>
 
-        </div>
+
       </div>
 
       {/* Controls Row */}
@@ -648,6 +648,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             High-definition direct streaming broadcast from {stream.provider.toUpperCase()} provider networks.
             Equipped with synchronized low-latency delivery and theater mode presentation.
           </p>
+        </div>
     </div>
   );
 };
