@@ -256,7 +256,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         <div className="relative">
           {/* TV Guide Overlay Panel */}
           {isGuideOpen && (
-            <div className="absolute left-0 top-0 h-full z-20 flex flex-col bg-[#050810]/25 backdrop-blur-sm border-r border-white/10 rounded-l-xl overflow-hidden" style={{ width: '30%' }}>
+            <div className="absolute left-0 top-0 h-full z-20 flex flex-col bg-[#050810]/40 backdrop-blur-sm border-r border-white/10 rounded-l-xl overflow-hidden" style={{ width: '30%' }}>
               {/* Guide Header */}
               <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/20 bg-black/40 shrink-0">
                 <div className="w-5 h-5 rounded bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center flex-shrink-0">

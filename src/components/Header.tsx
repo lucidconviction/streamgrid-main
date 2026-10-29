@@ -52,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
     history: 'Watch History',
     watchlist: 'Watchlist',
     smutt: 'Nett Smutt',
+    upcoming: 'Upcoming Events',
   };
 
   const VIEW_ICONS: Record<string, React.ReactNode> = {
@@ -64,6 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
     watchlist: <Bookmark className="w-4 h-4" />,
     multiview: <LayoutGrid className="w-4 h-4" />,
     smutt: <Flame className="w-4 h-4" />,
+    upcoming: <Compass className="w-4 h-4" />,
   };
 
   // ── Header background player ─────────────────────────────────────────

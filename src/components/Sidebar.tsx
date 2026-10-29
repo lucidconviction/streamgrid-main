@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <aside
         className={`fixed lg:static left-0 z-40 flex flex-col glass-panel border-r border-blue-500/20 transition-all duration-300 ${
-          isOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:border-0 lg:overflow-hidden'
+          isOpen ? 'translate-x-0 w-64' : '-translate-x-full w-0 border-0 overflow-hidden'
         }`}
         style={{ top: 'var(--header-height, 65px)', bottom: 0 }}
       >

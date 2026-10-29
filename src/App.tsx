@@ -366,6 +366,13 @@ export default function App() {
       .finally(() => setIsLoadingEvents(false));
   }, []);
 
+  // Show ad popup on first visit
+  useEffect(() => {
+    if (!localStorage.getItem('popupDismissed')) {
+      setShowPopup(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Profile Switching
   const handleSelectProfile = (id: string) => {
     storageService.setActiveProfileId(id);

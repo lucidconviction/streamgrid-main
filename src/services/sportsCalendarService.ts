@@ -69,13 +69,15 @@ const fmtDate = (d: Date): string =>
 
 function mapEvent(e: any, sportSlug: string, leagueName: string): UpcomingEvent | null {
   try {
-    if (!e || !e.id || !e.competitors) return null;
-    const state = e.status?.type?.state;
+    if (!e || !e.id) return null;
+    const comp = e.competitions?.[0];
+    if (!comp) return null;
+    const state = comp.status?.type?.state;
     // Only keep upcoming + live events; drop finished games
-    if (state === 'post' || e.status?.type?.completed) return null;
+    if (state === 'post' || comp.status?.type?.completed) return null;
 
-    const home = e.competitors.find((c: any) => c.homeAway === 'home');
-    const away = e.competitors.find((c: any) => c.homeAway === 'away');
+    const home = comp.competitors?.find((c: any) => c.homeAway === 'home');
+    const away = comp.competitors?.find((c: any) => c.homeAway === 'away');
     const broadcast = e.broadcast?.broadcasters?.[0]?.name;
 
     return {
@@ -83,13 +85,13 @@ function mapEvent(e: any, sportSlug: string, leagueName: string): UpcomingEvent 
       sport: sportSlug,
       league: leagueName || sportSlug,
       name: e.name || '',
-      home: home?.displayName || home?.name || '',
-      away: away?.displayName || away?.name || '',
-      homeLogo: home?.logo || undefined,
-      awayLogo: away?.logo || undefined,
+      home: home?.team?.name || home?.displayName || home?.name || '',
+      away: away?.team?.name || away?.displayName || away?.name || '',
+      homeLogo: home?.team?.logo || undefined,
+      awayLogo: away?.team?.logo || undefined,
       date: e.date || '',
       state: state || 'pre',
-      detail: e.status?.type?.detail || '',
+      detail: comp.status?.type?.detail || '',
       homeScore: typeof home?.score === 'number' ? home.score : undefined,
       awayScore: typeof away?.score === 'number' ? away.score : undefined,
       venue: e.venue?.fullName || undefined,
