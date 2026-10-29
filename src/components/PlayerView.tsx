@@ -402,26 +402,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Stream Information */}
-        <div className="p-5 bg-[#0f121a] rounded-xl border border-slate-800/80">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-            <span className="flex items-center gap-1 text-blue-400 font-semibold uppercase">
-              <Radio className="w-3 h-3 animate-pulse" />
-              {stream.status === '24/7' ? '24/7 Channel' : 'Live Stream'}
-            </span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span>{stream.category}</span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="font-mono tabular-nums text-slate-300 flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5 text-slate-400" />
-              {(stream.viewers || 3200).toLocaleString()} watching
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{stream.title}</h1>
-          <p className="text-base text-slate-300 leading-relaxed max-w-3xl font-medium">
-            High-definition direct streaming broadcast from {stream.provider.toUpperCase()} provider networks.
-            Equipped with synchronized low-latency delivery and theater mode presentation.
-          </p>
         </div>
       </div>
 
@@ -469,8 +449,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <ChevronDownIcon className={`w-4 h-4 transition-transform ${showHistoryMenu ? 'rotate-180' : ''}`} />
           </button>
           {showHistoryMenu && (
-            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
-              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
+            <div className="absolute z-50 bottom-full mb-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+              <div className="px-3 py-2 border-t border-slate-800 bg-slate-900/60 sticky bottom-0 z-10">
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Recent History</span>
               </div>
               <div className="max-h-64 overflow-y-auto">
@@ -522,8 +502,8 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
           </button>
           {showFavMenu && (
-            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
-              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
+            <div className="absolute z-50 bottom-full mb-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+              <div className="px-3 py-2 border-t border-slate-800 bg-slate-900/60 sticky bottom-0 z-10">
                 <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
               </div>
               <div className="max-h-64 overflow-y-auto">
@@ -647,6 +627,27 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </button>
         </div>
       </div>
+
+        {/* Stream Information */}
+        <div className="p-5 bg-[#0f121a] rounded-xl border border-slate-800/80">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
+            <span className="flex items-center gap-1 text-blue-400 font-semibold uppercase">
+              <Radio className="w-3 h-3 animate-pulse" />
+              {stream.status === '24/7' ? '24/7 Channel' : 'Live Stream'}
+            </span>
+            <span aria-hidden="true" className="text-slate-600">·</span>
+            <span>{stream.category}</span>
+            <span aria-hidden="true" className="text-slate-600">·</span>
+            <span className="font-mono tabular-nums text-slate-300 flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5 text-slate-400" />
+              {(stream.viewers || 3200).toLocaleString()} watching
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{stream.title}</h1>
+          <p className="text-base text-slate-300 leading-relaxed max-w-3xl font-medium">
+            High-definition direct streaming broadcast from {stream.provider.toUpperCase()} provider networks.
+            Equipped with synchronized low-latency delivery and theater mode presentation.
+          </p>
     </div>
   );
 };
