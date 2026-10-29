@@ -648,7 +648,8 @@ export const streamService = {
   },
 
   // ── Lazy IPTV fetch — called only when user navigates to IPTV page ──────────
-  async fetchIptvStreams(): Promise<StreamItem[]> {
+  async fetchIptvStreams(forceRefresh = false): Promise<StreamItem[]> {
+    if (forceRefresh) iptvService.invalidateCache();
     return iptvService.fetchAllIptvChannels();
   },
 

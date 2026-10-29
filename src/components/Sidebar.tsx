@@ -49,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'history', label: 'Watch History', icon: History },
     { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
     { id: 'multiview', label: 'Multiview Grid', icon: LayoutGrid, count: multiviewCount },
+    { id: 'upcoming', label: 'Upcoming Events', icon: Popcorn },
     { id: 'smutt', label: 'Nett Smutt', icon: Flame },
   ];
 

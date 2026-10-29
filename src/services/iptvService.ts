@@ -226,66 +226,69 @@ const playlistCache = new Map<string, StreamItem[]>();
 export function parseM3U(text: string, sourceName: string, playlistId?: string): StreamItem[] {
   const lines = text.split('\n');
   const items: StreamItem[] = [];
+  const srcLower = sourceName.toLowerCase();
 
+  // Single-pass: collect EXTINF lines and their following URL
+  let pendingExtinf: string | null = null;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line.startsWith('#EXTINF')) continue;
-
-    // Parse metadata
-    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-    const groupMatch = line.match(/group-title="([^"]*)"/);
-    const tvgIdMatch = line.match(/tvg-id="([^"]*)"/);
-
-    const logo = logoMatch ? logoMatch[1] : undefined;
-    const rawGroup = groupMatch ? groupMatch[1] : 'General';
-    const rawName = line.split(',').slice(1).join(',').trim();
-
-    // Look ahead for stream URL
-    let streamUrl = '';
-    for (let j = i + 1; j < lines.length; j++) {
-      const candidate = lines[j].trim();
-      if (candidate && !candidate.startsWith('#')) {
-        streamUrl = candidate;
-        i = j; // Advance outer loop
-        break;
-      }
+    if (line.startsWith('#EXTINF')) {
+      pendingExtinf = line;
+      continue;
     }
+    if (pendingExtinf && line && !line.startsWith('#')) {
+      // This line is the stream URL for the pending EXTINF
+      const extinf = pendingExtinf;
+      const streamUrl = line;
+      pendingExtinf = null;
 
-    if (!streamUrl) continue;
+      // Parse metadata from EXTINF
+      const logoMatch = extinf.match(/tvg-logo="([^"]*)"/);
+      const groupMatch = extinf.match(/group-title="([^"]*)"/);
+      const logo = logoMatch ? logoMatch[1] : undefined;
+      const rawGroup = groupMatch ? groupMatch[1] : 'General';
+      const rawName = extinf.split(',').slice(1).join(',').trim();
 
-    // Normalize category
-    const cleanGroup = mapIptvGroup(rawGroup, rawName);
-    const cleanTitle = cleanChannelName(rawName);
-    const isHls = streamUrl.includes('.m3u8') || streamUrl.includes('.ts');
-    // Country + genre derived from the group-title (and channel name)
-    const meta = parseGroupTitle(rawGroup, rawName);
+      // Normalize category
+      const cleanGroup = mapIptvGroup(rawGroup, rawName);
+      const cleanTitle = cleanChannelName(rawName);
+      const isHls = streamUrl.includes('.m3u8') || streamUrl.includes('.ts');
+      const meta = parseGroupTitle(rawGroup, rawName);
 
-    items.push({
-      id: `iptv-${sourceName.toLowerCase()}-${items.length}-${Math.random().toString(36).substr(2, 4)}`,
-      title: cleanTitle,
-      name: cleanTitle,
-      category: cleanGroup,
-      groupTitle: rawGroup,
-      status: '24/7',
-      popular: isPopularIptv(cleanTitle, rawGroup),
-      provider: 'iptv',
-      streamType: isHls ? 'hls' : 'embed',
-      m3uSource: sourceName,
-      m3uPlaylistId: playlistId,
-      poster: logo && logo.startsWith('http') ? logo : undefined,
-      directEmbedUrl: streamUrl,
-      iptvCountry: meta.country,
-      iptvGenre: meta.genre,
-      streams: [
-        {
-          streamNo: 1,
-          name: `${cleanTitle} (${isHls ? 'HLS Direct' : 'Stream'})`,
-          embedUrl: streamUrl,
-          hd: cleanTitle.toLowerCase().includes('1080') || cleanTitle.toLowerCase().includes('hd'),
-        },
-      ],
-      viewers: Math.floor(Math.random() * 4500) + 800,
-    });
+      // Stable ID: hash of source + URL (no Math.random for cache stability)
+      const urlHash = streamUrl.split('').reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a | 0;
+      }, 0);
+      const stableId = `iptv-${srcLower}-${Math.abs(urlHash).toString(16).slice(0, 6)}`;
+
+      items.push({
+        id: stableId,
+        title: cleanTitle,
+        name: cleanTitle,
+        category: cleanGroup,
+        groupTitle: rawGroup,
+        status: '24/7',
+        popular: isPopularIptv(cleanTitle, rawGroup),
+        provider: 'iptv',
+        streamType: isHls ? 'hls' : 'embed',
+        m3uSource: sourceName,
+        m3uPlaylistId: playlistId,
+        poster: logo && logo.startsWith('http') ? logo : undefined,
+        directEmbedUrl: streamUrl,
+        iptvCountry: meta.country,
+        iptvGenre: meta.genre,
+        streams: [
+          {
+            streamNo: 1,
+            name: `${cleanTitle} (${isHls ? 'HLS Direct' : 'Stream'})`,
+            embedUrl: streamUrl,
+            hd: cleanTitle.toLowerCase().includes('1080') || cleanTitle.toLowerCase().includes('hd'),
+          },
+        ],
+        viewers: Math.floor(Math.random() * 4500) + 800,
+      });
+    }
   }
 
   return items;

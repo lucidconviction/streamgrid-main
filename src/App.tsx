@@ -10,6 +10,9 @@ import { HeroBanner } from './components/HeroBanner';
 import { StreamCarousel } from './components/StreamCarousel';
 import { SearchResultsView } from './components/SearchResultsView';
 import { PlayerView } from './components/PlayerView';
+import { UpcomingEventsView } from './components/UpcomingEventsView';
+import { UpcomingEventsRow } from './components/UpcomingEventsRow';
+import { fetchUpcomingEvents, UpcomingEvent } from './services/sportsCalendarService';
 import { MultiviewGrid } from './components/MultiviewGrid';
 import { WatchHistoryView } from './components/WatchHistoryView';
 import { WatchlistView } from './components/WatchlistView';
@@ -29,7 +32,10 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player' | 'upcoming'>('home');
+  const [showPopup, setShowPopup] = useState(false);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -350,6 +356,15 @@ export default function App() {
     }
 
   }, [currentView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load upcoming events on mount
+  useEffect(() => {
+    setIsLoadingEvents(true);
+    fetchUpcomingEvents()
+      .then((events) => setUpcomingEvents(events))
+      .catch(console.error)
+      .finally(() => setIsLoadingEvents(false));
+  }, []);
 
   // Profile Switching
   const handleSelectProfile = (id: string) => {
@@ -841,6 +856,17 @@ export default function App() {
               }}
               isRefreshing={isRefreshing}
             />
+          ) : currentView === 'upcoming' ? (
+            <UpcomingEventsView
+              events={upcomingEvents}
+              isLoading={isLoadingEvents}
+              onRefresh={() => {
+                setIsLoadingEvents(true);
+                fetchUpcomingEvents()
+                  .then((events) => setUpcomingEvents(events))
+                  .finally(() => setIsLoadingEvents(false));
+              }}
+            />
           ) : (
             /* Home / Explore View (Netflix & YouTube Hybrid) */
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
@@ -855,26 +881,15 @@ export default function App() {
                 onSelectHeroStream={(stream) => setFeaturedStream(stream)}
               />
 
-              {/* Multiview Quick Launcher Strip */}
-              <div className="mb-6 sm:mb-8 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-blue-950/60 via-slate-900 to-[#0f121a] border border-blue-800/50 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-lg bg-blue-600/25 border border-blue-500/50 flex items-center justify-center text-blue-300 shrink-0">
-                    <LayoutGrid className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white drop-shadow-[0_0_6px_rgba(59,130,246,0.4)]">Multiview Screen Arena</h3>
-                    <p className="text-sm text-slate-300 mt-0.5 font-medium">
-                      Watch up to 4 live sports matches and TV channels simultaneously with individual audio soloing.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setCurrentView('multiview')}
-                  className="px-4 py-2 sm:px-5 sm:py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/40 whitespace-nowrap transition-transform hover:scale-105 active:scale-95"
-                >
-                  Multiview ({activeMultiviewCount} active)
-                </button>
-              </div>
+              {/* Upcoming Events Sliding Row */}
+              {!isLoadingEvents && upcomingEvents.length > 0 && (
+                <UpcomingEventsRow
+                  events={upcomingEvents}
+                  isLoading={isLoadingEvents}
+                  onViewAll={() => setCurrentView('upcoming')}
+                />
+              )}
+
 
               {/* Continue Watching / Recent History (if user has history) */}
               {watchHistory.length > 0 && (
@@ -1095,6 +1110,34 @@ export default function App() {
         );
       })}
 
+      {/* Ad/Popup Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPopup(false)} />
+          <div className="relative bg-gradient-to-br from-slate-900 to-[#0f121a] border border-slate-700 rounded-2xl p-6 max-w-lg w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center shrink-0"><span className="text-2xl">⚠️</span></div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-white mb-2">Ad Supported Content</h2>
+                <p className="text-sm text-slate-300 leading-relaxed">This site uses pop-up ads to support free content. If you are having trouble viewing videos, we recommend installing a popup blocker and/or a userscript manager:</p>
+                <div className="mt-4 space-y-2 text-xs text-slate-400">
+                  <p className="font-semibold text-slate-300">Desktop - Popup Blockers:</p>
+                  <p>- uBlock Origin Lite for Chrome / uBlock Origin for Firefox / AdGuard for Safari</p>
+                  <p className="font-semibold text-slate-300 mt-3">Desktop - Userscript Managers:</p>
+                  <p>- Tampermonkey or Violentmonkey then browse scripts on Greasy Fork for popup blocker</p>
+                  <p className="font-semibold text-slate-300 mt-3">Mobile:</p>
+                  <p>- Android: Brave Browser (built-in) / AdGuard / Poper Blocker</p>
+                  <p>- iPhone/iPad: Total Adblock / 1Blocker / AdGuard for Safari</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowPopup(false); localStorage.setItem('popupDismissed', 'true'); }} className="flex-1 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-bold transition-colors">Got it</button>
+              <button onClick={() => setShowPopup(false)} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-bold transition-colors">Don't show again</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Floating Toast Notifications */}
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
