@@ -366,7 +366,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
       <div className={`flex flex-col lg:flex-row gap-4 ${isTheaterMode ? '' : ''}`}>
         {/* TV Guide Sidebar — left side, collapses to icon only */}
         <div className={`flex flex-col bg-[#050810] rounded-xl border border-slate-800/80 overflow-hidden transition-all duration-300 ${
-          isTheaterMode ? 'hidden' : isGuideOpen ? 'w-full lg:w-[280px] lg:flex-shrink-0' : 'w-full lg:w-[48px] lg:flex-shrink-0'
+          isTheaterMode ? 'hidden' : isGuideOpen ? 'w-full lg:w-[25%] lg:flex-shrink-0' : 'w-full lg:w-[48px] lg:flex-shrink-0'
         }`}>
           {/* Guide Header */}
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10 bg-[#0a0f1e] shrink-0">
@@ -479,7 +479,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         </div>
 
         {/* Player Area — right side */}
-        <div className="flex-1 min-w-0 flex flex-col gap-4">
+        <div className="w-full lg:w-[75%] flex flex-col gap-4">
           {/* Expand button when guide is collapsed */}
           {!isGuideOpen && (
             <button
