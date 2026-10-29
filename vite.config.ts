@@ -2,11 +2,11 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
-import {bintvProxyPlugin, watchPartyPlugin, localM3UPlugin} from './vite.plugins';
+import {bintvProxyPlugin, watchPartyPlugin, localM3UPlugin, aiProxyPlugin} from './vite.plugins';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin(), localM3UPlugin()],
+    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin(), localM3UPlugin(), aiProxyPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -61,6 +61,20 @@ export default defineConfig(() => {
           secure: false,
         },
       },
+    build: {
+      // Split large vendor libs into separate chunks for parallel download + caching
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            hls: ['hls.js'],
+            lucide: ['lucide-react'],
+            motion: ['motion'],
+          },
+        },
+      },
+      cssCodeSplit: true,
+    },
     },
   };
 });

@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import org.schabi.newpipe.extractor.Image;
 import org.schabi.newpipe.extractor.Info;
 import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.Page;
 import org.schabi.newpipe.extractor.ServiceList;
@@ -257,7 +258,19 @@ public class YoutubeExtractor {
         }
     }
 
-    static JsonObject cmdChannel(String channelId) {
+    static JsonObject cmdChannel(String... args) {
+        if (args.length < 1) {
+            return error("channel: missing channelId");
+        }
+        String channelId = args[0];
+        int offset = 0;
+        int limit = 12;
+        for (int i = 1; i < args.length; i++) {
+            try {
+                if (offset == 0 && i == 1) offset = Integer.parseInt(args[i]);
+                else if (limit == 12) limit = Integer.parseInt(args[i]);
+            } catch (NumberFormatException ignored) {}
+        }
         try {
             String url = channelId;
             if (!channelId.startsWith("http://") && !channelId.startsWith("https://")) {
@@ -281,18 +294,31 @@ public class YoutubeExtractor {
             obj.add("avatars", serializeImages(ex.getAvatars()));
             obj.add("banners", serializeImages(ex.getBanners()));
 
-            // Fetch recent videos from the first tab (usually "Videos")
+            // Fetch recent videos from the first tab (usually "Videos") with offset support
             JsonArray videos = new JsonArray();
             try {
                 List<ListLinkHandler> tabs = ex.getTabs();
                 if (tabs != null && !tabs.isEmpty()) {
                     ChannelTabExtractor tabEx = YOUTUBE_SERVICE.getChannelTabExtractor(tabs.get(0));
                     tabEx.fetchPage();
-                    for (InfoItem ii : tabEx.getInitialPage().getItems()) {
-                        if (ii instanceof StreamInfoItem) {
-                            videos.add(itemToJsonObject((StreamInfoItem) ii));
+                    int collected = 0;
+                    int skipped = 0;
+                    ListExtractor.InfoItemsPage<InfoItem> page = tabEx.getInitialPage();
+                    while (page != null && collected < limit) {
+                        int skip = Math.max(0, offset - skipped);
+                        for (InfoItem ii : page.getItems()) {
+                            if (skip > 0) { skip--; skipped++; continue; }
+                            if (ii instanceof StreamInfoItem) {
+                                videos.add(itemToJsonObject((StreamInfoItem) ii));
+                                collected++;
+                                if (collected >= limit) break;
+                            }
                         }
-                        if (videos.size() >= 15) break;
+                        if (collected < limit && page.getNextPage() != null) {
+                            page = tabEx.getPage(page.getNextPage());
+                        } else {
+                            page = null;
+                        }
                     }
                 }
             } catch (Exception ignored) {}
@@ -447,7 +473,8 @@ public class YoutubeExtractor {
             }
             case "channel" -> {
                 if (args.length < 2) { System.err.println("Missing channelId"); System.exit(1); }
-                result = cmdChannel(args[1]);
+                String[] rest = java.util.Arrays.copyOfRange(args, 1, args.length);
+                result = cmdChannel(rest);
             }
             case "playlist" -> {
                 if (args.length < 2) { System.err.println("Missing playlistId"); System.exit(1); }

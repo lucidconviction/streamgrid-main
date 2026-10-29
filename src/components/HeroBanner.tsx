@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Play, LayoutGrid, Bookmark, Eye, Radio } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import Hls from 'hls.js';
+import { isEmbedPlayerUrl } from '../services/embedUrls';
 
 interface HeroBannerProps {
   featuredStream: StreamItem | null;
@@ -41,12 +42,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   // Determine stream URL and type once per featured stream
   const streamData = useMemo(() => {
     if (!featuredStream) return null;
-    // Use bgVideoUrl (original) for video autoplay, directEmbedUrl (proxied) for iframe display
-    const videoUrl = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || featuredStream.streams?.[0]?.embedUrl || '';
-    const url = videoUrl;
+    // bgVideoUrl holds the *original* URL (raw HLS / direct media). For embed
+    // providers the playable URL is directEmbedUrl, which has already been
+    // routed (BinTV wrappers unwrapped, Cloudflare-blocked hosts proxied).
+    // Using the raw BinTV wrapper here loads the wrapper's nested iframe,
+    // which strips `encrypted-media` and breaks the DRM players.
+    const rawUrl = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || featuredStream.streams?.[0]?.embedUrl || '';
+    const routedUrl = featuredStream.directEmbedUrl || featuredStream.streams?.[0]?.embedUrl || rawUrl;
+    const url = isEmbedPlayerUrl(rawUrl, featuredStream.streamType) ? routedUrl : rawUrl;
     const isHls = url.includes('.m3u8') || url.includes('.ts');
     const isDirectVideo = url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mkv');
-    const isEmbed = url.includes('/embed/') || url.includes('pages.dev') || url.includes('embed.st') || url.includes('pstream.cfd') || url.includes('/api/bintv-proxy');
+    const isEmbed = isEmbedPlayerUrl(url, featuredStream.streamType);
     return { url, isHls, isDirectVideo, isEmbed };
   }, [featuredStream?.id]);
 

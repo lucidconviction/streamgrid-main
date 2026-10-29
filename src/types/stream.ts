@@ -18,7 +18,7 @@ export interface StreamItem {
   poster?: string;
   popular?: boolean;
   status?: 'live' | 'upcoming' | 'offline' | '24/7';
-  provider: 'streamed' | 'bintv' | 'westream' | 'daddylive' | 'iptv' | 'smutt' | 'eporner' | 'anime';
+  provider: 'streamed' | 'bintv' | 'westream' | 'cinevid' | 'daddylive' | 'iptv' | 'smutt' | 'eporner' | 'anime';
   streamType?: 'hls' | 'embed';
   m3uSource?: string;
   groupTitle?: string;
@@ -29,6 +29,8 @@ export interface StreamItem {
   screenshotUrl?: string;
   /** Background video URL — original stream URL for autoplay hero/banner video */
   bgVideoUrl?: string;
+  /** Internal data for Cinevid lazy channel resolution (not part of public API) */
+  _cinevidData?: { eventId: string; eventTitle: string; eventSlug: string };
   viewers?: number;
   teams?: {
     home?: string;

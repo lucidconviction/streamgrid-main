@@ -12,9 +12,11 @@ import {
   ChevronDown,
   Check,
   LayoutGrid,
+  RefreshCw,
 } from 'lucide-react';
 import { StreamItem, MultiviewSlot, MultiviewLayout, MultiviewPreset } from '../types/stream';
 import { VideoPlayer } from './VideoPlayer';
+import { routeBintvUrl } from '../services/streamService';
 
 const LAYOUT_OPTIONS: { id: MultiviewLayout; label: string }[] = [
   { id: 'single', label: '1 Focus' },
@@ -73,6 +75,7 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
   const [fullscreenSlotId, setFullscreenSlotId] = useState<number | null>(null);
   const [layoutDropdownOpen, setLayoutDropdownOpen] = useState(false);
   const [presetDropdownOpen, setPresetDropdownOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const layoutDropdownRef = useRef<HTMLDivElement>(null);
   const presetDropdownRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
@@ -395,6 +398,19 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
           >
             <Trash2 className="w-4 h-4" />
           </button>
+
+          {/* Refresh All Streams Button */}
+          <button
+            onClick={() => {
+              setRefreshKey((k) => k + 1);
+              onShowToast('Refreshing all streams...', 'info');
+            }}
+            className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-900 rounded-lg transition-colors"
+            title="Refresh all stream players"
+            aria-label="Refresh all streams"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -425,7 +441,7 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
               slot.stream?.directEmbedUrl ||
               (slot.stream?.sources?.[0]
                 ? `https://embed.st/embed/${slot.stream.sources[0].source}/${slot.stream.sources[0].id}/1`
-                : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
+                : routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng'));
 
             // Height based on layout and fullscreen
             const isFullscreen = isGridFullscreen;
@@ -535,6 +551,7 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
                 <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-0">
                   {slot.stream ? (
                     <VideoPlayer
+                      key={`vp-${slot.slotId}-${refreshKey}`}
                       url={embedUrl}
                       title={slot.stream.title}
                       streamType={slot.stream.streamType}
@@ -577,7 +594,7 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
               fsSlot.stream?.directEmbedUrl ||
               (fsSlot.stream?.sources?.[0]
                 ? `https://embed.st/embed/${fsSlot.stream.sources[0].source}/${fsSlot.stream.sources[0].id}/1`
-                : 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng');
+                : routeBintvUrl('https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng'));
             return (
               <>
                 <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -585,17 +602,31 @@ export const MultiviewGrid: React.FC<MultiviewGridProps> = ({
                     <span className="text-sm font-semibold text-slate-200 truncate pr-4">
                       {fsSlot.stream?.title || `Screen ${fullscreenSlotId + 1}`}
                     </span>
-                    <button
-                      onClick={() => setFullscreenSlotId(null)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors shrink-0"
-                      title="Exit fullscreen"
-                    >
-                      <Minimize2 className="w-3.5 h-3.5" />
-                      <span>Exit</span>
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          setRefreshKey((k) => k + 1);
+                          onShowToast('Refreshing stream...', 'info');
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Refresh stream"
+                        aria-label="Refresh stream"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setFullscreenSlotId(null)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors shrink-0"
+                        title="Exit fullscreen"
+                      >
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span>Exit</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="flex-1 min-h-0 bg-black">
                     <VideoPlayer
+                      key={`vp-fs-${fullscreenSlotId}-${refreshKey}`}
                       url={fsEmbedUrl}
                       title={fsSlot.stream?.title || ''}
                       streamType={fsSlot.stream?.streamType}

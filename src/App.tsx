@@ -17,8 +17,7 @@ import { ChannelDirectory } from './components/ChannelDirectory';
 import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
-import { YouTubeHub } from './components/YouTubeHub';
-import { SavedChannelsRow } from './components/SavedChannelsRow';
+import { TVGrid } from './components/TVGrid';
 import { CHANNELS, fetchChannelVideos } from './services/youtubeService';
 
 import { MusicDirectory } from './components/MusicDirectory';
@@ -31,7 +30,7 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube' | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
+  const [currentView, setCurrentView] = useState<'tv' | 'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,6 +203,7 @@ export default function App() {
 
     try {
       const all = await streamService.fetchAllStreams(forceRefresh);
+      console.log('[App] loadStreams complete:', all.length, 'streams');
       setStreams(all);
 
       // Check watchlist stream transitions from offline/upcoming to live
@@ -343,9 +343,13 @@ export default function App() {
 
   // Lazy-load IPTV streams when navigating to the IPTV view or home
   useEffect(() => {
-    if (currentView === 'iptv' || currentView === 'home') {
+    if (currentView === 'iptv' || currentView === 'tv') {
       loadIptvStreams();
     }
+    if (currentView === 'tv' || currentView === 'sports' || currentView === 'channels') {
+      loadStreams();
+    }
+
   }, [currentView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Profile Switching
@@ -381,6 +385,7 @@ export default function App() {
 
   // Play Stream Handler (also logs to Watch History)
   const handlePlayStream = (stream: StreamItem) => {
+    console.log('[App] handlePlayStream called:', stream.title, 'directEmbedUrl:', (stream.directEmbedUrl || '').substring(0, 100));
     setActiveStream(stream);
     setPipStreams([]); // Dismiss all PiPs when entering full theater view
     setCurrentView('player');
@@ -691,7 +696,7 @@ export default function App() {
         />
 
         {/* Viewport Content */}
-        <main className="flex-1 overflow-x-hidden min-h-[calc(100vh-var(--header-height,65px))] pb-16">
+        <main className="flex-1 overflow-x-hidden h-[calc(100vh-var(--header-height,65px))] pb-16">
           {/* Active View Rendering */}
           {currentView === 'player' && activeStream ? (
             <PlayerView
@@ -757,7 +762,7 @@ export default function App() {
           ) : currentView === 'sports' ? (
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
               <SportsEPG
-                streams={streams.filter((s) => s.status !== '24/7' || s.category.includes('Sport'))}
+                channels={streams.filter((s) => s.status !== '24/7' || s.category.includes('Sport'))}
                 onPlayStream={handlePlayStream as any}
               />
               <ChannelDirectory
@@ -801,29 +806,9 @@ export default function App() {
               onSetStreams={setSmuttStreams}
             />
           ) : currentView === 'youtube' ? (
-             <YouTubeHub
-               watchlistIds={watchlistIds}
-               onToggleWatchlist={(ytStream) =>
-                 handleToggleWatchlist({
-                   id: ytStream.id,
-                   title: ytStream.title,
-                   category: ytStream.category,
-                   provider: 'streamed',
-                   poster: ytStream.thumbnail,
-                 })
-               }
-               onShowToast={showToast}
-               reminders={storageService.getStreamReminders(activeProfile.id)}
-               onToggleReminder={(streamId) => {
-                 const updated = storageService.toggleStreamReminder(activeProfile.id, streamId);
-                 showToast(updated.includes(streamId) ? 'Reminder set' : 'Reminder removed', 'success');
-               }}
-               savedChannelIds={savedChannels}
-               onToggleSavedChannel={handleToggleSavedChannel}
-               onOpenChannel={onOpenYouTubeChannel}
-               pendingVideo={pendingYtVideo}
-               onPendingVideoConsumed={() => setPendingYtVideo(null)}
-             />
+             <div className="w-full h-full flex items-center justify-center text-slate-400">
+               <p>YouTube Hub — coming soon</p>
+             </div>
           ) : currentView === 'music' ? (
             <MusicDirectory
               onPlayStream={handlePlayStream}
@@ -853,6 +838,8 @@ export default function App() {
               }}
               isRefreshing={isRefreshing}
             />
+          ) : currentView === 'tv' ? (
+            <TVGrid streams={[...streams, ...iptvStreams]} onPlayStream={handlePlayStream} />
           ) : (
             /* Home / Explore View (Netflix & YouTube Hybrid) */
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
@@ -943,19 +930,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* YouTube Saved Channels Carousel (NewPipe-backed) */}
-              <SavedChannelsRow
-                channels={savedChannelData}
-                onRemoveChannel={(handle) => handleToggleSavedChannel(handle)}
-                onOpenVideo={(stream) => {
-                  // Open YouTube videos in-app (YouTubeHub theater-mode player)
-                  setPendingYtVideo(stream);
-                  setCurrentView('youtube');
-                }}
-                onOpenChannel={onOpenYouTubeChannel}
-              />
-
-              {/* Row 1: Live Sports Matches */}
+              {/* YouTube Saved Channels Carousel (NewPipe-backed) */}{/* Row 1: Live Sports Matches */}
               <StreamCarousel
                 title="Live Sports Broadcasts"
                 subtitle="Live football, basketball, and world championships happening right now"

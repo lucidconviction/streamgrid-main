@@ -1,5 +1,30 @@
 # RdNutz TV Streams — Version History
 
+## v1.3.0 — 2026-10-19
+
+### Stream Hub — 3D Deck + Real YouTube Playback
+- **7-category 3D cover-flow deck** — Trending, News and Politics, Latest Sports News, Vice News, Law Enforcement, Live, Recently Uploaded; each category ≥20 real YouTube videos fetched in parallel via `Promise.allSettled`
+- **`parseVideoId()` rewritten** — now handles bare 11-char IDs, `/watch?v=`, `/embed/`, `/v/`, `/shorts/`, and `youtu.be` short links (was embed-only — root cause of playback failure)
+- **YouTube IFrame API player** — theater-mode, ENDED → 5s countdown → auto-advance; Play Next button; Play Next wired through `onPlayNext`
+- **"More from this channel"** — fetches real channel videos via `fetchChannelVideosPaginated` with offset/limit; `UC...` channel IDs treated as channel IDs (not `@handle`) — root cause of empty channel video lists
+- **"Related Streams"** — separate section showing same-category videos from the deck pool
+- **Load More buttons** on both "More from this channel" and "Related Streams" sections — append next 12 items
+- **Topic filter bar removed** from YouTubeHub; **subscribe buttons removed** (in-app bookmark only); **top-right overlays and floating social card removed**
+- **Deck cards show real YouTube thumbnails**; **channel grid cards show real YouTube avatars** (lazy-loaded via `data-channel-handle` + `#channel-grid-root`, concurrency 4, cached in `streamgrid_yt_channel_avatars`)
+- **Saved-channels strip** persisted per-profile in localStorage; add/remove bookmarks always visible
+
+### YouTube Engine Pipeline
+- **Java `cmdChannel`** — positional args `[channelId, offset, limit]`; tracks `skipped` vs `collected` across pages
+- **`cmdSearch` / `cmdTrending` / `cmdLive`** — real YouTube extraction via NewPipeExtractor
+- **Python server** — `/api/youtube` endpoints (channel offset/limit, search q+limit, trending, live, comments); 2-min cache; normalizes `results`→`items` for trending
+- **Dev script** — auto-starts `music_server :8765`, `youtube_server :8766`, `vite :4207` (host 0.0.0.0)
+
+### IPTV
+- **Local M3U SRC serving** via vite `localM3UPlugin` at `/api/iptv/local/<filename>` with traversal protection + no-cache; remote fallback to `iptv.rdnutz.us`
+- **`invalidateCache()`** on refresh
+
+---
+
 ## v1.2.1 — 2026-10-17
 
 ### Multiview UI Redesign

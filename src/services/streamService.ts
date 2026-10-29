@@ -128,7 +128,7 @@ function base64UrlEncode(str: string): string {
 }
 
 // Route bintv-sources URLs through the Vite proxy to bypass Cloudflare bot protection
-function routeBintvUrl(url: string): string {
+export function routeBintvUrl(url: string): string {
   if (!url) return '';
   if (url.includes('bintv-sources.pages.dev') || url.includes('eihgembxe.cfd')) {
     return `/api/bintv-proxy?id=${base64UrlEncode(url)}`;
@@ -229,6 +229,77 @@ const FALLBACK_STREAMS: StreamItem[] = [
     viewers: 5200,
   },
 ];
+
+
+// ── Cinevid Stream Integration ───────────────────────────────────────────────
+// Cinevid (cinevid.st) — sports streaming API with CORS support.
+// Flow: events API → main-server API → ltv endpoint → M3U8 playlist
+
+const CINEVID_API = 'https://cinevid.st/api/public/events';
+const CINEVID_CDN = 'https://vidcdn.vip';
+const CINEVID_PLAYER = 'https://cinevid.st/embed/live';
+
+interface CinevidEvent {
+  id: string;
+  slug: string;
+  title: string;
+  sport: string;
+  league: string;
+  date: string;
+  time: string;
+  status: string;
+  score?: string | null;
+  playerUrl: string;
+  homeTeamImage?: string;
+  awayTeamImage?: string;
+  thumbnail?: string;
+}
+
+interface CinevidChannel {
+  id: string;
+  name: string;
+  speed: string;
+  language: string;
+  flag?: string;
+  Main: string;
+  live: boolean;
+}
+
+async function fetchCinevidStreams(
+  aggregated: StreamItem[],
+  stableId: (prefix: string, name: string, fallback?: string) => string,
+): Promise<void> {
+  try {
+    const res = await fetch(CINEVID_API, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) { console.warn(`Cinevid API returned ${res.status}`); return; }
+    const data = await res.json();
+    if (!Array.isArray(data?.events)) return;
+
+    for (const event of data.events as CinevidEvent[]) {
+      if (event.status === 'Ended' || event.status === 'ended') continue;
+      const status: 'live' | 'upcoming' = event.status === 'Live' ? 'live' : 'upcoming';
+      const category = mapCategory(event.league || event.sport || 'Sports');
+      const embedUrl = `${CINEVID_PLAYER}/${event.id}`;
+
+      // Store resolved channels on the stream object for lazy loading
+      const stream: StreamItem = {
+        id: stableId('cinevid', event.title || event.slug, event.id),
+        title: event.title || event.league || 'Cinevid Stream',
+        name: event.title,
+        category, status,
+        poster: event.thumbnail || '',
+        provider: 'cinevid', streamType: 'embed', popular: status === 'live',
+        directEmbedUrl: embedUrl, bgVideoUrl: embedUrl,
+        viewers: status === 'live' ? Math.floor(Math.random() * 5000) + 500 : 0,
+        // Attach raw channel data for lazy resolution (not displayed directly)
+        _cinevidData: { eventId: event.id, eventTitle: event.title, eventSlug: event.slug },
+      };
+      aggregated.push(stream);
+    }
+  } catch (e) {
+    console.warn('Cinevid fetch failed:', e);
+  }
+}
 
 export const streamService = {
   async fetchAllStreams(forceRefresh = false): Promise<StreamItem[]> {
@@ -340,7 +411,10 @@ export const streamService = {
       console.warn('bintvjson fetch failed, using fallback or streamed.pk', e);
     }
 
-    // 2. Fetch from streamed.pk (matches/all)
+    // 2. Fetch from Cinevid (sports events with HLS resolution)
+    await fetchCinevidStreams(aggregated, stableId);
+
+    // 3. Fetch from streamed.pk (matches/all)
     try {
       const res = await fetch(`${STREAMED_BASE}/api/matches/all`, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
@@ -464,6 +538,54 @@ export const streamService = {
       } catch (e) {
         console.warn(`Error resolving stream sources from ${stream.provider}`, e);
       }
+    }
+
+    // Cinevid: lazy-resolve channel list from main-server API
+    if (stream.provider === 'cinevid' && !stream.streams && stream._cinevidData) {
+      try {
+        const serverRes = await fetch(
+          `${CINEVID_CDN}/api/main-server?id=${stream._cinevidData.eventId}`,
+          { signal: AbortSignal.timeout(6000), headers: { 'Referer': 'https://cinevid.st/' } },
+        );
+        if (serverRes.ok) {
+          const serverData = await serverRes.json() as { channels: CinevidChannel[] };
+          const channels = serverData?.channels || [];
+          if (channels.length > 0) {
+            const mapped: StreamSource[] = channels
+              .filter(c => c.Main)
+              .map((channel, idx) => {
+                const ltvMatch = channel.Main.match(/id=([^\s&]+)/);
+                const ltvId = ltvMatch ? ltvMatch[1] : channel.Main;
+                const hlsUrl = `${CINEVID_CDN}/ltv?id=${encodeURIComponent(ltvId)}`;
+                return {
+                  streamNo: idx + 1,
+                  name: channel.name,
+                  language: channel.language || 'English',
+                  hd: channel.speed === 'HD',
+                  embedUrl: hlsUrl,
+                };
+              });
+            if (mapped.length > 0) {
+              stream.streams = mapped;
+              stream.directEmbedUrl = mapped[0].embedUrl;
+              stream.bgVideoUrl = mapped[0].embedUrl;
+              stream.streamType = 'hls';
+              return mapped;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Cinevid channel resolution failed:', e);
+      }
+      // Fall back to embed URL
+      stream.streams = [{
+        streamNo: 1,
+        name: stream.title || 'Main Feed',
+        language: 'English',
+        hd: true,
+        embedUrl: stream.directEmbedUrl || '',
+      }];
+      return stream.streams;
     }
 
     // Default fallback source

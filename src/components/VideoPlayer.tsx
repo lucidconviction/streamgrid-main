@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
+import { isEmbedPlayerUrl } from '../services/embedUrls';
 import {
   AlertCircle,
   RefreshCw,
@@ -68,16 +69,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
 
   // Check whether this is a direct video/HLS stream (not an iframe embed)
-  const isEmbedUrl =
-    url.includes('pages.dev') ||
-    url.includes('embed.st') ||
-    url.includes('/embed/') ||
-    url.includes('westream.su/embed') ||
-    url.includes('adultembed.com') ||
-    url.includes('eporner.com/embed') ||
-    url.includes('pstream.cfd') ||
-    url.includes('/api/bintv-proxy') ||
-    streamType === 'embed';
+  const isEmbedUrl = isEmbedPlayerUrl(url, streamType);
   const isHls =
     streamType === 'hls' ||
     url.includes('.m3u8') ||
@@ -94,8 +86,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     // For iframe embeds, there's no video element to wait for
     if (isEmbedUrl) {
-      // Hide loading after a short delay to allow iframe to start loading
-      const timer = setTimeout(() => setIsLoading(false), 800);
+      // Hide loading overlay immediately — the browser starts loading the
+      // iframe src as soon as it's mounted; no artificial delay needed.
+      const timer = setTimeout(() => setIsLoading(false), 50);
       return () => clearTimeout(timer);
     }
 
@@ -347,6 +340,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             src={iframeSrc}
             title={title}
             className="w-full h-full border-0"
+            style={{ background: '#111', position: 'absolute', inset: '0' }}
             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
           />
@@ -355,6 +349,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <video
           ref={videoRef}
           playsInline
+          preload="none"
+          muted={isMuted}
           className="w-full h-full object-contain"
           onClick={handleTogglePlay}
         />

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, X, Zap, Flame, Flame as QuickJumpIcon, Youtube, Compass, Radio, Tv, Layers, Music, History, Bookmark, LayoutGrid } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame, Flame as QuickJumpIcon, Compass, Radio, Tv, Layers, Music, History, Bookmark, LayoutGrid } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -45,7 +45,6 @@ export const Header: React.FC<HeaderProps> = ({
   const VIEW_LABELS: Record<string, string> = {
     home: 'Explore',
     sports: 'Live Sports',
-    youtube: 'Stream Hub',
     channels: '24/7 Channels',
     iptv: 'IPTV Playlists',
     music: 'Music',
@@ -58,7 +57,6 @@ export const Header: React.FC<HeaderProps> = ({
   const VIEW_ICONS: Record<string, React.ReactNode> = {
     home: <Compass className="w-4 h-4" />,
     sports: <Radio className="w-4 h-4" />,
-    youtube: <Youtube className="w-4 h-4" />,
     channels: <Tv className="w-4 h-4" />,
     iptv: <Layers className="w-4 h-4" />,
     music: <Music className="w-4 h-4" />,

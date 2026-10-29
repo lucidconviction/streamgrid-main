@@ -249,6 +249,46 @@ const REAL_PROFILES: Array<[string, string, string, boolean]> = [
   ['Jay Williams Let\'s Live Life', 'Jaywilliamsletslivelife', '385K', false],
 ];
 
+// ── Topic classification (must be before CHANNELS to avoid TDZ) ─────────────
+const TOPIC_RULES: Array<[string, string[]]> = [
+  ['Sports', ['ufc', 'nfl', 'espn', 'fumble', 'uninterrupted', 'strelka', 'street fight', 'tronmma', 'helwani', 'mma', 'boxing', 'socc', 'football', 'basketball', 'tennis', 'golf', 'nascar', 'motorsport', 'custom offsets', 'mecum', 'holley', 'dennis kirk', 'mustangmedic']],
+  ['Music', ['npr music', 'tpain', 'hot 97', 'breakfast club', 'revolt', 'axs tv', 'hip hop', 'rap']],
+  ['Tech & AI', ['fireship', 'android developer', 'matt wolfe', 'futurepedia', 'ai search', 'ai quest', 'prompt engineering', 'worldofai', 'a.i.', 'automation', 'claire code', 'the ai daily', 'all your tech', 'nate herk', 'manuagi', 'theagrid']],
+  ['News & Politics', ['vice news', 'daily show', 'candace owens', 'piers morgan', 'majority report', 'african diaspora', 'roland s. martin', 'mother jones', 'alex finn', 'stephen a. smith', 'urbanspoliticians', 'the officer tatum']],
+  ['Comedy', ['netflix is a joke', 'andrew schulz', 'ed bassmaster', 'daym drops', 'shane hummus', 'shout studios', 'funarios', 'kevin samuels', 'the angryman', 'gary owen', 'all def', 'worldstarhiphop']],
+  ['Business & Finance', ['coin bureau', 'trading parrot', 'discover crypto', 'stock moe', 'mylesg', 'mark stache', 'the clever millionaire', 'millions morning', 'ross cameron', 'trading fraternity', 'gabe trades', 'wes roth', 'julian goldie']],
+  ['Cars & Motors', ['mighty car mods', 'custom offsets', 'mecum auctions', 'holley', 'dennis kirk', 'mustang medic', 'be the boss', 'bullrunners', 'bounty tank']],
+  ['Cooking & Food', ['smokin grillin', 'danny kim', 'not another cooking', 'stalekracker', 'hannibal hungry', 'dawgfatha', 'bbq', 'allthingsbbq', 'kimmy kreations']],
+  ['History & Education', ['absolute history', 'jubilee', 'star talk', 'mrballen', '4bidden knowledge']],
+  ['Podcasts & Talk Shows', ['diary of a ceo', 'no jumper', 'joe buen tv', 'dr phil podcast', 'art of dialogue', 'mcqueen on air', 'latryguy', 'trilogy media', 'speakeasy', 'allthingsbbq']],
+  ['Reactors & Commentary', ['kingdom reacts', 'mrlobyd', 'demons row', 'flossy carter', 'the blues channel', 'the conscious lee', 'sav says']],
+  ['Entertainment & Pop Culture', ['complex', 'djvlad', 'vlad tv', 'bet networks', 'streetbeefs', 'flagrant clips', 'the fumble', 'hype plus']],
+  ['Investing & Trading', ['coin desk', 'trading fraternity', 'stock moe', 'mylesg', 'warrior trading', 'the trading parrot']],
+  ['Lifestyle & Vlogs', ['hayls world', 'nice kicks', 'the dag life', 'yaad lifes good', 'everything kevo', 'devory darkins', 'social proof']],
+];
+
+export function classifyTopics(name: string, handle: string): string[] {
+  const text = `${name} ${handle}`.toLowerCase();
+  const matched: string[] = [];
+  for (const [topic, keywords] of TOPIC_RULES) {
+    if (keywords.some((kw) => text.includes(kw))) matched.push(topic);
+  }
+  return matched.length > 0 ? matched : ['General'];
+}
+
+export function getAvailableTopics(): string[] {
+  const set = new Set<string>();
+  for (const ch of CHANNELS) {
+    if (ch.topics) ch.topics.forEach((t) => set.add(t));
+  }
+  return Array.from(set).sort();
+}
+
+export function getChannelsByTopic(channelIds: string[], topics: string[]): YouTubeChannel[] {
+  if (topics.length === 0) return CHANNELS;
+  return CHANNELS.filter((ch) => topics.some((t) => ch.topics?.includes(t)));
+}
+
 export const CHANNELS: YouTubeChannel[] = REAL_PROFILES.map(
   ([name, handle, subscribers, verified], i) => ({
     id: handle.toLowerCase(),
@@ -258,9 +298,413 @@ export const CHANNELS: YouTubeChannel[] = REAL_PROFILES.map(
     verified,
     bio: `@${handle} • ${subscribers} subscribers`,
     youtubeChannelId: handle,
+    topics: classifyTopics(name, handle),
     socialLinks: { youtube: `https://www.youtube.com/@${handle}` },
   })
 );
+
+// ── StreamDeck category filters ─────────────────────────────────────────────
+const DECK_TITLE_POOL: Record<string, string[]> = {
+  'Trending': [
+    'Viral sensation takes over the internet',
+    'Breaking: Major announcement just dropped',
+    'This is the most viewed video today',
+    'Everyone is talking about this',
+    'The clip that broke the internet',
+    'You wont believe what happened next',
+    'Record-breaking moment caught on camera',
+    'The story everyone needs to hear',
+    'This changed everything overnight',
+    'The moment that went viral worldwide',
+    'Shocking revelation in 60 seconds',
+    'The truth no one saw coming',
+    'Millions are watching this right now',
+    'The most unexpected twist ever',
+    'This is why you should pay attention',
+    'The incident that stunned the world',
+    'A must-watch for everyone',
+    'The breakdown everyone is sharing',
+    'You have to see this to believe it',
+    'The story of the year so far',
+  ],
+  'News and Politics': [
+    'Breaking political developments today',
+    'Lawmakers debate new legislation',
+    'Policy shift impacts millions',
+    'Press briefing highlights key announcements',
+    'Analysis: What the decision means',
+    'Election updates and polling data',
+    'International relations in focus',
+    'Congressional hearing today',
+    'The vote that could change everything',
+    'Expert breakdown of the situation',
+    'Behind the scenes at the Capitol',
+    'The legislation explained simply',
+    'What voters need to know now',
+    'The coalition that shocked everyone',
+    'Campaign trail updates and analysis',
+    'The ruling and its implications',
+    'Transparency watchdog investigation',
+    'The policy debate everyone watches',
+    'What comes next after the vote',
+    'The story developing before our eyes',
+  ],
+  'Latest Sports News': [
+    'Championship thriller ends in controversy',
+    'Star player signs record deal',
+    'Playoff picture clarified after weekend',
+    'Injury updates from the locker room',
+    'Trade rumors heating up fast',
+    'Coach breaks silence on controversy',
+    'Rookie sensation dominates headlines',
+    'Record broken in stunning fashion',
+    'The rivalry that never disappoints',
+    'Season implications after the result',
+    'Team chemistry building momentum',
+    'The upset that shook the league',
+    'Playoff predictions from experts',
+    'Momentum shift nobody saw coming',
+    'The stat line that tells the story',
+    'Behind the scenes with the champions',
+    'The grueling training regimen',
+    'Fan reaction to the big win',
+    'What the coach said after the game',
+    'The highlight reel everyone shares',
+  ],
+  'Vice News': [
+    'On the ground: Crisis zone report',
+    'Undercover investigation released',
+    'Corruption exposed in exclusive',
+    'The cost of war from the frontlines',
+    'Climate crisis: Firsthand account',
+    'Refugee stories from the border',
+    'The truth behind the numbers',
+    'Power players and their influence',
+    'The hidden story behind the headline',
+    'Conflict zone: A day in the life',
+    'The investigation that changed policy',
+    'On assignment: The real story',
+    'The power broker nobody talks about',
+    'Behind the propaganda machine',
+    'The environmental disaster unfolding',
+    'The human cost of the conflict',
+    'Exclusive: Sources reveal the truth',
+    'The story the mainstream missed',
+    'From the field: Ground report',
+    'The accountability gap exposed',
+  ],
+  'Law Enforcement': [
+    'True crime: The case that shocked a nation',
+    'Cold case breakthrough after decades',
+    'Inside the investigation that closed the file',
+    'The story behind the warrant unsealed',
+    'How they caught the suspect',
+    'The trial everyone watched',
+    'Evidence that changed everything',
+    'The interrogation that cracked the case',
+    'Behind the badge: A detective story',
+    'The forensic breakthrough explained',
+    'Missing persons: The search continues',
+    'The case that haunted the investigators',
+    'Courtroom drama: The verdict',
+    'The witness who changed everything',
+    'How the crime was solved',
+    'The inside story of the takedown',
+    'The pattern nobody wanted to see',
+    'The investigation that exposed corruption',
+    'From the files: The full account',
+    'Justice served or system failure',
+  ],
+  'Recently Uploaded': [
+    'The story you missed yesterday',
+    'New evidence changes the narrative',
+    'What happened in the last 24 hours',
+    'The update everyone needed',
+    'Breaking overnight: New development',
+    'The interview that dropped today',
+    'What the documents reveal',
+    'The clip going viral now',
+    'The analysis you need to see',
+    'Yesterday in review: The key moments',
+    'The story developing fast',
+    'What we know so far',
+    'The new filing changes everything',
+    'The footage that surfaced today',
+    'The interview that broke the story',
+    'What the sources are saying',
+    'The development that matters',
+    'The timeline everyone follows',
+    'The update from the frontlines',
+    'The story that just broke',
+  ],
+};
+
+const DECK_CHANNEL_POOL: Record<string, string[]> = {
+  'News and Politics': ['VICENews', 'TheDailyShow', 'RealCandaceO', 'PiersMorganUncensored', 'AfricanDiasporaNews', 'rolandsmartin', 'TheMajorityReport', 'MrStephenASmith'],
+  'Latest Sports News': ['espn', 'ufc', 'NFL', 'thefumble', 'UNINTERRUPTED', 'ArielHelwani', 'CustomOffsetsTV', 'Tronmma'],
+  'Vice News': ['VICENews'],
+  'Law Enforcement': ['MrBallen', 'RealCrime', '4biddenKnowledgePodcast', 'FlossyCarter'],
+};
+
+// Deck stream pool — populated from real engine data on first call
+let _deckCache: YouTubeStream[] | null = null;
+let _deckCachePromise: Promise<YouTubeStream[]> | null = null;
+
+/**
+ * Build the deck stream pool from real YouTube data.
+ * Fetches category-specific videos from the engine via search, plus live streams.
+ * Falls back to mock data if the engine is unavailable.
+ */
+async function fetchDeckStreamsAsync(): Promise<YouTubeStream[]> {
+  if (_deckCache) return _deckCache;
+  if (_deckCachePromise) return _deckCachePromise;
+
+  _deckCachePromise = (async () => {
+    try {
+      const result: YouTubeStream[] = [];
+      let idx = 0;
+
+      // Category → search queries (try multiple queries per category to get enough results)
+      const categoryQueries: Record<string, string[]> = {
+        'Trending': ['trending', 'viral', 'popular today'],
+        'News and Politics': ['news politics', 'politics', 'news'],
+        'Latest Sports News': ['sports news', 'sports', 'ufc mma'],
+        'Vice News': ['vice news', 'news documentary'],
+        'Law Enforcement': ['law enforcement', 'true crime', 'police'],
+        'Recently Uploaded': ['new video', 'latest upload', 'new'],
+      };
+
+      // Fetch videos for each category — parallelize across categories
+      const categoryEntries = Object.entries(categoryQueries);
+      const categoryResults = await Promise.allSettled(
+        categoryEntries.map(async ([category, queries]) => {
+          const seen = new Set<string>();
+          const items: YouTubeStream[] = [];
+          for (const query of queries) {
+            try {
+              const res = await engineSearch(query, 25);
+              for (const item of res.results || []) {
+                const stream = enrichEngineItem(item, idx);
+                if (!stream) continue;
+                if (seen.has(stream.id)) continue;
+                seen.add(stream.id);
+                stream.category = category;
+                items.push(stream);
+                idx++;
+                if (seen.size >= 20) break;
+              }
+            } catch { /* engine unavailable for this query, try next */ }
+            if (seen.size >= 20) break;
+          }
+          return { category, items };
+        })
+      );
+
+      for (const cr of categoryResults) {
+        if (cr.status === 'fulfilled') {
+          result.push(...cr.value.items);
+        }
+      }
+
+      // Fetch live videos
+      try {
+        const liveRes = await engineLive();
+        for (const item of liveRes.items || []) {
+          const stream = enrichEngineItem(item, idx);
+          if (!stream) continue;
+          stream.category = 'Live';
+          stream.status = 'live';
+          result.push(stream);
+          idx++;
+        }
+      } catch { /* engine unavailable for live */ }
+
+      // If engine returned no results, fall back to mock data
+      if (result.length === 0) {
+        _deckCache = buildMockDeckStreams();
+      } else {
+        _deckCache = result.sort((a, b) => {
+          const catOrder: Record<string, number> = {
+            'Trending': 0,
+            'News and Politics': 1,
+            'Latest Sports News': 2,
+            'Vice News': 3,
+            'Law Enforcement': 4,
+            'Live': 5,
+            'Recently Uploaded': 6,
+          };
+          return (catOrder[a.category] || 99) - (catOrder[b.category] || 99);
+        });
+      }
+    } catch (e) {
+      console.warn('[deck] Engine fetch failed, falling back to mock:', (e as Error).message);
+      _deckCache = buildMockDeckStreams();
+    } finally {
+      _deckCachePromise = null;
+    }
+
+    return _deckCache;
+  })();
+
+  return _deckCachePromise;
+}
+
+/** Convert an engine stream item to a YouTubeStream, enriched with channel info */
+function enrichEngineItem(data: EngineStreamData, idx: number): YouTubeStream | null {
+  try {
+    // Get the channel avatar from the engine data
+    const avatar = data.uploaderAvatars?.[data.uploaderAvatars.length - 1]?.url
+      || data.uploaderAvatars?.[0]?.url
+      || '';
+
+    const vid = parseVideoId(data.videoId || data.id);
+    if (!vid) return null;
+
+    const thumb = data.thumbnails?.[data.thumbnails.length - 1]?.url
+      || data.thumbnails?.[0]?.url
+      || makeThumb(data.title.slice(0, 18).toUpperCase(), data.category || 'Video', idx);
+
+    const channelName = data.uploaderName || data.channel?.name || '';
+    const channelHandle = (() => {
+      const url = data.uploaderUrl || '';
+      const h = url.match(/\/@([A-Za-z0-9_.-]+)/);
+      if (h) return `@${h[1]}`;
+      const c = url.match(/\/channel\/([A-Za-z0-9_-]+)/);
+      if (c) return `@${c[1]}`;
+      return url || `channel-${idx}`;
+    })();
+
+    // Try to enrich with known channel data
+    const knownChannel = CHANNELS.find(
+      (c) => c.youtubeChannelId?.toLowerCase() === channelHandle.replace(/^@/, '').toLowerCase()
+        || c.id === channelHandle.replace(/^@/, '').toLowerCase()
+    );
+
+    return {
+      id: vid,
+      title: data.title,
+      description: data.description || '',
+      thumbnail: thumb,
+      channel: {
+        id: channelHandle,
+        name: channelName,
+        avatar: knownChannel?.avatar || avatar || '',
+        subscribers: knownChannel?.subscribers || '1.2M',
+        verified: knownChannel?.verified || data.channel?.verified || false,
+        bio: `@${channelHandle} • ${knownChannel?.subscribers || '1.2M'} subscribers`,
+        youtubeChannelId: knownChannel?.youtubeChannelId || channelHandle,
+        socialLinks: knownChannel?.socialLinks || { youtube: `https://www.youtube.com/${channelHandle.startsWith('@') ? channelHandle : '@' + channelHandle}` },
+      },
+      status: data.status === 'live' ? 'live' : data.status === 'shorts' ? 'shorts' : 'vod',
+      category: data.category || 'General',
+      tags: data.tags || [],
+      viewers: data.status === 'live' ? data.viewCount : undefined,
+      durationSeconds: data.durationSeconds > 0 ? data.durationSeconds : undefined,
+      publishedAt: data.uploadDate ? Date.now() - 86400000 : undefined,
+      chapters: [],
+      embedUrl: `https://www.youtube.com/embed/${vid}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Build mock deck streams as fallback when engine is unavailable */
+function buildMockDeckStreams(): YouTubeStream[] {
+  const result: YouTubeStream[] = [];
+  let idx = 0;
+
+  const topics = ['Trending', 'News and Politics', 'Latest Sports News', 'Vice News', 'Law Enforcement', 'Recently Uploaded'];
+
+  for (const topic of topics) {
+    const titles = DECK_TITLE_POOL[topic];
+    const chans = DECK_CHANNEL_POOL[topic]
+      ? DECK_CHANNEL_POOL[topic].map((h) => CHANNELS.find((c) => c.youtubeChannelId === h)!).filter(Boolean)
+      : CHANNELS;
+
+    for (let i = 0; i < 20; i++) {
+      const ch = chans[i % chans.length];
+      const title = titles[i % titles.length];
+      const viewers =
+        topic === 'Trending' ? Math.floor(10000 + Math.random() * 200000) :
+        Math.floor(100 + Math.random() * 5000);
+
+      result.push({
+        id: `yt-dk-${topic.replace(/\s/g, '-').toLowerCase()}-${String(i + 1).padStart(2, '0')}`,
+        title,
+        description: `Deck stream #${i + 1} in the ${topic} category. Channel: ${ch.name}.`,
+        thumbnail: makeThumb(title.slice(0, 18).toUpperCase(), topic, idx),
+        channel: ch,
+        status: 'vod',
+        category: topic,
+        tags: [`#${topic.replace(/\s|#/g, '')}`, `#DeckStream${i + 1}`],
+        viewers,
+        durationSeconds: Math.floor(300 + Math.random() * 3600),
+        publishedAt: now - (i * 86400000),
+        chapters: [],
+        embedUrl: `https://www.youtube.com/embed/${topic.toLowerCase().slice(0, 2)}${idx}aBcD123`,
+      });
+      idx++;
+    }
+  }
+
+  // 20 Live streams
+  for (let i = 0; i < 20; i++) {
+    const ch = CHANNELS[i % CHANNELS.length];
+    const titles = DECK_TITLE_POOL['Recently Uploaded'];
+    const title = titles[i % titles.length];
+    result.push({
+      id: `yt-dk-live-${String(i + 1).padStart(2, '0')}`,
+      title: `LIVE: ${title}`,
+      description: `Live deck stream #${i + 1}. Channel: ${ch.name}.`,
+      thumbnail: makeThumb('LIVE', '🔴 NOW', idx),
+      channel: ch,
+      status: 'live',
+      category: 'Live',
+      tags: ['#Live', `#DeckStream${i + 1}`],
+      viewers: Math.floor(5000 + Math.random() * 50000),
+      chapters: [],
+      embedUrl: `https://www.youtube.com/embed/live${idx}aBc`,
+    });
+    idx++;
+  }
+
+  return result;
+}
+
+/** Synchronous fallback — returns mock data immediately while async fetch runs */
+export function deckStreamsSync(): YouTubeStream[] {
+  if (_deckCache) return _deckCache;
+  return buildMockDeckStreams();
+}
+
+/** Synchronous: returns mock deck data immediately (for initial render). */
+export function getStreamsByDeckCategory(streams: YouTubeStream[], category: string): YouTubeStream[] {
+  const pool = streams.length > 0 ? streams : deckStreamsSync();
+
+  switch (category) {
+    case 'Trending':
+    case 'News and Politics':
+    case 'Latest Sports News':
+    case 'Vice News':
+    case 'Law Enforcement':
+      return pool.filter((s) => s.category === category).slice(0, 20);
+    case 'Live':
+      return pool.filter((s) => s.status === 'live').slice(0, 20);
+    case 'Recently Uploaded':
+      return pool
+        .filter((s) => s.status === 'vod')
+        .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0))
+        .slice(0, 20);
+    default:
+      return pool.slice(0, 20);
+  }
+}
+
+/** Async: fetches real videos from the engine and returns enriched deck streams. */
+export async function loadDeckStreams(): Promise<YouTubeStream[]> {
+  return fetchDeckStreamsAsync();
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -655,6 +1099,11 @@ export function getRelated(stream: YouTubeStream): YouTubeStream[] {
   return fromPool.length > 0 ? fromPool.slice(0, 6) : pool.filter((s) => s.id !== stream.id).slice(0, 6);
 }
 
+export function getAllRelated(stream: YouTubeStream): YouTubeStream[] {
+  const pool = allKnownStreams();
+  return pool.filter((s) => s.id !== stream.id && (s.category === stream.category || s.channel.id === stream.channel.id));
+}
+
 export function getPlaylistsFor(stream: YouTubeStream): YouTubePlaylist[] {
   return YOUTUBE_PLAYLISTS.filter((p) => p.streamIds.includes(stream.id));
 }
@@ -769,8 +1218,13 @@ export async function engineFetchChannel(channelId: string): Promise<EngineChann
 }
 
 export async function engineFetchChannelByHandle(handle: string): Promise<EngineChannelData> {
-  return cachedFetch(`channel:${handle}`, () =>
-    fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(handle)}`)
+  // Normalize: bare handles need a leading @ for the engine to resolve them
+  const normalized =
+    handle.startsWith('@') || handle.startsWith('http') || handle.startsWith('UC')
+      ? handle
+      : `@${handle}`;
+  return cachedFetch(`channel:${normalized}`, () =>
+    fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(normalized)}`)
   );
 }
 
@@ -780,10 +1234,10 @@ export async function fetchChannelVideos(
   limit = 12
 ): Promise<YouTubeStream[]> {
   try {
-    // Normalize: ensure leading @ for handle URLs
-    const normalized = handle.startsWith('@') ? handle : `@${handle}`;
+    // Normalize: ensure leading @ for handle URLs, but NOT for UC... channel IDs
+    const normalized = handle.startsWith('@') || handle.startsWith('UC') ? handle : `@${handle}`;
     const res = await cachedFetch(`channel-videos:${normalized}:${limit}`, () =>
-      fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(normalized)}`)
+      fetchJson<EngineChannelData>(`${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(normalized)}&limit=${limit}`)
     );
     const items = (res.videos || []).slice(0, limit);
     const channel: EngineChannelData = {
@@ -800,6 +1254,40 @@ export async function fetchChannelVideos(
     return items.map((v) => engineToStream(v as EngineStreamData, channel));
   } catch (e) {
     console.warn(`[youtube] channel videos failed for ${handle}:`, (e as Error).message);
+    return [];
+  }
+}
+
+/** Paginated fetch for channel videos — used by "Load More" buttons. */
+export async function fetchChannelVideosPaginated(
+  handle: string,
+  offset: number,
+  limit = 12
+): Promise<YouTubeStream[]> {
+  try {
+    const normalized = handle.startsWith('@') || handle.startsWith('UC') ? handle : `@${handle}`;
+    const res = await cachedFetch(
+      `channel-videos-pag:${normalized}:o${offset}:l${limit}`,
+      () =>
+        fetchJson<EngineChannelData>(
+          `${YOUTUBE_BACKEND}/channel?id=${encodeURIComponent(normalized)}&offset=${offset}&limit=${limit}`
+        )
+    );
+    const items = (res.videos || []).slice(0, limit);
+    const channel: EngineChannelData = {
+      id: res.id || handle,
+      name: res.name,
+      url: res.url,
+      description: res.description,
+      verified: res.verified,
+      subscriberCount: res.subscriberCount,
+      avatars: res.avatars || [],
+      thumbnails: res.thumbnails || [],
+      videos: [],
+    };
+    return items.map((v) => engineToStream(v as EngineStreamData, channel));
+  } catch (e) {
+    console.warn(`[youtube] channel videos paginated failed for ${handle}:`, (e as Error).message);
     return [];
   }
 }
@@ -867,14 +1355,25 @@ export async function engineComments(videoId: string, limit = 20): Promise<Engin
 /** Extract a YouTube video ID from a watch URL, ID, or handle. */
 export function parseVideoId(s: string): string {
   if (!s) return '';
+  // Already a bare video ID (11 chars, YouTube format)
+  if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
   if (/^https?:\/\//.test(s)) {
     try {
       const u = new URL(s);
       if (u.hostname === 'youtu.be') return u.pathname.split('/')[0] || '';
       const v = u.searchParams.get('v');
       if (v) return v;
-      const parts = u.pathname.split('/');
-      if (parts.length >= 2 && parts[1] === 'watch') return parts[parts.length - 1];
+      // /watch?v=ID
+      if (u.pathname === '/watch') return v || '';
+      // /embed/ID
+      const embedMatch = u.pathname.match(/\/embed\/([A-Za-z0-9_-]+)/);
+      if (embedMatch) return embedMatch[1];
+      // /v/ID
+      const vMatch = u.pathname.match(/\/v\/([A-Za-z0-9_-]+)/);
+      if (vMatch) return vMatch[1];
+      // /shorts/ID
+      const shortsMatch = u.pathname.match(/\/shorts\/([A-Za-z0-9_-]+)/);
+      if (shortsMatch) return shortsMatch[1];
     } catch { /* fall through */ }
     const m = s.match(/[?&]v=([\w-]{6,})/);
     if (m) return m[1];

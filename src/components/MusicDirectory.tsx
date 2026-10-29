@@ -78,6 +78,7 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Player state (mirrors floating player in App) ──
   const [activeTracks, setActiveTracks] = useState<MusicTrack[]>([]);
@@ -324,7 +325,8 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
   }, [activeGenre, searchActive]);
 
   // ── Search ──
-  const handleSearch = useCallback(async (query: string) => {
+  // Core search logic — called after debounce or immediately (e.g. from history chips)
+  const doSearch = useCallback(async (query: string) => {
     if (!query.trim() || isLoading) return;
     addSearchHistory(query);
     setSearchHistory(getSearchHistory());
@@ -342,9 +344,16 @@ export const MusicDirectory: React.FC<MusicDirectoryProps> = ({
     }
   }, [isLoading]);
 
+  // Debounced search for typing — waits 350ms after user stops typing
+  const handleSearch = useCallback((query: string) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => doSearch(query), 350);
+  }, [doSearch]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(searchQuery);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    doSearch(searchQuery);
   };
 
   const clearSearch = () => {

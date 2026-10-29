@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qs
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 JAVA_EXTRACTOR_JAR = os.path.join(SCRIPT_DIR, "java_youtube", "build", "libs", "java-youtube-extractor-1.0.jar")
-JAVA_HOME_PATH = "/usr/local/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home"
+JAVA_HOME_PATH = "/usr/lib/jvm/java-25-openjdk-amd64"
 
 _cache = {}
 _cache_time = {}
@@ -93,10 +93,13 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/youtube/channel":
             q = parse_qs(parsed.query)
             channel_id = q.get("id", [None])[0]
+            offset = int(q.get("offset", ["0"])[0])
+            limit = int(q.get("limit", ["12"])[0])
             if not channel_id:
                 self._send_json({"error": "missing id"}, 400)
                 return
-            self._send_json(cached(f"channel:{channel_id}", lambda: run_java(["channel", channel_id])))
+            cache_key = f"channel:{channel_id}:o{offset}:l{limit}"
+            self._send_json(cached(cache_key, lambda: run_java(["channel", channel_id, str(offset), str(limit)])))
         elif parsed.path == "/api/youtube/playlist":
             q = parse_qs(parsed.query)
             playlist_id = q.get("id", [None])[0]

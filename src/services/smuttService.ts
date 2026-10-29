@@ -1,7 +1,17 @@
 import { StreamItem } from '../types/stream';
 import { resolveSmuttThumbnail, CATEGORY_EMOJI } from './smuttThumbnailService';
 
-export const SMUTT_M3U_URL = import.meta.env.VITE_SMUTT_M3U_URL || '/api/smutt/Nett_Smutt_4.0.m3u';
+export const SMUTT_M3U_URL = import.meta.env.VITE_SMUTT_M3U_URL || '/api/iptv/local/Nett_Smutt_4.0.m3u';
+
+/**
+ * Adult playlists from the local `M3U SRC` directory. The first entry can be
+ * overridden with `VITE_SMUTT_M3U_URL`; the rest are always read from disk.
+ */
+export const SMUTT_M3U_URLS: string[] = [
+  SMUTT_M3U_URL,
+  '/api/iptv/local/Nett_Smutt_2.0.m3u',
+  '/api/iptv/local/Robbdeeze_Nett_Smutt.m3u',
+];
 
 export const getGroupIcons = () => CATEGORY_EMOJI;
 
@@ -49,14 +59,19 @@ let cachedStreams: StreamItem[] = [];
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes for smutt (less frequent changes)
 
-const GROUP_ICONS: Record<string, string> = {
+export const GROUP_ICONS: Record<string, string> = {
   'Worldstar Hip Hop': '🎤',
   'LiveGore': '🔴',
   'Vidmax': '📹',
   'ZFilmzOriginals': '🎬',
   'HorribleVideos': '⚠️',
   'Crazyshit': '🤪',
+  'Kaotic': '🎥',
   'DaftPorn': '💋',
+  'TheYNC': '💀',
+  'USACrime': '🗞️',
+  'HeavyFetish': '⛓️',
+  'Xrares': '🎞️',
 };
 
 // Groups to exclude from the directory
@@ -131,7 +146,7 @@ export function parseSmuttM3U(text: string): StreamItem[] {
       popular: false,
       provider: 'smutt',
       streamType: isHls ? 'hls' : 'embed',
-      m3uSource: 'Nett_Smutt_4.0',
+      m3uSource: 'Nett_Smutt',
       poster: thumbUrl || undefined,
       directEmbedUrl: transformedUrl,
       smuttEmoji: emoji,
@@ -158,17 +173,35 @@ export const smuttService = {
       return cachedStreams;
     }
 
-    try {
-      const res = await fetch(SMUTT_M3U_URL, { signal: AbortSignal.timeout(15000) });
-      if (res.ok) {
+    // Load every adult playlist from the local M3U SRC directory. The files
+    // overlap, so entries are deduped by their stream URL.
+    const results = await Promise.allSettled(
+      SMUTT_M3U_URLS.map(async (url) => {
+        const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+        if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
         const text = await res.text();
-        const parsed = parseSmuttM3U(text).filter((s) => !EXCLUDED_GROUPS.has(s.groupTitle || ''));
-        cachedStreams = parsed;
-        lastFetchTime = Date.now();
-        return parsed;
+        return parseSmuttM3U(text).filter((s) => !EXCLUDED_GROUPS.has(s.groupTitle || ''));
+      }),
+    );
+
+    const merged: StreamItem[] = [];
+    const seen = new Set<string>();
+
+    results.forEach((r) => {
+      if (r.status !== 'fulfilled') return;
+      for (const item of r.value) {
+        const key = item.directEmbedUrl || item.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(item);
       }
-    } catch (e) {
-      console.warn('Smutt M3U fetch failed', e);
+    });
+
+    if (merged.length > 0) {
+      cachedStreams = merged;
+      lastFetchTime = Date.now();
+    } else {
+      console.warn('Smutt M3U fetch failed');
     }
 
     return cachedStreams;

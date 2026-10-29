@@ -4,6 +4,7 @@ import { Layers, Bookmark, Play, PictureInPicture2, Headphones } from 'lucide-re
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
 import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
+import { COUNTRY_LABELS } from '../services/iptvService';
 
 interface StreamCardProps {
   stream: StreamItem;
@@ -352,13 +353,28 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       {/* Card Info Details */}
       <div className="p-3.5 flex flex-col flex-1 justify-between">
         <div>
-          {/* Metadata line with dot separators (Zero-Pill discipline) */}
+          {/* Metadata line — country/genre chips for IPTV, category+viewers for others */}
           <div className="flex items-center gap-2 text-[12px] text-slate-300 mb-1.5 font-medium">
-            <span className="truncate">{stream.category}</span>
-            <span aria-hidden="true" className="text-slate-500">·</span>
-            <span className="font-mono tabular-nums text-slate-300">
-              {(stream.viewers || 1200).toLocaleString()} viewers
-            </span>
+            {isIptv && stream.iptvCountry ? (
+              <>
+                <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-bold uppercase tracking-wide">
+                  {COUNTRY_LABELS[stream.iptvCountry] || stream.iptvCountry}
+                </span>
+                {stream.iptvGenre && stream.iptvGenre !== 'general' ? (
+                  <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold uppercase tracking-wide">
+                    {stream.iptvGenre}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span className="truncate">{stream.category}</span>
+                <span aria-hidden="true" className="text-slate-500">·</span>
+                <span className="font-mono tabular-nums text-slate-300">
+                  {(stream.viewers || 1200).toLocaleString()} viewers
+                </span>
+              </>
+            )}
           </div>
 
           <h3
@@ -369,7 +385,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             {stream.title}
           </h3>
 
-          {/* Buttons row — Multiview | Play | PiP | Watch */}
+          {/* Buttons row — Multiview | Play | PiP | Watch — compact on mobile */}
           <div className="mt-2 grid grid-cols-4 gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onAddToMultiview(stream); }}

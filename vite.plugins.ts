@@ -7,8 +7,120 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { randomBytes } from 'crypto';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { homedir } from 'os';
 
 const M3U_SRC_DIR = resolve(process.cwd(), 'M3U SRC');
+
+// ── FreeLLMAPI (local AI gateway) ───────────────────────────────────────────
+//
+// The app talks to a self-hosted FreeLLMAPI instance that exposes an
+// Anthropic-compatible `/v1/messages` endpoint. The key never reaches the
+// browser — it stays inside this dev-server middleware.
+//
+// Resolution order for the API key:
+//   1. `FREELLMAPI_API_KEY` in the environment
+//   2. `FREELLMAPI_API_KEY` in the project's `.env.local`
+//   3. `FREELLMAPI_API_KEY` in `~/.config/environment.d/freellmapi.conf`
+//      (the systemd env file written by the FreeLLMAPI installer)
+const FREELLM_DEFAULT_URL = 'http://127.0.0.1:3001';
+
+function readEnvValue(file: string, key: string): string {
+  try {
+    const text = readFileSync(file, 'utf8');
+    const match = text.match(new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=\\s*(.+)$`, 'm'));
+    if (!match) return '';
+    return match[1].trim().replace(/^["']|["']$/g, '');
+  } catch {
+    return '';
+  }
+}
+
+function resolveFreellmApiKey(): string {
+  return (
+    process.env.FREELLMAPI_API_KEY ||
+    readEnvValue(resolve(process.cwd(), '.env.local'), 'FREELLMAPI_API_KEY') ||
+    readEnvValue(resolve(homedir(), '.config/environment.d/freellmapi.conf'), 'FREELLMAPI_API_KEY')
+  );
+}
+
+function resolveFreellmUrl(): string {
+  const raw =
+    process.env.FREELLMAPI_URL ||
+    readEnvValue(resolve(process.cwd(), '.env.local'), 'FREELLMAPI_URL') ||
+    FREELLM_DEFAULT_URL;
+  return raw.replace(/\/+$/, '');
+}
+
+export function aiProxyPlugin(): Plugin {
+  return {
+    name: 'ai-proxy',
+    configureServer(server) {
+      server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        const url = new URL(req.url || '', 'http://localhost');
+        if (url.pathname !== '/api/ai') return next();
+
+        let body = '';
+        req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+        req.on('end', async () => {
+          const apiKey = resolveFreellmApiKey();
+          const baseUrl = resolveFreellmUrl();
+
+          if (!apiKey) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'FreeLLMAPI key not found. Set FREELLMAPI_API_KEY in .env.local (or ~/.config/environment.d/freellmapi.conf).',
+            }));
+            return;
+          }
+
+          try {
+            const payload = JSON.parse(body || '{}');
+            const response = await fetch(`${baseUrl}/v1/messages`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+              },
+              body: JSON.stringify({
+                model: payload.model || 'auto',
+                // The gateway drops replies with a very small output budget
+                // (anything under ~192 tokens comes back empty), so keep a
+                // floor here for every caller.
+                max_tokens: Math.max(payload.max_tokens || 2048, 256),
+                messages: payload.messages,
+                system: payload.system,
+                temperature: payload.temperature ?? 0.7,
+              }),
+              signal: AbortSignal.timeout(120000),
+            });
+
+            // Forward the upstream body verbatim — the gateway answers with
+            // Anthropic-style JSON on success and { type: 'error' } on failure.
+            const raw = await response.text();
+            let data: any;
+            try {
+              data = JSON.parse(raw);
+            } catch {
+              data = { error: raw || `Upstream returned HTTP ${response.status}` };
+            }
+            res.writeHead(response.status, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+          } catch (e: any) {
+            const message =
+              e?.name === 'TimeoutError'
+                ? `AI gateway timed out (${baseUrl})`
+                : e?.cause?.code
+                  ? `AI gateway unreachable at ${baseUrl} (${e.cause.code})`
+                  : e?.message || 'AI proxy error';
+            res.writeHead(502, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: message }));
+          }
+        });
+      });
+    },
+  };
+}
 
 export function localM3UPlugin(): Plugin {
   return {
@@ -70,6 +182,17 @@ export function bintvProxyPlugin(): Plugin {
             return;
           }
 
+          // Only allow http(s) targets — this endpoint is an open proxy otherwise.
+          let target: URL;
+          try {
+            target = new URL(decodedUrl);
+            if (target.protocol !== 'http:' && target.protocol !== 'https:') throw new Error('bad protocol');
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid target url' }));
+            return;
+          }
+
           // Use native fetch() — more compatible with Cloudflare than Node https module
           try {
             const response = await fetch(decodedUrl, {
@@ -78,6 +201,8 @@ export function bintvProxyPlugin(): Plugin {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'identity',
+                // ehgembxe.cfd only serves players when the request comes from the
+                // BinTV wrapper origin — this is what makes the proxy work.
                 'Referer': 'https://bintv-sources.pages.dev/',
                 'Sec-Fetch-Dest': 'iframe',
                 'Sec-Fetch-Mode': 'navigate',
@@ -92,12 +217,29 @@ export function bintvProxyPlugin(): Plugin {
               return;
             }
 
+            const contentType = response.headers.get('content-type') || '';
+
+            // Non-HTML payloads (m3u8, ts, json, …) are streamed through untouched.
+            if (!contentType.includes('text/html')) {
+              const buffer = Buffer.from(await response.arrayBuffer());
+              res.writeHead(200, {
+                'Content-Type': contentType || 'application/octet-stream',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache',
+              });
+              res.end(buffer);
+              return;
+            }
+
             const html = await response.text();
+            const patched = patchBintvHtml(html, target.origin);
+
             res.writeHead(200, {
               'Content-Type': 'text/html; charset=utf-8',
               'Access-Control-Allow-Origin': '*',
+              'Cache-Control': 'no-cache',
             });
-            res.end(html);
+            res.end(patched);
           } catch (e: any) {
             console.error('Bintv proxy fetch error:', e.message);
             res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -110,6 +252,44 @@ export function bintvProxyPlugin(): Plugin {
       });
     },
   };
+}
+
+/**
+ * Rewrite a proxied BinTV player document so it still works when it is served
+ * from the local dev server:
+ *
+ *  - `<base href>` keeps relative URLs (scripts, API calls) pointing at the
+ *    upstream origin instead of localhost.
+ *  - every nested `<iframe>` gains `encrypted-media`, otherwise the Widevine
+ *    players behind the BinTV wrapper are denied EME by the Permissions Policy
+ *    and fail with "encrypted-media is not allowed in this document".
+ */
+function patchBintvHtml(html: string, origin: string): string {
+  let patched = html;
+
+  if (!/<base\s/i.test(patched)) {
+    const baseTag = `<base href="${origin}/">`;
+    if (/<head[^>]*>/i.test(patched)) {
+      patched = patched.replace(/<head([^>]*)>/i, (_m, attrs) => `<head${attrs}>${baseTag}`);
+    } else if (/<html[^>]*>/i.test(patched)) {
+      patched = patched.replace(/<html([^>]*)>/i, (_m, attrs) => `<html${attrs}>${baseTag}`);
+    } else {
+      patched = baseTag + patched;
+    }
+  }
+
+  patched = patched.replace(/<iframe\b[^>]*>/gi, (tag) => {
+    if (!/\ballow\s*=/i.test(tag)) {
+      return tag.replace(/^<iframe/i, '<iframe allow="autoplay; encrypted-media; fullscreen; picture-in-picture"');
+    }
+    return tag.replace(
+      /(\ballow\s*=\s*")([^"]*)(")/i,
+      (_m, open, value, close) =>
+        /encrypted-media/i.test(value) ? `${open}${value}${close}` : `${open}${value}; encrypted-media${close}`,
+    );
+  });
+
+  return patched;
 }
 
 // ── Watch Party Signaling Server ──────────────────────────────────────────────

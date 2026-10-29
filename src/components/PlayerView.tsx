@@ -7,7 +7,7 @@ import {
   Bookmark,
   Share2,
   RefreshCw,
-  MessageSquare,
+
   Send,
   Eye,
   Radio,
@@ -15,7 +15,10 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronDown as ChevronDownIcon,
+  Search,
   ShieldAlert,
+  MessageSquare,
+
   PictureInPicture2,
   Users,
   AlertCircle,
@@ -53,6 +56,8 @@ interface PlayerViewProps {
   allStreams?: StreamItem[];
   currentIndex?: number;
   onPlayHistoryItem?: (entry: WatchHistoryEntry) => void;
+  /** Smutt playlist — used for LAST CH / NEXT CH when playing smutt content */
+  smuttPlaylist?: StreamItem[];
 }
 
 interface ChatMessage {
@@ -93,6 +98,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   allStreams,
   currentIndex,
   onPlayHistoryItem,
+  smuttPlaylist,
 }) => {
   const [sources, setSources] = useState<StreamSource[]>([]);
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
@@ -104,6 +110,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   const [iframeKey, setIframeKey] = useState(0);
   const [showChannelList, setShowChannelList] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [playerError, setPlayerError] = useState(false);
   const [showHistoryMenu, setShowHistoryMenu] = useState(false);
   const [showFavMenu, setShowFavMenu] = useState(false);
@@ -154,26 +161,53 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     return () => { unsubscribed = true; watchPartyService.disconnect(); };
   }, []);
 
-  // Merge all stream sources — every site section accessible from channel list (except smutt)
+  // Merge all stream sources — every site section accessible from channel list
+  // When playing smutt/eporner, inject the smutt playlist so its videos appear in the channel list
   const mergedStreams = useMemo(() => {
-    return [
+    const base = [
       ...(allStreams || relatedStreams || []),
       ...(iptvStreams || []),
-    ].filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
-  }, [allStreams, relatedStreams, iptvStreams]);
+    ];
+    const isAdult = stream.provider === 'smutt' || stream.provider === 'eporner';
+    if (!isAdult) {
+      return base.filter((s) => s.provider !== 'smutt' && s.provider !== 'eporner');
+    }
+    // Append the smutt playlist (dedup by id) to the channel list
+    const baseIds = new Set(base.map((s) => s.id));
+    const smutt = (smuttPlaylist || []).filter((s) => !baseIds.has(s.id));
+    return [...base, ...smutt];
+  }, [allStreams, relatedStreams, iptvStreams, stream.provider, smuttPlaylist]);
 
-  const groups = ['All', 'Live Sports', '24/7 Channels', 'IPTV', 'Entertainment & Movies', 'News & Documentaries'];
+  // Playlist used for LAST CH / NEXT CH navigation — smutt playlist when playing smutt/eporner
+  const activePlaylist = useMemo(() => {
+    if ((stream.provider === 'smutt' || stream.provider === 'eporner') && smuttPlaylist && smuttPlaylist.length > 0) return smuttPlaylist;
+    return mergedStreams;
+  }, [stream.provider, smuttPlaylist, mergedStreams]);
+
+  const groups = useMemo(() => {
+    const base = ['All', 'Live Sports', '24/7 Channels', 'IPTV', 'Entertainment & Movies', 'News & Documentaries'];
+    if (stream.provider === 'smutt' || stream.provider === 'eporner') {
+      base.push('Smutt');
+    }
+    return base;
+  }, [stream.provider]);
 
   // Filter channels based on selected tab
   const filteredChannels = useMemo(() => {
-    if (selectedGroup === 'All') return mergedStreams;
-    if (selectedGroup === 'IPTV') return mergedStreams.filter((s) => s.provider === 'iptv');
-    if (selectedGroup === 'Live Sports') return mergedStreams.filter((s) => s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer')));
-    if (selectedGroup === '24/7 Channels') return mergedStreams.filter((s) => s.status === '24/7');
-    if (selectedGroup === 'Entertainment & Movies') return mergedStreams.filter((s) => s.category === 'Entertainment & Movies');
-    if (selectedGroup === 'News & Documentaries') return mergedStreams.filter((s) => s.category === 'News & Documentaries');
-    return mergedStreams.filter((s) => s.groupTitle === selectedGroup || s.category === selectedGroup);
-  }, [mergedStreams, selectedGroup]);
+    let list = mergedStreams;
+    if (selectedGroup === 'Smutt') list = list.filter((s) => s.provider === 'smutt' || s.provider === 'eporner');
+    else if (selectedGroup === 'IPTV') list = list.filter((s) => s.provider === 'iptv');
+    else if (selectedGroup === 'Live Sports') list = list.filter((s) => s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer')));
+    else if (selectedGroup === '24/7 Channels') list = list.filter((s) => s.status === '24/7');
+    else if (selectedGroup === 'Entertainment & Movies') list = list.filter((s) => s.category === 'Entertainment & Movies');
+    else if (selectedGroup === 'News & Documentaries') list = list.filter((s) => s.category === 'News & Documentaries');
+    else if (selectedGroup !== 'All') list = list.filter((s) => s.groupTitle === selectedGroup || s.category === selectedGroup);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(s => s.title.toLowerCase().includes(q) || s.category.toLowerCase().includes(q));
+    }
+    return list;
+  }, [mergedStreams, selectedGroup, searchQuery]);
 
   // Group counts for tab badges
   const groupCounts = useMemo(() => {
@@ -184,9 +218,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
       '24/7 Channels': 0,
       'Entertainment & Movies': 0,
       'News & Documentaries': 0,
+      'Smutt': 0,
     };
     mergedStreams.forEach((s) => {
       if (s.provider === 'iptv') { counts['IPTV']++; return; }
+      if (s.provider === 'smutt' || s.provider === 'eporner') { counts['Smutt']++; return; }
       if (s.status === 'live' && (s.category.includes('Sport') || s.category.includes('Basketball') || s.category.includes('Football') || s.category.includes('Combat') || s.category.includes('Golf') || s.category.includes('Motorsport') || s.category.includes('Tennis') || s.category.includes('Cricket') || s.category.includes('Rugby') || s.category.includes('Hockey') || s.category.includes('Baseball') || s.category.includes('MMA') || s.category.includes('Boxing') || s.category.includes('Soccer'))) {
         counts['Live Sports']++;
       }
@@ -269,6 +305,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
     stream.directEmbedUrl ||
     '';
 
+  // Nothing to play — show a proper message instead of an empty video frame.
+  const hasPlayableSource = Boolean(activeEmbedUrl);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputChat.trim()) return;
@@ -337,6 +376,21 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 <p className="text-sm font-medium text-slate-300">Connecting to stream feed...</p>
                 <p className="text-xs text-slate-500 mt-1 font-mono">Resolving live media gateway</p>
               </div>
+            ) : !hasPlayableSource ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 text-center px-6">
+                <AlertCircle className="w-9 h-9 text-amber-500 mb-3" />
+                <p className="text-sm font-semibold text-white">No stream source available</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                  &ldquo;{stream.title}&rdquo; has no playable feed right now. Pick another channel
+                  from the list or go back to the guide.
+                </p>
+                <button
+                  onClick={onClose}
+                  className="mt-4 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                >
+                  Back to channels
+                </button>
+              </div>
             ) : (
               <VideoPlayer
                 key={iframeKey}
@@ -355,11 +409,11 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             )}
           </div>
 
-          {/* Channel Up/Down — left of sources bar, directly under player */}
-          <div className="mt-3 flex items-center gap-3">
+          {/* Channel Up/Down — left of sources bar, directly under player — compact on mobile */}
+          <div className="mt-3 flex items-center gap-2">
             <button
               onClick={() => {
-                const list = mergedStreams;
+                const list = activePlaylist;
                 const idx = list.findIndex((s) => s.id === stream.id);
                 const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
                 if (prev) onPlayStream(prev);
@@ -368,7 +422,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               title="Previous channel"
             >
               <ChevronUp className="w-5 h-5" />
-              <span>Channel Up</span>
+              <span>LAST CH</span>
             </button>
 
             {/* History Dropdown */}
@@ -385,39 +439,41 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               </button>
               {showHistoryMenu && (
                 <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
-                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60">
+                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
                     <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Recent History</span>
                   </div>
-                  {watchHistory.length > 0 ? (
-                    watchHistory.slice(0, 8).map((entry) => (
-                      <button
-                        key={entry.id}
-                        onClick={() => {
-                          if (onPlayHistoryItem) onPlayHistoryItem(entry);
-                          setShowHistoryMenu(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
-                      >
-                        <img
-                          src={entry.poster || '/hero.png'}
-                          alt=""
-                          className="w-8 h-5 rounded object-cover shrink-0"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-white truncate">{entry.title}</p>
-                          <span className="text-[10px] text-slate-500">{entry.category}</span>
-                        </div>
-                        <Clock className="w-3 h-3 text-slate-600 shrink-0" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-6 text-center">
-                      <HistoryIcon className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                      <p className="text-xs text-slate-500">No watch history yet</p>
-                    </div>
-                  )}
+                  <div className="max-h-64 overflow-y-auto">
+                    {watchHistory.length > 0 ? (
+                      watchHistory.slice(0, 12).map((entry) => (
+                        <button
+                          key={entry.id}
+                          onClick={() => {
+                            if (onPlayHistoryItem) onPlayHistoryItem(entry);
+                            setShowHistoryMenu(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                        >
+                          <img
+                            src={entry.poster || '/hero.png'}
+                            alt=""
+                            className="w-8 h-5 rounded object-cover shrink-0"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-white truncate">{entry.title}</p>
+                            <span className="text-[10px] text-slate-500">{entry.category}</span>
+                          </div>
+                          <Clock className="w-3 h-3 text-slate-600 shrink-0" />
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <HistoryIcon className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500">No watch history yet</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -436,44 +492,46 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               </button>
               {showFavMenu && (
                 <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
-                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60">
+                  <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
                     <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
                   </div>
-                  {watchlistStreams.length > 0 ? (
-                    watchlistStreams.slice(0, 8).map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
-                      >
-                        <img
-                          src={s.poster || '/hero.png'}
-                          alt=""
-                          className="w-8 h-5 rounded object-cover shrink-0"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-white truncate">{s.title}</p>
-                          <span className="text-[10px] text-slate-500">{s.category}</span>
-                        </div>
-                        <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-6 text-center">
-                      <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                      <p className="text-xs text-slate-500">No favorites yet</p>
-                      <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
-                    </div>
-                  )}
+                  <div className="max-h-64 overflow-y-auto">
+                    {watchlistStreams.length > 0 ? (
+                      watchlistStreams.slice(0, 12).map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                        >
+                          <img
+                            src={s.poster || '/hero.png'}
+                            alt=""
+                            className="w-8 h-5 rounded object-cover shrink-0"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-white truncate">{s.title}</p>
+                            <span className="text-[10px] text-slate-500">{s.category}</span>
+                          </div>
+                          <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                        <p className="text-xs text-slate-500">No favorites yet</p>
+                        <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
             <button
               onClick={() => {
-                const list = mergedStreams;
+                const list = activePlaylist;
                 const idx = list.findIndex((s) => s.id === stream.id);
                 const next = idx < list.length - 1 ? list[idx + 1] : list[0];
                 if (next) onPlayStream(next);
@@ -481,7 +539,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
               title="Next channel"
             >
-              <span>Channel Down</span>
+              <span>NEXT CH</span>
               <ChevronDown className="w-5 h-5" />
             </button>
           </div>
@@ -618,222 +676,115 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </div>
         </div>
 
-        {/* Right Sidebar: Channel List & Chat */}
-        <div className={isTheaterMode ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-6' : 'lg:col-span-4 grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+                {/* Right Sidebar: TV Guide Channel List + Chat */}
+        <div className={isTheaterMode ? 'w-full mt-6' : 'lg:col-span-4'}>
 
-          {/* Now Playing Card — half width */}
-          <div className="bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white">Now Playing</span>
+          {/* TV Guide Channel List */}
+          <div className="flex flex-col bg-[#050810] rounded-xl border border-slate-800/80 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10 bg-[#0a0f1e] shrink-0">
+              <div className="w-5 h-5 rounded bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center flex-shrink-0">
+                <Radio className="w-3 h-3 text-white" />
               </div>
-              <span className="text-[10px] font-mono text-slate-500">
-                #{currentIndex !== undefined ? currentIndex + 1 : '?'} / {allStreams?.length || relatedStreams.length + 1}
-              </span>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="relative w-32 sm:w-40 aspect-video rounded-lg overflow-hidden bg-slate-900 shrink-0">
-                  <img
-                    src={stream.poster || '/src/assets/images/hero_championship_live_1792048678438.jpg'}
-                    alt={stream.title}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/src/assets/images/hero_championship_live_1792048678438.jpg';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-blue-600/20 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white drop-shadow">NOW</span>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base font-bold text-white line-clamp-2 leading-tight">{stream.title}</p>
-                  <p className="text-xs sm:text-sm text-slate-300 mt-1.5">{stream.category}</p>
-                  <p className="text-xs font-mono text-slate-400 mt-1">
-                    <span className="uppercase text-slate-500">Source:</span> {stream.provider}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Channel Suggestions — half width */}
-          <div className="bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white">Hot Sports Now</span>
-              </div>
-              <span className="text-[10px] font-mono text-slate-500">Live</span>
-            </div>
-            <div className="divide-y divide-slate-800/50">
-              {(() => {
-                const sportsStreams = mergedStreams
-                  .filter((s) => s.id !== stream.id && s.status === 'live' && (
-                    s.category.includes('Sport') || s.category.includes('Basketball') ||
-                    s.category.includes('Football') || s.category.includes('Combat') ||
-                    s.category.includes('Golf') || s.category.includes('Motorsport') ||
-                    s.category.includes('Tennis') || s.category.includes('Cricket') ||
-                    s.category.includes('Rugby') || s.category.includes('Hockey') ||
-                    s.category.includes('Baseball') || s.category.includes('MMA') ||
-                    s.category.includes('Boxing') || s.category.includes('Soccer')
-                  ))
-                  .slice(0, 4);
-                return sportsStreams.length > 0 ? sportsStreams.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => onPlayStream(s)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-800/60 transition-colors text-left"
-                  >
-                    <img
-                      src={s.poster || '/hero.png'}
-                      alt={s.title}
-                      className="w-14 h-9 rounded object-cover shrink-0"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-white truncate">{s.title}</p>
-                      <p className="text-[10px] text-slate-400">{s.category}</p>
-                    </div>
-                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-                  </button>
-                )) : (
-                  <div className="px-4 py-8 text-center">
-                    <Radio className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">No live sports available</p>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-
-          {/* Full Channel List (toggleable) — spans full width on desktop */}
-          <div className="lg:col-span-2 bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-white">Channel List</span>
-                <span className="text-[10px] font-mono text-slate-500">{filteredChannels.length} channels</span>
-              </div>
+              <span className="text-xs font-black tracking-[0.2em] text-white flex-1 truncate">TV GUIDE</span>
+              <span className="text-[9px] text-slate-500">{filteredChannels.length} ch</span>
               <button
-                onClick={() => setShowChannelList(!showChannelList)}
-                className="text-[10px] font-mono text-slate-500 hover:text-slate-300 transition-colors"
+                onClick={() => setShowChat(!showChat)}
+                className={`p-1.5 rounded transition-colors ${showChat ? 'bg-red-600/30 text-red-400' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                title="Toggle chat"
               >
-                {showChannelList ? '▲ Less' : '▼ Show'}
+                <MessageSquare className="w-3.5 h-3.5" />
               </button>
             </div>
-            {showChannelList && (
-              <>
-                {/* Category Tabs */}
-                <div className="px-3 py-2 border-b border-slate-800/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                  {groups.map((group) => (
-                    <button
-                      key={group}
-                      onClick={() => setSelectedGroup(group)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
-                        selectedGroup === group
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
-                      }`}
-                    >
-                      {group === 'Live Sports' && '⚡ '}
-                      {group === '24/7 Channels' && '📺 '}
-                      {group === 'IPTV' && '📡 '}
-                      {group === 'Entertainment & Movies' && '🎬 '}
-                      {group === 'News & Documentaries' && '📰 '}
-                      {group}
-                      <span className={`ml-1 text-[10px] ${selectedGroup === group ? 'text-white/70' : 'text-slate-600'}`}>
-                        {groupCounts[group] || 0}
-                      </span>
-                    </button>
-                  ))}
-                </div>
 
-                {/* Filtered Channel List */}
-                <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-800/50">
-                  {filteredChannels.map((item, idx) => {
-                      const isCurrent = item.id === stream.id;
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => !isCurrent && onPlayStream(item)}
-                          className={`flex items-center gap-3 p-2.5 transition-colors ${
-                            isCurrent
-                              ? 'bg-blue-600/15 border-l-2 border-blue-500'
-                              : 'hover:bg-slate-900/80 cursor-pointer'
-                          }`}
-                        >
-                          <span className={`text-[10px] font-mono w-4 shrink-0 ${isCurrent ? 'text-blue-400 font-bold' : 'text-slate-600'}`}>
-                            {isCurrent ? '▶' : idx + 1}
-                          </span>
-                          <div className="relative w-16 aspect-video rounded-md overflow-hidden shrink-0">
-                            {item.provider === 'iptv' && !item.poster ? (
-                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                                <div
-                                  className="absolute inset-0"
-                                  style={{
-                                    background: `linear-gradient(135deg, ${getStreamGradient(item)?.[0] || '#334155'}, ${getStreamGradient(item)?.[1] || '#1e293b'})`,
-                                  }}
-                                />
-                                <span className="relative text-lg leading-none">📡</span>
-                                <span className="relative text-[7px] font-bold text-white/80 uppercase tracking-tight px-1 truncate max-w-full">
-                                  {(item.m3uSource || '').replace(/\s*\(.*/, '')}
-                                </span>
-                              </div>
-                            ) : item.poster ? (
-                              <img
-                                src={item.poster}
-                                alt={item.title}
-                                className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  const gradient = getStreamGradient(item);
-                                  if (gradient) {
-                                    target.style.display = 'none';
-                                    const parent = target.parentElement;
-                                    if (parent) {
-                                      const gradDiv = document.createElement('div');
-                                      gradDiv.className = 'absolute inset-0';
-                                      gradDiv.style.background = `linear-gradient(135deg, ${gradient[0]}, ${gradient[1]})`;
-                                      parent.appendChild(gradDiv);
-                                    }
-                                  } else {
-                                    target.src = '/src/assets/images/hero_championship_live_1792048678438.jpg';
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div
-                                className="absolute inset-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${getStreamGradient(item)?.[0] || '#334155'}, ${getStreamGradient(item)?.[1] || '#1e293b'})`,
-                                }}
-                              />
-                            )}
-                            {isCurrent && (
-                              <div className="absolute inset-0 bg-blue-600/30 flex items-center justify-center">
-                                <span className="text-[9px] font-bold text-white">LIVE</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-xs font-semibold line-clamp-1 ${isCurrent ? 'text-blue-400' : 'text-slate-200'}`}>
-                              {item.title}
-                            </p>
-                            <p className="text-[10px] text-slate-500">
-                              {item.provider === 'iptv' ? item.m3uSource || item.category : item.category}
-                            </p>
-                          </div>
+            {/* Search + Category Tabs */}
+            <div className="px-3 py-2 border-b border-white/10 bg-[#0a0f1e] space-y-2 shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
+                  placeholder="Search channels..."
+                  className="w-full bg-white/5 border border-white/10 rounded-md pl-7 pr-2.5 py-1.5 text-[11px] text-white placeholder-slate-500 outline-none focus:border-white/25"
+                />
+              </div>
+              <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
+                {groups.map((group) => (
+                  <button
+                    key={group}
+                    onClick={() => setSelectedGroup(group)}
+                    className={`px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap transition-colors ${
+                      selectedGroup === group ? 'bg-red-600 text-white' : 'bg-white/10 text-slate-400 hover:text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {group === 'Live Sports' && '⚡ '}
+                    {group === '24/7 Channels' && '📺 '}
+                    {group === 'IPTV' && '📡 '}
+                    {group === 'Smutt' && '🔥 '}
+                    {group === 'Entertainment & Movies' && '🎬 '}
+                    {group === 'News & Documentaries' && '📰 '}
+                    {group}
+                    <span className={`ml-0.5 text-[9px] ${selectedGroup === group ? 'text-white/70' : 'text-slate-600'}`}>
+                      {groupCounts[group] || 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Channel List */}
+            <div className="flex-1 overflow-y-auto max-h-[420px]">
+              {filteredChannels.length === 0 && (
+                <div className="p-4 text-center text-xs text-slate-500">No channels found</div>
+              )}
+              {filteredChannels.map((item, idx) => {
+                const isCurrent = item.id === stream.id;
+                const liveBadge = item.status === 'live' || item.status === '24/7';
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => !isCurrent && onPlayStream(item)}
+                    className={`w-full text-left flex items-center gap-2 px-3 py-2 border-l-2 transition-all ${
+                      isCurrent ? 'bg-red-600/20 border-l-red-500' : 'border-l-transparent hover:bg-white/5'
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      item.status === 'live' ? 'bg-red-500 animate-pulse' :
+                      item.status === '24/7' ? 'bg-blue-500' :
+                      item.status === 'upcoming' ? 'bg-amber-500' : 'bg-slate-600'
+                    }`} />
+                    <div className="w-10 h-6 rounded bg-white/5 flex-shrink-0 overflow-hidden">
+                      {item.poster ? (
+                        <img src={item.poster} alt="" className="w-full h-full object-cover opacity-70" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-600">
+                          {(item.title || '?')[0]}
                         </div>
-                      );
-                    })}
-                  </div>
-              </>
-            )}
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[11px] font-medium truncate ${isCurrent ? 'text-white' : 'text-slate-300'}`}>{item.title}</p>
+                      <p className="text-[9px] text-slate-500 truncate">
+                        {item.provider === 'iptv' ? 'IPTV' : item.provider}
+                        {item.viewers && ` · ${Math.round(item.viewers).toLocaleString()}`}
+                      </p>
+                    </div>
+                    {liveBadge && (
+                      <span className={`text-[8px] font-black px-1 py-0.5 rounded flex-shrink-0 ${
+                        item.status === 'live' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
+                      }`}>
+                        {item.status === '24/7' ? '24/7' : 'LIVE'}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-3 py-1.5 border-t border-white/10 bg-[#0a0f1e] text-[9px] text-slate-600 flex items-center gap-2 shrink-0">
+              <span>click to play</span>
+            </div>
           </div>
 
           {/* Chat or Watch Party Panel */}
@@ -846,31 +797,16 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                 setShowWatchPartyModal(true);
               }}
             />
-          ) : showChat && (
-            <div className="flex flex-col h-[260px] sm:h-[320px] bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
-              <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-blue-400" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-white">Live Chat</span>
-                </div>
-                <span className="text-[11px] font-mono tabular-nums text-slate-400">
-                  {chatMessages.length} comments
-                </span>
-              </div>
-              <div ref={chatScrollRef} className="flex-1 p-3 overflow-y-auto space-y-3 font-normal text-xs">
+          ) : showChat ? (
+            <div className="flex flex-col h-[260px] sm:h-[320px] mt-4 bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
+              {/* Chat messages area */}
+              <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
                 {chatMessages.map((msg) => (
-                  <div key={msg.id} className="flex items-start gap-2.5">
-                    <div
-                      className={`w-5 h-5 rounded-full ${msg.avatarColor} text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5`}
-                    >
-                      {msg.user[0]}
-                    </div>
+                  <div key={msg.id} className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">{msg.user[0]}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-200">{msg.user}</span>
-                        <span className="text-[10px] font-mono text-slate-500">{msg.time}</span>
-                      </div>
-                      <p className="text-slate-300 mt-0.5 break-words">{msg.text}</p>
+                      <span className="text-[10px] font-semibold text-slate-400">{msg.user}</span>
+                      <p className="text-xs text-slate-300 mt-0.5 break-words">{msg.text}</p>
                     </div>
                   </div>
                 ))}
@@ -883,15 +819,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                   onChange={(e) => setInputChat(e.target.value)}
                   className="flex-1 bg-black/50 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
-                <button
-                  type="submit"
-                  className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-                >
+                <button type="submit" className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

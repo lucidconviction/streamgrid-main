@@ -12,9 +12,9 @@ from urllib.parse import urlparse, parse_qs
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRAPER = os.path.join(SCRIPT_DIR, "music_scraper.py")
 JAVA_SEARCH_JAR = os.path.join(SCRIPT_DIR, "java_music_search", "build", "libs", "java-music-search-1.0.jar")
-JAVA_HOME_PATH = "/usr/local/Cellar/openjdk@17/17.0.17/libexec/openjdk.jdk/Contents/Home"
-VENV_PY = os.path.join(SCRIPT_DIR, "..", ".venv", "bin", "python3")
-PY = VENV_PY if os.path.exists(VENV_PY) else sys.executable
+JAVA_HOME_PATH = "/usr/lib/jvm/java-25-openjdk-amd64"
+VENV_PY = sys.executable  # use system python (venv was created on Mac)
+PY = sys.executable
 
 _cache = {}
 _cache_time = {}
