@@ -800,13 +800,308 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         </div>
       </div>
 
-      {/* Watch Party Modal */}
-      <WatchPartyModal
-        isOpen={showWatchPartyModal}
-        onClose={() => setShowWatchPartyModal(false)}
-        currentStream={stream}
-        onAddToQueue={() => {}}
-      />
+      {/* Controls Row — below guide + player */}
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => {
+            const list = activePlaylist;
+            const idx = list.findIndex((s) => s.id === stream.id);
+            const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
+            if (prev) onPlayStream(prev);
+          }}
+          className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
+          title="Previous channel"
+        >
+          <ChevronUp className="w-5 h-5" />
+          <span>LAST CH</span>
+        </button>
+
+        {/* History Dropdown */}
+        <div className="relative flex-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowHistoryMenu((h) => !h); setShowFavMenu(false); }}
+            className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
+          >
+            <div className="flex items-center gap-2">
+              <HistoryIcon className="w-5 h-5 text-white" />
+              <span>History</span>
+            </div>
+            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showHistoryMenu ? 'rotate-180' : ''}`} />
+          </button>
+          {showHistoryMenu && (
+            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Recent History</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {watchHistory.length > 0 ? (
+                  watchHistory.slice(0, 12).map((entry) => (
+                    <button
+                      key={entry.id}
+                      onClick={() => {
+                        if (onPlayHistoryItem) onPlayHistoryItem(entry);
+                        setShowHistoryMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                    >
+                      <img
+                        src={entry.poster || '/hero.png'}
+                        alt=""
+                        className="w-8 h-5 rounded object-cover shrink-0"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-white truncate">{entry.title}</p>
+                        <span className="text-[10px] text-slate-500">{entry.category}</span>
+                      </div>
+                      <Clock className="w-3 h-3 text-slate-600 shrink-0" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <HistoryIcon className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No watch history yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Favorites Dropdown */}
+        <div className="relative flex-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowFavMenu((f) => !f); setShowHistoryMenu(false); }}
+            className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
+          >
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-white" />
+              <span>Favorites</span>
+            </div>
+            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
+          </button>
+          {showFavMenu && (
+            <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#0f121a] rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 sticky top-0 z-10">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {watchlistStreams.length > 0 ? (
+                  watchlistStreams.slice(0, 12).map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                    >
+                      <img
+                        src={s.poster || '/hero.png'}
+                        alt=""
+                        className="w-8 h-5 rounded object-cover shrink-0"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-white truncate">{s.title}</p>
+                        <span className="text-[10px] text-slate-500">{s.category}</span>
+                      </div>
+                      <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No favorites yet</p>
+                    <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => {
+            const list = activePlaylist;
+            const idx = list.findIndex((s) => s.id === stream.id);
+            const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+            if (next) onPlayStream(next);
+          }}
+          className="flex-1 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-sm font-bold player-nav-btn"
+          title="Next channel"
+        >
+          <span>NEXT CH</span>
+          <ChevronDown className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Sources Toolbar — below controls */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3 bg-[#0f121a] p-3 rounded-xl border border-slate-800/80">
+        {/* Stream Mirror Sources Switcher */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-xs text-slate-400 font-mono uppercase tracking-wider shrink-0 mr-1">
+            Sources:
+          </span>
+          {sources.map((src, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveSourceIndex(idx)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                activeSourceIndex === idx
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              {src.name || `Stream ${idx + 1}`} {src.hd ? 'HD' : ''}
+            </button>
+          ))}
+        </div>
+
+        {/* Quick Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefreshStream}
+            className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+            title="Reload Stream Player"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={onTogglePiP}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
+            title="Pop out into floating Picture-in-Picture window"
+          >
+            <PictureInPicture2 className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">Picture-in-Picture</span>
+          </button>
+
+          <button
+            onClick={() => onAddToMultiview(stream)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              isInMultiview
+                ? 'bg-blue-950/80 border-blue-700 text-blue-300'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-800'
+            }`}
+            title="Watch alongside other streams in Multiview"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
+            <span>{isInMultiview ? 'In Multiview' : 'Multiview'}</span>
+          </button>
+
+          <button
+            onClick={() => onToggleWatchlist(stream)}
+            className={`p-2 rounded-lg border transition-colors ${
+              isInWatchlist
+                ? 'bg-blue-950/80 border-blue-700 text-blue-400'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+            }`}
+            title={isInWatchlist ? 'Saved to Watchlist' : 'Save to Watchlist'}
+          >
+            <Bookmark className={`w-4 h-4 ${isInWatchlist ? 'fill-blue-400' : ''}`} />
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+            title="Copy Stream Link"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              showChat
+                ? 'bg-slate-800 border-slate-700 text-white'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Live Chat</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (watchPartyActive) {
+                setShowWatchPartyModal((p) => !p);
+              } else {
+                setShowWatchPartyModal(true);
+              }
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              watchPartyActive
+                ? 'bg-blue-950/80 border-blue-700 text-blue-300'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-800'
+            }`}
+            title="Watch Party"
+          >
+            <Users className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">Watch Party</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stream Information */}
+      <div className="mt-3 p-5 bg-[#0f121a] rounded-xl border border-slate-800/80">
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
+          <span className="flex items-center gap-1 text-blue-400 font-semibold uppercase">
+            <Radio className="w-3 h-3 animate-pulse" />
+            {stream.status === '24/7' ? '24/7 Channel' : 'Live Stream'}
+          </span>
+          <span aria-hidden="true" className="text-slate-600">·</span>
+          <span>{stream.category}</span>
+          <span aria-hidden="true" className="text-slate-600">·</span>
+          <span className="font-mono tabular-nums text-slate-300 flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5 text-slate-400" />
+            {(stream.viewers || 3200).toLocaleString()} watching
+          </span>
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{stream.title}</h1>
+        <p className="text-base text-slate-300 leading-relaxed max-w-3xl font-medium">
+          High-definition direct streaming broadcast from {stream.provider.toUpperCase()} provider networks.
+          Equipped with synchronized low-latency delivery, theater mode presentation, and multi-screen split view compatibility.
+        </p>
+      </div>
+
+      {/* Chat Panel — below everything */}
+      {watchPartyActive ? (
+        <WatchPartyPanel
+          currentStream={stream}
+          isOpen={true}
+          onToggle={() => {
+            setWatchPartyActive(false);
+            setShowWatchPartyModal(true);
+          }}
+        />
+      ) : showChat ? (
+        <div className="flex flex-col h-[260px] sm:h-[320px] mt-4 bg-[#0f121a] rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+            {chatMessages.map((msg) => (
+              <div key={msg.id} className="flex items-start gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">{msg.user[0]}</div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-semibold text-slate-400">{msg.user}</span>
+                  <p className="text-xs text-slate-300 mt-0.5 break-words">{msg.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleSendMessage} className="p-2.5 border-t border-slate-800 bg-slate-900/80 flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Say something..."
+              value={inputChat}
+              onChange={(e) => setInputChat(e.target.value)}
+              className="flex-1 bg-black/50 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+            <button type="submit" className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 };
