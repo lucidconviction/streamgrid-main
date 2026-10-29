@@ -46,7 +46,7 @@ interface PlayerViewProps {
   watchHistory: WatchHistoryEntry[];
   iptvStreams: StreamItem[];
   onShowToast: (text: string, type?: 'success' | 'info' | 'warning') => void;
-  onTogglePiP?: () => void;
+  onTogglePiP?: (stream?: StreamItem, embedUrl?: string) => void;
   onVideoEnd?: () => void;
   allStreams?: StreamItem[];
   currentIndex?: number;
@@ -584,7 +584,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </button>
 
           <button
-            onClick={onTogglePiP}
+            onClick={() => onTogglePiP?.(stream, activeEmbedUrl)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition-colors"
             title="Picture-in-Picture"
           >

@@ -365,21 +365,32 @@ export const iptvService = {
       return playlistCache.get(playlist.id)!;
     }
 
-    // Try proxy URL first (bypasses CORS in Vite dev server and proxy)
+    // Try both proxy URL and remote URL in parallel (faster than sequential)
     const targetUrls = [playlist.proxyUrl, playlist.url];
     let rawText = '';
 
-    for (const u of targetUrls) {
-      try {
-        const res = await fetch(u, { signal: AbortSignal.timeout(20000) });
-        if (res.ok) {
-          rawText = await res.text();
-          if (rawText.includes('#EXTINF') || rawText.includes('#EXTM3U')) {
-            break;
+    // Race: first valid response wins
+    const results = await Promise.allSettled(
+      targetUrls.map(async (u) => {
+        try {
+          const res = await fetch(u, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            const text = await res.text();
+            if (text.includes('#EXTINF') || text.includes('#EXTM3U')) {
+              return { url: u, text };
+            }
           }
+        } catch (err) {
+          console.warn(`Failed fetching from ${u}:`, err);
         }
-      } catch (err) {
-        console.warn(`Failed fetching from ${u}:`, err);
+        return null;
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        rawText = result.value.text;
+        break;
       }
     }
 

@@ -431,14 +431,18 @@ export default function App() {
   };
 
   // Picture-in-Picture Toggle Handler — supports multiple PiPs
-  const handleTogglePiP = (stream?: StreamItem) => {
+  // If embedUrl is provided, use that as the active source (for player view with source switcher)
+  const handleTogglePiP = (stream?: StreamItem, embedUrl?: string) => {
     const targetStream = stream || activeStream;
     if (targetStream) {
+      const pipStream = embedUrl
+        ? { ...targetStream, directEmbedUrl: embedUrl }
+        : targetStream;
       setPipStreams((prev) => {
         if (prev.some((p) => p.stream.id === targetStream.id)) {
           return prev.filter((p) => p.stream.id !== targetStream.id);
         }
-        return [...prev, { id: targetStream.id, stream: targetStream }];
+        return [...prev, { id: targetStream.id, stream: pipStream }];
       });
       if (!stream) {
         setCurrentView('home');

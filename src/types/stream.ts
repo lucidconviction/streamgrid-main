@@ -38,6 +38,11 @@ export interface StreamItem {
   };
   smuttEmoji?: string; // Emoji for smutt streams without thumbnails
   subCategory?: string; // Eporner sub-category (Asian, Japanese, etc.)
+  /** IPTV channel country (e.g., 'US', 'UK') */
+  iptvCountry?: string;
+  /** IPTV channel genre (e.g., 'Sports', 'News') */
+  iptvGenre?: string;
+  m3uPlaylistId?: string;
 }
 
 export interface UserProfile {
