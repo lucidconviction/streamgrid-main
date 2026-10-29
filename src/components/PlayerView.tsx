@@ -405,90 +405,24 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
 
       </div>
 
-      {/* Controls Row */}
-      <div className="mt-3 flex items-center gap-2">
-        {/* NEXT CH + LAST CH — 50% less wide, side by side, left side */}
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => {
-              const list = activePlaylist;
-              const idx = list.findIndex((s) => s.id === stream.id);
-              const next = idx < list.length - 1 ? list[idx + 1] : list[0];
-              if (next) onPlayStream(next);
-            }}
-            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
-            title="Next channel"
-          >
-            <span>NEXT CH</span>
-            <ChevronDown className="w-4 h-4 shrink-0" />
-          </button>
-          <button
-            onClick={() => {
-              const list = activePlaylist;
-              const idx = list.findIndex((s) => s.id === stream.id);
-              const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
-              if (prev) onPlayStream(prev);
-            }}
-            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
-            title="Previous channel"
-          >
-            <ChevronUp className="w-4 h-4 shrink-0" />
-            <span>LAST CH</span>
-          </button>
-        </div>
-
-        {/* Favorites Dropdown */}
-        <div className="relative flex-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowFavMenu((f) => !f); setShowHistoryMenu(false); }}
-            className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
-          >
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-white" />
-              <span>Favorites</span>
-            </div>
-            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
-          </button>
-          {showFavMenu && (
-            <div className="absolute z-50 bottom-full mb-1 left-0 right-0 bg-[#0f121a]/25 backdrop-blur-md rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
-              <div className="px-3 py-2 border-t border-slate-800 bg-slate-900/60 sticky bottom-0 z-10">
-                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
-              </div>
-              <div className="max-h-64 overflow-y-auto">
-                {watchlistStreams.length > 0 ? (
-                  watchlistStreams.slice(0, 12).map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
-                    >
-                      <img
-                        src={s.poster || '/hero.png'}
-                        alt=""
-                        className="w-8 h-5 rounded object-cover shrink-0"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs text-white truncate">{s.title}</p>
-                        <span className="text-[10px] text-slate-500">{s.category}</span>
-                      </div>
-                      <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-6 text-center">
-                    <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">No favorites yet</p>
-                    <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}        </div>
+      {/* Controls Row — Layer 1: buttons directly under player */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {/* TV Guide Toggle */}
+        <button
+          onClick={() => setIsGuideOpen(!isGuideOpen)}
+          className={`h-12 rounded-xl flex items-center gap-2 transition-all touch-manipulation text-sm font-bold player-nav-btn ${
+            isGuideOpen
+              ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
+              : 'bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600'
+          }`}
+          title="Toggle TV Guide"
+        >
+          <Radio className="w-5 h-5" />
+          <span>TV GUIDE</span>
+        </button>
 
         {/* History Dropdown */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-[120px]">
           <button
             onClick={(e) => { e.stopPropagation(); setShowHistoryMenu((h) => !h); setShowFavMenu(false); }}
             className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
@@ -538,21 +472,89 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
               </div>
             </div>
           )}
-        {/* TV Guide Toggle */}
-        <button
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className={`h-12 rounded-xl flex items-center gap-2 transition-all touch-manipulation text-sm font-bold player-nav-btn ${
-            isGuideOpen
-              ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
-              : 'bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600'
-          }`}
-          title="Toggle TV Guide"
-        >
-          <Radio className="w-5 h-5" />
-          <span>TV GUIDE</span>
-        </button>
-      </div>
+        </div>
 
+        {/* Favorites Dropdown */}
+        <div className="relative flex-1 min-w-[120px]">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowFavMenu((f) => !f); setShowHistoryMenu(false); }}
+            className="w-full h-12 rounded-xl bg-red-600/90 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-between gap-2 transition-all shadow-lg shadow-red-600/30 touch-manipulation text-sm font-bold px-3 player-nav-btn dropdown-menu"
+          >
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-white" />
+              <span>Favorites</span>
+            </div>
+            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showFavMenu ? 'rotate-180' : ''}`} />
+          </button>
+          {showFavMenu && (
+            <div className="absolute z-50 bottom-full mb-1 left-0 right-0 bg-[#0f121a]/25 backdrop-blur-md rounded-xl border border-slate-800/80 shadow-2xl overflow-hidden dropdown-menu">
+              <div className="px-3 py-2 border-t border-slate-800 bg-slate-900/60 sticky bottom-0 z-10">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Favorited Channels</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {watchlistStreams.length > 0 ? (
+                  watchlistStreams.slice(0, 12).map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { onPlayStream(s); setShowFavMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-800 transition-colors text-left"
+                    >
+                      <img
+                        src={s.poster || '/hero.png'}
+                        alt=""
+                        className="w-8 h-5 rounded object-cover shrink-0"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/hero.png'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-white truncate">{s.title}</p>
+                        <span className="text-[10px] text-slate-500">{s.category}</span>
+                      </div>
+                      <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <Star className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No favorites yet</p>
+                    <p className="text-[10px] text-slate-600 mt-1">Tap ★ on any channel</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* LAST CH + NEXT CH — 50% less wide, side by side */}
+        <div className="flex gap-2 ml-auto shrink-0">
+          <button
+            onClick={() => {
+              const list = activePlaylist;
+              const idx = list.findIndex((s) => s.id === stream.id);
+              const prev = idx > 0 ? list[idx - 1] : list[list.length - 1];
+              if (prev) onPlayStream(prev);
+            }}
+            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
+            title="Previous channel"
+          >
+            <ChevronUp className="w-4 h-4 shrink-0" />
+            <span>LAST CH</span>
+          </button>
+          <button
+            onClick={() => {
+              const list = activePlaylist;
+              const idx = list.findIndex((s) => s.id === stream.id);
+              const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+              if (next) onPlayStream(next);
+            }}
+            className="w-24 sm:w-28 h-12 rounded-xl bg-blue-600/90 hover:bg-blue-500 active:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-blue-600/30 touch-manipulation text-xs font-bold player-nav-btn"
+            title="Next channel"
+          >
+            <span>NEXT CH</span>
+            <ChevronDown className="w-4 h-4 shrink-0" />
+          </button>
+        </div>
+      </div>
       {/* Sources Toolbar */}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3 bg-[#0f121a] p-3 rounded-xl border border-slate-800/80">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -624,28 +626,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
           </button>
         </div>
       </div>
-
-        {/* Stream Information */}
-        <div className="p-5 bg-[#0f121a] rounded-xl border border-slate-800/80">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-            <span className="flex items-center gap-1 text-blue-400 font-semibold uppercase">
-              <Radio className="w-3 h-3 animate-pulse" />
-              {stream.status === '24/7' ? '24/7 Channel' : 'Live Stream'}
-            </span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span>{stream.category}</span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="font-mono tabular-nums text-slate-300 flex items-center gap-1">
-              <Eye className="w-3.5 h-3.5 text-slate-400" />
-              {(stream.viewers || 3200).toLocaleString()} watching
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">{stream.title}</h1>
-          <p className="text-base text-slate-300 leading-relaxed max-w-3xl font-medium">
-            High-definition direct streaming broadcast from {stream.provider.toUpperCase()} provider networks.
-            Equipped with synchronized low-latency delivery and theater mode presentation.
-          </p>
-        </div>
     </div>
     </div>
   );

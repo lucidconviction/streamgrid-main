@@ -17,7 +17,6 @@ import { ChannelDirectory } from './components/ChannelDirectory';
 import { SportsEPG } from './components/SportsEPG';
 import { IptvDirectory } from './components/IptvDirectory';
 import { SmuttDirectory } from './components/SmuttDirectory';
-import { TVGrid } from './components/TVGrid';
 import { CHANNELS, fetchChannelVideos } from './services/youtubeService';
 
 import { MusicDirectory } from './components/MusicDirectory';
@@ -30,7 +29,7 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'tv' | 'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player'>('home');
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -343,10 +342,10 @@ export default function App() {
 
   // Lazy-load IPTV streams when navigating to the IPTV view or home
   useEffect(() => {
-    if (currentView === 'iptv' || currentView === 'tv') {
+    if (currentView === 'iptv') {
       loadIptvStreams();
     }
-    if (currentView === 'tv' || currentView === 'sports' || currentView === 'channels') {
+    if (currentView === 'sports' || currentView === 'channels') {
       loadStreams();
     }
 
@@ -838,8 +837,6 @@ export default function App() {
               }}
               isRefreshing={isRefreshing}
             />
-          ) : currentView === 'tv' ? (
-            <TVGrid streams={[...streams, ...iptvStreams]} onPlayStream={handlePlayStream} />
           ) : (
             /* Home / Explore View (Netflix & YouTube Hybrid) */
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">

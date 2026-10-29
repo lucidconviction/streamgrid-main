@@ -42,7 +42,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Explore', icon: Compass },
-    { id: 'tv', label: 'TV Guide', icon: MonitorPlay },
     { id: 'sports', label: 'Live Sports', icon: Radio },
     { id: 'channels', label: '24/7 Channels', icon: Tv },
     { id: 'iptv', label: 'IPTV Playlists', icon: Layers },
