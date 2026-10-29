@@ -34,7 +34,7 @@ export default function App() {
   // Navigation & View State
   const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player' | 'upcoming'>('home');
   const [showPopup, setShowPopup] = useState(false);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);

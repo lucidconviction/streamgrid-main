@@ -13,7 +13,9 @@ import {
   X,
   Music,
   Youtube,
-} from 'lucide-react';
+  Popcorn,
+} from 'lucide-react'
+
 import { UserProfile } from '../types/stream';
 
 interface SidebarProps {
