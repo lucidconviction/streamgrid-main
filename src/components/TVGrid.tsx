@@ -188,7 +188,7 @@ export const TVGrid: React.FC<TVGridProps> = ({ streams, onPlayStream }) => {
                 <div className="flex-1 min-w-0">
                   <p className={`text-[11px] font-medium truncate ${isSel ? "text-white" : "text-slate-300"}`}>{s.title}</p>
                   <p className="text-[9px] text-slate-500 truncate">
-                    {s.provider === "iptv" ? "IPTV" : s.provider}
+                    {s.category}
                     {s.viewers && ` · ${Math.round(s.viewers).toLocaleString()}`}
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export const TVGrid: React.FC<TVGridProps> = ({ streams, onPlayStream }) => {
             <div className="min-w-0">
               <p className="text-sm font-bold text-white truncate">{selectedStream?.title ?? "Select a channel"}</p>
               <p className="text-[10px] text-slate-500">
-                {selectedStream ? `${selectedStream.category} · ${selectedStream.provider}` : ""}
+                {selectedStream ? selectedStream.category : ""}
               </p>
             </div>
           </div>

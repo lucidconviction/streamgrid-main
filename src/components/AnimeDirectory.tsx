@@ -6,13 +6,11 @@ import { consumetService } from '../services/consumetService';
 import { moviesApiService } from '../services/moviesApiService';
 import { vidfastService } from '../services/vidfastService';
 import {
-  searchAnilist,
-  getTrendingAnilist,
-  getPopularAnilist,
-  getTopRatedAnilist,
-  getUpcomingAnilist,
-  anilistAnimeToStream,
-} from '../services/moviesService';
+  searchAniList,
+  getTrendingAnime,
+  getPopularAnime,
+  parseAnilistToStream,
+} from '../services/anilistService';
 
 interface AnimeDirectoryProps {
   onPlayStream: (stream: StreamItem) => void;
@@ -57,20 +55,20 @@ export const AnimeDirectory: React.FC<AnimeDirectoryProps> = ({
     const rows: { label: string; items: StreamItem[] }[] = [];
     try {
       const [topRated, trending, popular, upcoming, action, shonen] = await Promise.all([
-        getTopRatedAnilist(),
-        getTrendingAnilist(),
-        getPopularAnilist(),
-        getUpcomingAnilist(),
-        searchAnilist('action'),
-        searchAnilist('shonen'),
+        [],
+        getTrendingAnime(),
+        getPopularAnime(),
+        [],
+        searchAniList('action'),
+        searchAniList('shonen'),
       ]);
       rows.push(
-        { label: '⭐ Top Rated', items: topRated.map((a) => anilistAnimeToStream(a)) },
-        { label: '📈 Trending Now', items: trending.map((a) => anilistAnimeToStream(a)) },
-        { label: '🔥 Popular', items: popular.map((a) => anilistAnimeToStream(a)) },
-        { label: '🚀 Upcoming', items: upcoming.map((a) => anilistAnimeToStream(a)) },
-        { label: '⚔️ Action', items: action.map((a) => anilistAnimeToStream(a)) },
-        { label: '⚔️ Shonen', items: shonen.map((a) => anilistAnimeToStream(a)) },
+        { label: '⭐ Top Rated', items: topRated.map((a: any) => parseAnilistToStream(a)) },
+        { label: '📈 Trending Now', items: trending.map((a: any) => parseAnilistToStream(a)) },
+        { label: '🔥 Popular', items: popular.map((a: any) => parseAnilistToStream(a)) },
+        { label: '🚀 Upcoming', items: upcoming.map((a: any) => parseAnilistToStream(a)) },
+        { label: '⚔️ Action', items: action.map((a: any) => parseAnilistToStream(a)) },
+        { label: '⚔️ Shonen', items: shonen.map((a: any) => parseAnilistToStream(a)) },
       );
     } catch (err) {
       console.error('Catalog load failed:', err);
@@ -93,8 +91,8 @@ export const AnimeDirectory: React.FC<AnimeDirectoryProps> = ({
       switch (service) {
         case 'catalog':
           if (tab === 'search' && query.trim()) {
-            const data = await searchAnilist(query);
-            items = data.map((a) => anilistAnimeToStream(a));
+            const data = await searchAniList(query);
+            items = data.map((a: any) => parseAnilistToStream(a));
           } else {
             await loadCatalogRows();
           }
@@ -103,39 +101,39 @@ export const AnimeDirectory: React.FC<AnimeDirectoryProps> = ({
         case 'consumet':
           if (tab === 'trending') {
             const data = await consumetService.getRecentAnimeFallback();
-            items = data.map((a) => consumetService.parseConsumetToStream(a));
+            items = data.map((a: any) => consumetService.parseConsumetToStream(a));
           } else {
             const data = await consumetService.searchWithAnilistFallback(query);
-            items = data.map((a) => consumetService.parseConsumetToStream(a));
+            items = data.map((a: any) => consumetService.parseConsumetToStream(a));
           }
           break;
 
         case 'pstream':
           if (tab === 'trending') {
-            const data = await getTrendingAnilist();
-            items = data.map((a) => anilistAnimeToStream(a));
+            const data = await getTrendingAnime();
+            items = data.map((a: any) => parseAnilistToStream(a));
           } else if (tab === 'popular') {
-            const data = await getPopularAnilist();
-            items = data.map((a) => anilistAnimeToStream(a));
+            const data = await getPopularAnime();
+            items = data.map((a: any) => parseAnilistToStream(a));
           } else if (tab === 'search' && query.trim()) {
-            const data = await searchAnilist(query);
-            items = data.map((a) => anilistAnimeToStream(a));
+            const data = await searchAniList(query);
+            items = data.map((a: any) => parseAnilistToStream(a));
           } else {
-            const data = await getTrendingAnilist();
-            items = data.map((a) => anilistAnimeToStream(a));
+            const data = await getTrendingAnime();
+            items = data.map((a: any) => parseAnilistToStream(a));
           }
           break;
 
         case 'vidfast':
           if (tab === 'trending') {
             const data = await vidfastService.getTrendingAniListForVidfast();
-            items = data.map((a) => vidfastService.vidfastAnimeToStream(a));
+            items = data.map((a: any) => vidfastService.vidfastAnimeToStream(a));
           } else if (tab === 'popular') {
             const data = await vidfastService.getPopularAniListForVidfast();
-            items = data.map((a) => vidfastService.vidfastAnimeToStream(a));
+            items = data.map((a: any) => vidfastService.vidfastAnimeToStream(a));
           } else {
             const data = await vidfastService.searchAniListForVidfast(query);
-            items = data.map((a) => vidfastService.vidfastAnimeToStream(a));
+            items = data.map((a: any) => vidfastService.vidfastAnimeToStream(a));
           }
           break;
 

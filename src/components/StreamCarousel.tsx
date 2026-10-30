@@ -12,6 +12,7 @@ interface StreamCarouselProps {
   onTogglePiP?: (stream: StreamItem) => void;
   watchlistIds: string[];
   multiviewStreamIds: string[];
+  onCardClick?: (stream: StreamItem) => void;
   onViewAll?: () => void;
 }
 
@@ -25,6 +26,7 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
   onTogglePiP,
   watchlistIds,
   multiviewStreamIds,
+  onCardClick,
   onViewAll,
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -92,6 +94,7 @@ export const StreamCarousel: React.FC<StreamCarouselProps> = ({
                 onTogglePiP={onTogglePiP}
                 isInWatchlist={watchlistIds.includes(stream.id)}
                 isInMultiview={multiviewStreamIds.includes(stream.id)}
+                onCardClick={onCardClick}
               />
             </div>
           ))}

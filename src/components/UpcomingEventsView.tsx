@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Clock, Radio, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Radio, ChevronRight, Bookmark } from 'lucide-react';
 import {
   UpcomingEvent,
   SPORT_INFO,
@@ -10,12 +10,16 @@ interface UpcomingEventsViewProps {
   events: UpcomingEvent[];
   isLoading: boolean;
   onRefresh: () => void;
+  watchlistIds?: string[];
+  onToggleWatchlist?: (eventId: string) => void;
 }
 
 export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
   events,
   isLoading,
   onRefresh,
+  watchlistIds = [],
+  onToggleWatchlist,
 }) => {
   const [sportFilter, setSportFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -40,7 +44,6 @@ export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
     });
   }, [events, sportFilter, dateFilter]);
 
-  // Group by date
   const grouped = useMemo(() => {
     const map = new Map<string, UpcomingEvent[]>();
     for (const e of filtered) {
@@ -65,6 +68,12 @@ export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
     });
   };
 
+  const handleToggleWatchlist = (eventId: string) => {
+    if (onToggleWatchlist) {
+      onToggleWatchlist(eventId);
+    }
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
       {/* Header */}
@@ -75,7 +84,7 @@ export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">Upcoming Events</h1>
-            <p className="text-xs text-slate-400">Live &amp; upcoming matches across all sports</p>
+            <p className="text-xs text-slate-400">Live & upcoming matches across all sports</p>
           </div>
         </div>
         <button
@@ -173,11 +182,25 @@ export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
                 {dayEvents.map((e) => {
                   const info = SPORT_INFO[e.sport];
                   const isLive = e.state === 'in';
+                  const inWatchlist = watchlistIds.includes(e.id);
                   return (
                     <div
                       key={e.id}
-                      className="p-3.5 rounded-xl bg-gradient-to-br from-slate-900/80 to-[#0f121a] border border-slate-800 hover:border-blue-700/60 transition-colors"
+                      className="p-3.5 rounded-xl bg-gradient-to-br from-slate-900/80 to-[#0f121a] border border-slate-800 hover:border-blue-700/60 transition-colors relative"
                     >
+                      <button
+                        onClick={() => handleToggleWatchlist(e.id)}
+                        className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-800 transition-colors z-10"
+                        title={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+                      >
+                        <Bookmark
+                          className={`w-4 h-4 ${
+                            inWatchlist
+                              ? 'fill-blue-500 text-blue-400'
+                              : 'text-slate-400'
+                          }`}
+                        />
+                      </button>
                       <div className="flex items-center justify-between mb-2.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           {info?.emoji} {e.league}
@@ -233,7 +256,7 @@ export const UpcomingEventsView: React.FC<UpcomingEventsViewProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
                             isLive

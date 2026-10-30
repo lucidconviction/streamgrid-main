@@ -8,6 +8,12 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { HeroBanner } from './components/HeroBanner';
 import { StreamCarousel } from './components/StreamCarousel';
+import { getTMDBPopularMovies, getTMDBPopularTV, getTMDBNowPlaying, getMovieTrailer, getTVTrailer } from './services/tmdbService';
+import { getTrendingAnime, getPopularAnime, parseAnilistToStream } from './services/anilistService';
+import { fetchMovies, fetchTVShows, fetchAnime } from './services/moviesService';
+import { fetchReplays, getSportConfig } from './services/replaysService';
+import { ReplaysView } from './components/ReplaysView';
+import { MoviesView } from './components/MoviesView';
 import { SearchResultsView } from './components/SearchResultsView';
 import { PlayerView } from './components/PlayerView';
 import { UpcomingEventsView } from './components/UpcomingEventsView';
@@ -32,7 +38,7 @@ import { RefreshCw, Radio, Tv, LayoutGrid, AlertCircle, Layers } from 'lucide-re
 
 export default function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player' | 'upcoming'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'sports' | 'channels' | 'iptv' | 'smutt' | 'youtube'  | 'music' | 'multiview' | 'history' | 'watchlist' | 'player' | 'replays' | 'movies' | 'upcoming'>('home');
   const [showPopup, setShowPopup] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
@@ -67,6 +73,16 @@ export default function App() {
   const [watchHistory, setWatchHistory] = useState<WatchHistoryEntry[]>([]);
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
   const [presets, setPresets] = useState<MultiviewPreset[]>([]);
+
+  // Media (Movies/TV/Anime) State
+  const [popularMovies, setPopularMovies] = useState<any[]>([]);
+  const [popularTv, setPopularTv] = useState<any[]>([]);
+  const [trendingAnime, setTrendingAnime] = useState<any[]>([]);
+  const [hoveredMediaId, setHoveredMediaId] = useState<string | null>(null);
+  const [hoveredTrailerKey, setHoveredTrailerKey] = useState<string | null>(null);
+  const [isHoveringMedia, setIsHoveringMedia] = useState(false);
+  const [replays, setReplays] = useState<any[]>([]);
+  const [replaysLoading, setReplaysLoading] = useState(true);
 
   // Saved YouTube channels (NewPipe-backed)
   const [savedChannels, setSavedChannels] = useState<string[]>(
@@ -874,10 +890,38 @@ export default function App() {
                   .finally(() => setIsLoadingEvents(false));
               }}
             />
+          ) : currentView === 'movies' ? (
+            <MoviesView
+              activeProfileId={activeProfile.id}
+              watchlistIds={watchlistIds}
+              onToggleWatchlist={(id: string) => {
+                handleToggleWatchlist({ id, title: id, name: id, category: 'movie', provider: 'tmdb' as any, streamType: 'embed' as const, status: 'live' as const } as any);
+              }}
+            />
+          ) : currentView === 'replays' ? (
+            <ReplaysView
+              activeProfileId={activeProfile.id}
+              onPlayVideo={(video) => {
+                handlePlayStream({
+                  id: `replay-${video.videoId}`,
+                  title: video.title,
+                  name: video.title,
+                  category: 'Replay Highlights',
+                  provider: 'sportsrc' as any,
+                  streamType: 'embed' as const,
+                  directEmbedUrl: `https://www.youtube.com/embed/${video.videoId}`,
+                  status: 'live' as const,
+                  viewers: video.views,
+                  poster: video.thumbnail,
+                } as any);
+              }}
+              watchlistIds={watchlistIds}
+              onToggleWatchlist={(videoId: string) => {}}
+            />
           ) : (
             /* Home / Explore View (Netflix & YouTube Hybrid) */
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 animate-in fade-in duration-200">
-                {/* Netflix Cinematic Hero Banner */}
+            <div className="w-full animate-in fade-in duration-200">
+                {/* Netflix Cinematic Hero Banner — full-bleed, edge to edge */}
               <HeroBanner
                 featuredStream={featuredStream}
                 onPlayStream={handlePlayStream}
@@ -887,6 +931,9 @@ export default function App() {
                 upcomingLiveEvents={liveStreams.slice(1, 6)}
                 onSelectHeroStream={(stream) => setFeaturedStream(stream)}
               />
+
+              {/* Content area — readable width below full-bleed hero */}
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
 
               {/* Upcoming Events Sliding Row */}
               {!isLoadingEvents && upcomingEvents.length > 0 && (
@@ -916,12 +963,12 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="flex items-stretch gap-3 sm:gap-5 overflow-x-auto no-scrollbar py-2 px-1">
+                  <div className="flex items-stretch gap-2 sm:gap-3 md:gap-4 overflow-x-auto no-scrollbar py-2 px-1">
                     {watchHistory.slice(0, 6).map((item) => (
                       <div
                         key={item.id}
                         onClick={() => handlePlayHistoryItem(item)}
-                        className="w-[180px] sm:w-[220px] md:w-[280px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
+                        className="w-[140px] sm:w-[170px] md:w-[220px] shrink-0 bg-[#0f121a] border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all hover:-translate-y-1.5 group shadow-lg"
                       >
                         <div className="relative aspect-video w-full bg-slate-900">
                           <img
@@ -1009,7 +1056,61 @@ export default function App() {
                 </div>
               )}
 
-              {/* Row 4: Basketball & NBA */}
+              {/* Row 4: Popular Movies */}
+              {popularMovies.length > 0 && (
+                <StreamCarousel
+                  title="Popular Movies"
+                  subtitle="The biggest hits from around the world"
+                  streams={popularMovies.slice(0, 20)}
+                  onPlayStream={handlePlayStream}
+                  onAddToMultiview={handleAddToMultiview}
+                  onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
+                  watchlistIds={watchlistIds}
+                  multiviewStreamIds={multiviewStreamIds}
+                  onCardClick={(stream) => {
+                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                  }}
+                />
+              )}
+
+              {/* Row 5: Popular TV Shows */}
+              {popularTv.length > 0 && (
+                <StreamCarousel
+                  title="Popular TV Shows"
+                  subtitle="Top-rated series and binge-worthy hits"
+                  streams={popularTv.slice(0, 20)}
+                  onPlayStream={handlePlayStream}
+                  onAddToMultiview={handleAddToMultiview}
+                  onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
+                  watchlistIds={watchlistIds}
+                  multiviewStreamIds={multiviewStreamIds}
+                  onCardClick={(stream) => {
+                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                  }}
+                />
+              )}
+
+              {/* Row 6: Trending Anime */}
+              {trendingAnime.length > 0 && (
+                <StreamCarousel
+                  title="Trending Anime"
+                  subtitle="Hot picks from AniList"
+                  streams={trendingAnime.slice(0, 20)}
+                  onPlayStream={handlePlayStream}
+                  onAddToMultiview={handleAddToMultiview}
+                  onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
+                  watchlistIds={watchlistIds}
+                  multiviewStreamIds={multiviewStreamIds}
+                  onCardClick={(stream) => {
+                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                  }}
+                />
+              )}
+
+              {/* Row 7a: Basketball & NBA */}
               {basketballStreams.length > 0 && (
                 <StreamCarousel
                   title="Basketball & NBA League Pass"
@@ -1024,7 +1125,7 @@ export default function App() {
                 />
               )}
 
-              {/* Row 4: Football & Premier Soccer */}
+              {/* Row 7b: Football & Premier Soccer */}
               {footballStreams.length > 0 && (
                 <StreamCarousel
                   title="Football & Premier League"
@@ -1039,7 +1140,7 @@ export default function App() {
                 />
               )}
 
-              {/* Row 5: Motorsport / F1 & Combat */}
+              {/* Row 7c: Motorsport / F1 & Combat */}
               {(motorsportStreams.length > 0 || combatStreams.length > 0) && (
                 <StreamCarousel
                   title="High Octane: Motorsport & Combat"
@@ -1054,7 +1155,7 @@ export default function App() {
                 />
               )}
 
-              {/* Row 6: Golf & Tennis Classics */}
+              {/* Row 7d: Golf & Tennis Classics */}
               {(golfStreams.length > 0 || entertainmentStreams.length > 0) && (
                 <StreamCarousel
                   title="Entertainment, Movies & Golf Tour"
@@ -1068,6 +1169,33 @@ export default function App() {
                   multiviewStreamIds={multiviewStreamIds}
                 />
               )}
+              </div>
+                          {/* Row 8: Sports Replays & Highlights */}
+              {replays.length > 0 && (
+                <StreamCarousel
+                  title="Sports Replays & Highlights"
+                  subtitle="Full game recaps, highlights, and top plays from NBA, NFL, MLB, NHL, and Soccer"
+                  streams={replays.map((r: any) => ({
+                    id: r.id,
+                    title: r.title,
+                    name: r.title,
+                    category: 'Replay Highlights',
+                    provider: 'sportsrc' as any,
+                    streamType: 'embed' as const,
+                    status: 'live' as const,
+                    poster: r.thumbnail,
+                    viewers: r.views,
+                    directEmbedUrl: `https://www.youtube.com/embed/${r.videoId}`,
+                  }))}
+                  onPlayStream={handlePlayStream}
+                  onAddToMultiview={handleAddToMultiview}
+                  onToggleWatchlist={handleToggleWatchlist}
+                  onTogglePiP={handleTogglePiP}
+                  watchlistIds={watchlistIds}
+                  multiviewStreamIds={multiviewStreamIds}
+                />
+              )}
+
             </div>
           )}
         </main>

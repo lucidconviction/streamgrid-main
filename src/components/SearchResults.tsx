@@ -118,7 +118,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-slate-400">{stream.category}</span>
                       <span className="text-slate-600">·</span>
-                      <span className="text-[11px] text-slate-500 capitalize">{stream.provider}</span>
+                      <span className="text-[11px] text-slate-500 capitalize">{stream.category}</span>
                       {stream.status === 'live' && (
                         <>
                           <span className="text-slate-600">·</span>

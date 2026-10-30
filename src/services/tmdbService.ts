@@ -224,6 +224,66 @@ export async function getTVTrailer(tmdbId: number): Promise<TMDBTrailer | null> 
   });
 }
 
+// ── Details & Recommendations ────────────────────────────────────────────────────
+
+export interface TMDBMovieDetails extends TMDBMovie {
+  runtime?: number;
+  genres?: { id: number; name: string }[];
+  production_companies?: { name: string }[];
+  release_date?: string;
+  status?: string;
+  tagline?: string;
+}
+
+export interface TMDBTVDetails extends TMDBTVShow {
+  episode_run_time?: number[];
+  genres?: { id: number; name: string }[];
+  created_by?: { name: string }[];
+  status?: string;
+  tagline?: string;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  last_air_date?: string;
+}
+
+export async function getMovieDetails(tmdbId: number): Promise<TMDBMovieDetails | null> {
+  return cachedFetch(`tmdb-movie-details-${tmdbId}`, async () => {
+    const url = makeUrl(`/movie/${tmdbId}`, { append_to_response: 'credits,videos' });
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return res.json();
+  });
+}
+
+export async function getTVDetails(tmdbId: number): Promise<TMDBTVDetails | null> {
+  return cachedFetch(`tmdb-tv-details-${tmdbId}`, async () => {
+    const url = makeUrl(`/tv/${tmdbId}`, { append_to_response: 'credits,videos' });
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return res.json();
+  });
+}
+
+export async function getSimilarMovies(tmdbId: number, page = 1): Promise<TMDBMovie[]> {
+  return cachedFetch(`tmdb-similar-movies-${tmdbId}-${page}`, async () => {
+    const url = makeUrl(`/movie/${tmdbId}/similar`, { page: String(page) });
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  });
+}
+
+export async function getSimilarTV(tmdbId: number, page = 1): Promise<TMDBTVShow[]> {
+  return cachedFetch(`tmdb-similar-tv-${tmdbId}-${page}`, async () => {
+    const url = makeUrl(`/tv/${tmdbId}/similar`, { page: String(page) });
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  });
+}
+
 // ── Stream conversion ─────────────────────────────────────────────────────────
 
 export function tmdbMovieToStream(movie: TMDBMovie): StreamItem {

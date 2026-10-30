@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Radio } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Radio, Bookmark } from 'lucide-react';
 import {
   UpcomingEvent,
   SPORT_INFO,
@@ -10,18 +10,28 @@ interface UpcomingEventsRowProps {
   events: UpcomingEvent[];
   isLoading: boolean;
   onViewAll: () => void;
+  watchlistIds?: string[];
+  onToggleWatchlist?: (eventId: string) => void;
 }
 
 export const UpcomingEventsRow: React.FC<UpcomingEventsRowProps> = ({
   events,
   isLoading,
   onViewAll,
+  watchlistIds = [],
+  onToggleWatchlist,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const shown = events.slice(0, 10);
 
   const scrollBy = (dir: number) => {
     scrollRef.current?.scrollBy({ left: dir * 320, behavior: 'smooth' });
+  };
+
+  const handleToggleWatchlist = (eventId: string) => {
+    if (onToggleWatchlist) {
+      onToggleWatchlist(eventId);
+    }
   };
 
   if (isLoading && shown.length === 0) {
@@ -84,11 +94,25 @@ export const UpcomingEventsRow: React.FC<UpcomingEventsRowProps> = ({
         {shown.map((e) => {
           const info = SPORT_INFO[e.sport];
           const isLive = e.state === 'in';
+          const inWatchlist = watchlistIds.includes(e.id);
           return (
             <div
               key={e.id}
-              className="w-72 shrink-0 p-3.5 rounded-xl bg-gradient-to-br from-slate-900/80 to-[#0f121a] border border-slate-800 hover:border-blue-700/60 transition-colors"
+              className="w-72 shrink-0 p-3.5 rounded-xl bg-gradient-to-br from-slate-900/80 to-[#0f121a] border border-slate-800 hover:border-blue-700/60 transition-colors relative"
             >
+              <button
+                onClick={() => handleToggleWatchlist(e.id)}
+                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-800 transition-colors z-10"
+                title={inWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+              >
+                <Bookmark
+                  className={`w-4 h-4 ${
+                    inWatchlist
+                      ? 'fill-blue-500 text-blue-400'
+                      : 'text-slate-400'
+                  }`}
+                />
+              </button>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   {info?.emoji} {e.league}
@@ -117,7 +141,7 @@ export const UpcomingEventsRow: React.FC<UpcomingEventsRowProps> = ({
                   <span className="text-sm font-semibold text-slate-200 truncate">{e.home}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
                 <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-500" />
                   {formatEventTime(e.date)}

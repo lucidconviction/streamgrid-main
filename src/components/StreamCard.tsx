@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Hls from 'hls.js';
-import { Layers, Bookmark, Play, PictureInPicture2, Headphones } from 'lucide-react';
+import { Layers, Bookmark, Play, PictureInPicture2, Headphones, Star } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
 import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
@@ -15,6 +15,7 @@ interface StreamCardProps {
   isInWatchlist: boolean;
   isInMultiview?: boolean;
   screenshotUrl?: string | null;
+  onCardClick?: (stream: StreamItem) => void;
 }
 
 export const StreamCard: React.FC<StreamCardProps> = ({
@@ -26,6 +27,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   isInWatchlist,
   isInMultiview,
   screenshotUrl,
+  onCardClick,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -227,7 +229,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         className="relative aspect-video w-full overflow-hidden bg-slate-900 cursor-pointer"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={() => onPlay(stream)}
+        onClick={() => onCardClick ? onCardClick(stream) : onPlay(stream)}
       >
         {/* Live Video Preview — visible on hover for all stream types */}
         {isHovered && stream.directEmbedUrl ? (
@@ -242,20 +244,33 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         ) : isIptv ? (
           /* IPTV: screenshot as background, logo at bottom-left */
           <div className="relative w-full h-full">
+            {/* Base background: logo centered, always present to prevent flickering */}
+            <img
+              src="/logo.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-contain opacity-20 z-0"
+              referrerPolicy="no-referrer"
+            />
+            {/* Gradient overlay to ensure readability */}
+            <div className="absolute inset-0 z-0" style={{ background: iptvGradient ? 'none' : 'linear-gradient(135deg, rgba(14,165,233,0.3), rgba(2,132,199,0.3))' }} />
             {screenshotUrl ? (
               <img
                 src={screenshotUrl}
                 alt={stream.title}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105 relative z-10"
                 referrerPolicy="no-referrer"
                 onError={() => setImageError(true)}
               />
             ) : (
               <div
-                className="w-full h-full flex flex-col items-center justify-center"
-                style={{ background: iptvGradient || 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
+                className="w-full h-full flex flex-col items-center justify-center relative z-10"
               >
-                <span className="text-3xl mb-1 drop-shadow-lg">📡</span>
+                <img
+                  src="/logo.png"
+                  alt={stream.title}
+                  className="w-12 h-12 mb-2 opacity-60"
+                  referrerPolicy="no-referrer"
+                />
                 {iptvLabel && (
                   <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest px-2 text-center truncate w-full">
                     {iptvLabel}
@@ -291,11 +306,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             <span className="text-[10px] text-white/60 font-mono uppercase tracking-wider px-2 text-center truncate w-full">{stream.category}</span>
           </div>
         ) : (
-          /* High quality fallback SVG container per Zero-Broken-Image Policy */
+          /* High quality fallback with logo center */
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 text-slate-500 p-4 text-center">
-            <svg className="w-8 h-8 mb-2 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <img src="/logo.png" alt="" className="w-10 h-10 mb-2 opacity-40" referrerPolicy="no-referrer" />
             <span className="text-xs font-medium text-slate-400 line-clamp-1">{stream.title}</span>
           </div>
         )}
@@ -378,7 +391,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           </div>
 
           <h3
-            onClick={() => onPlay(stream)}
+            onClick={() => onCardClick ? onCardClick(stream) : onPlay(stream)}
             className="text-sm font-semibold text-slate-100 hover:text-blue-400 transition-colors line-clamp-1 cursor-pointer"
             title={stream.title}
           >
@@ -422,17 +435,17 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                   ? 'bg-amber-500 text-black border border-amber-400'
                   : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-amber-500/60 hover:text-amber-300 hover:bg-amber-500/20'
               }`}
-              title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+              title={isInWatchlist ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Bookmark className={`w-3 h-3 shrink-0 ${isInWatchlist ? 'fill-black' : ''}`} />
-              <span className="truncate text-[9px] leading-none">{isInWatchlist ? 'Watched' : 'Watch'}</span>
+              <Star className={`w-3 h-3 shrink-0 ${isInWatchlist ? 'fill-black' : ''}`} />
+              <span className="truncate text-[9px] leading-none">{isInWatchlist ? 'Fav' : 'Fav'}</span>
             </button>
           </div>
         </div>
 
       {/* Bottom subtle kicker */}
         <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-          <span className="uppercase">{stream.provider}</span>
+          <span className="uppercase">{stream.category}</span>
           <span>{stream.sources?.length ? `${stream.sources.length} sources` : 'HD Feed'}</span>
         </div>
       </div>

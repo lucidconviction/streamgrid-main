@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronUp, Search, X, Zap, Flame, Flame as QuickJumpIcon, Compass, Radio, Tv, Layers, Music, History, Bookmark, LayoutGrid } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X, Zap, Flame, Flame as QuickJumpIcon, Compass, Radio, Tv, Layers, Music, History, Bookmark, LayoutGrid, PlayCircle, Film } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { storageService } from '../services/storageService';
 import Hls from 'hls.js';
@@ -35,6 +35,8 @@ export const Header: React.FC<HeaderProps> = ({
   const pageDropdownRef = useRef<HTMLDivElement>(null);
   const [qjOpen, setQjOpen] = useState(false);
   const qjRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const quickJumps = storageService.getQuickJumps(activeProfileId);
   // Add form state
   const [qjAddMode, setQjAddMode] = useState(false);
@@ -51,8 +53,10 @@ export const Header: React.FC<HeaderProps> = ({
     multiview: 'Multiview',
     history: 'Watch History',
     watchlist: 'Watchlist',
-    smutt: 'Nett Smutt',
     upcoming: 'Upcoming Events',
+    replays: 'Sports Replays',
+    movies: 'Movies & Shows',
+    smutt: 'Nett Smutt',
   };
 
   const VIEW_ICONS: Record<string, React.ReactNode> = {
@@ -64,9 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
     history: <History className="w-4 h-4" />,
     watchlist: <Bookmark className="w-4 h-4" />,
     multiview: <LayoutGrid className="w-4 h-4" />,
-    smutt: <Flame className="w-4 h-4" />,
     upcoming: <Compass className="w-4 h-4" />,
+    replays: <PlayCircle className="w-4 h-4" />,
+    movies: <Film className="w-4 h-4" />,
+    smutt: <Flame className="w-4 h-4" />,
   };
+
+  // Views in dropdown order (smutt pinned to bottom)
+  const VIEW_ORDER = ['home', 'sports', 'channels', 'iptv', 'music', 'multiview', 'history', 'watchlist', 'upcoming', 'replays', 'movies', 'smutt'];
 
   // ── Header background player ─────────────────────────────────────────
   // Pick ONE stream and play it. No rotation. No switching. Simple.
@@ -253,13 +262,45 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Right: Quick Search + Page Dropdown + Sidebar Toggle */}
+          {/* Right: Global Search + Quick Search + Page Dropdown + Sidebar Toggle */}
           <div className="flex items-center gap-2">
+            {/* Global Search Bar */}
+            <div className="relative" ref={searchBarRef}>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search all streams..."
+                value={globalSearchQuery}
+                onChange={(e) => {
+                  setGlobalSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    onSearch?.(e.target.value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && globalSearchQuery.trim()) {
+                    onSearch?.(globalSearchQuery);
+                  }
+                  if (e.key === 'Escape') {
+                    setGlobalSearchQuery('');
+                  }
+                }}
+                className="w-32 sm:w-44 md:w-56 pl-9 pr-8 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
+              />
+              {globalSearchQuery && (
+                <button
+                  onClick={() => setGlobalSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             {/* Quick Search Dropdown (replaces Saved Searches) */}
             <div className="relative" ref={qjRef}>
               <button
                 onClick={() => setQjOpen(!qjOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
+                className="flex items-center gap-1 px-2 py-1.5 min-h-10 sm:min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
                 title="Quick Jumps"
               >
                 <QuickJumpIcon className="w-4 h-4" />
@@ -314,8 +355,8 @@ export const Header: React.FC<HeaderProps> = ({
                           className="w-full bg-slate-900/80 border border-slate-700/50 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/60 appearance-none"
                         >
                           <option value="__global__">🌐 Global Search (all jumps)</option>
-                          {Object.entries(VIEW_LABELS).map(([id, label]) => (
-                            <option key={id} value={id}>{label}</option>
+                          {VIEW_ORDER.map((id) => (
+                            <option key={id} value={id}>{VIEW_LABELS[id]}</option>
                           ))}
                         </select>
                         <div className="flex items-center gap-2 pt-1">
@@ -432,7 +473,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="relative" ref={pageDropdownRef}>
               <button
                 onClick={() => setPageDropdownOpen(!pageDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
+                className="flex items-center gap-1 px-2 py-1.5 min-h-10 sm:min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
               >
                 {VIEW_ICONS[currentPage || 'home']}
                 <span className="hidden sm:inline">{VIEW_LABELS[currentPage || 'home']}</span>
@@ -442,7 +483,7 @@ export const Header: React.FC<HeaderProps> = ({
               {pageDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-[#12151e] border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
                   <div className="p-1.5">
-                    {Object.entries(VIEW_LABELS).map(([id, label]) => (
+                    {VIEW_ORDER.map((id) => (
                       <button
                         key={id}
                         onClick={() => { onNavigate(id); setPageDropdownOpen(false); }}
@@ -453,7 +494,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }`}
                       >
                         {VIEW_ICONS[id]}
-                        <span>{label}</span>
+                        <span>{VIEW_LABELS[id]}</span>
                       </button>
                     ))}
                   </div>

@@ -166,7 +166,7 @@ export const WatchHistoryView: React.FC<WatchHistoryViewProps> = ({
                   <div className="flex items-center gap-2 text-[11px] text-slate-400 font-normal mb-1">
                     <span>{item.category}</span>
                     <span>·</span>
-                    <span className="font-mono">{item.provider.toUpperCase()}</span>
+                    <span className="font-mono">{item.category.toUpperCase()}</span>
                     <span>·</span>
                     <span className="font-mono text-slate-500">{formatWatchedTime(item.watchedAt)}</span>
                   </div>

@@ -9,11 +9,12 @@ import {
   Bookmark,
   Flame,
   Layers,
-  Search,
-  X,
+
   Music,
   Youtube,
   Popcorn,
+  PlayCircle,
+  Film,
 } from 'lucide-react'
 
 import { UserProfile } from '../types/stream';
@@ -30,6 +31,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  onClose,
   currentView,
   onNavigate,
   multiviewCount,
@@ -39,9 +41,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggle,
   onSearch,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
   const navItems = [
     { id: 'home', label: 'Explore', icon: Compass },
     { id: 'sports', label: 'Live Sports', icon: Radio },
@@ -52,6 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
     { id: 'multiview', label: 'Multiview Grid', icon: LayoutGrid, count: multiviewCount },
     { id: 'upcoming', label: 'Upcoming Events', icon: Popcorn },
+    { id: 'replays', label: 'Sports Replays', icon: PlayCircle },
+    { id: 'movies', label: 'Movies & Shows', icon: Film },
+  ];
+
+  // Fixed bottom items that stay at the bottom
+  const pinnedBottom = [
     { id: 'smutt', label: 'Nett Smutt', icon: Flame },
   ];
 
@@ -73,40 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         style={{ top: 'var(--header-height, 65px)', bottom: 0 }}
       >
         <div className="flex-1 flex flex-col overflow-hidden min-h-0 lg:h-[calc(100vh-var(--header-height,65px))]">
-          {/* Search Bar */}
-          <div className="px-3 pt-3 pb-2">
-            <div className="relative">
-              {isSearchOpen ? (
-                <div className="flex items-center bg-slate-900 border border-blue-500/40 rounded-lg px-3 py-2 gap-2">
-                  <Search className="w-4 h-4 text-blue-400 shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Search all streams..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onBlur={() => {
-                      if (!searchQuery) setIsSearchOpen(false);
-                    }}
-                    autoFocus
-                    className="bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none flex-1"
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-slate-500 hover:text-white">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  className="w-full flex items-center gap-2 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-left text-sm text-slate-400 hover:border-blue-500/50 hover:text-slate-200 transition-colors"
-                >
-                  <Search className="w-4 h-4 shrink-0" />
-                  <span>Search streams...</span>
-                </button>
-              )}
-            </div>
-          </div>
+
 
           {/* Scrollable Nav */}
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1" style={{ minHeight: 0 }}>
@@ -138,30 +110,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               );
             })}
+          </div>
 
-            {/* Profile Card — moved up under navigation */}
-            <div className="pt-3 mt-3 border-t border-slate-800/80">
-              <button
-                onClick={() => {
-                  onOpenProfileModal();
-                  if (window.innerWidth < 1024) onToggle();
-                }}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-left group"
-              >
-                <img
-                  src={activeProfile.avatar}
-                  alt={activeProfile.name}
-                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/10 shrink-0"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-100 group-hover:text-blue-300 truncate transition-colors">
-                    {activeProfile.name}
-                  </p>
-                  <p className="text-[11px] text-slate-400 truncate">Preferences &amp; History</p>
-                </div>
-              </button>
-            </div>
+          {/* Pinned Bottom - Nett Smutt */}
+          <div className="px-3 py-2 border-t border-slate-800/60 mt-auto">
+            {pinnedBottom.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    if (window.innerWidth < 1024) onToggle();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                    isActive
+                      ? 'bg-blue-600/15 text-blue-300 border border-blue-500/40'
+                      : 'text-slate-200 hover:text-white hover:bg-blue-500/10'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-300' : 'text-slate-300'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Profile Card — at very bottom */}
+          <div className="px-3 pb-3">
+            <button
+              onClick={() => {
+                onOpenProfileModal();
+                if (window.innerWidth < 1024) onToggle();
+              }}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-left group"
+            >
+              <img
+                src={activeProfile.avatar}
+                alt={activeProfile.name}
+                className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/10 shrink-0"
+                referrerPolicy="no-referrer"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-100 group-hover:text-blue-300 truncate transition-colors">
+                  {activeProfile.name}
+                </p>
+                <p className="text-[11px] text-slate-400 truncate">Preferences & History</p>
+              </div>
+            </button>
           </div>
         </div>
       </aside>

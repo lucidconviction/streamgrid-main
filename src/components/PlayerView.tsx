@@ -339,7 +339,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                       <div className="flex-1 min-w-0">
                         <p className={`text-[11px] font-medium truncate ${isCurrent ? 'text-white' : 'text-white/80'}`}>{item.title}</p>
                         <p className="text-[9px] text-white/50 truncate">
-                          {item.provider === 'iptv' ? 'IPTV' : item.provider}
+                          {item.category}
                         </p>
                       </div>
                       {liveBadge && (
@@ -395,7 +395,13 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
                   autoPlay={true}
                   onRefresh={handleRefreshStream}
                   onTogglePiP={onTogglePiP}
-                  onVideoEnd={onVideoEnd}
+                  onVideoEnd={() => {
+                    // Autoplay next stream in the active playlist
+                    const list = activePlaylist;
+                    const idx = list.findIndex((s) => s.id === stream.id);
+                    const next = idx < list.length - 1 ? list[idx + 1] : list[0];
+                    if (next) onPlayStream(next);
+                  }}
                 />
               )}
             </div>
@@ -581,6 +587,19 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
             title="Reload Stream Player"
           >
             <RefreshCw className="w-4 h-4" />
+          </button>
+
+          {/* Star / Favorite button on right side of sources row */}
+          <button
+            onClick={() => onToggleWatchlist(stream)}
+            className={`p-2 rounded-lg border transition-colors ${
+              isInWatchlist
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 hover:bg-amber-500/30'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800'
+            }`}
+            title={isInWatchlist ? 'Remove from Favorites' : 'Add to Favorites'}
+          >
+            <Star className={`w-4 h-4 ${isInWatchlist ? 'fill-amber-400' : ''}`} />
           </button>
 
           <button

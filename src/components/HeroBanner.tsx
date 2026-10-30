@@ -125,7 +125,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   const displayPoster = posterSrc || '/src/assets/images/hero_championship_live_1792048678438.jpg';
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden mb-6 sm:mb-8 md:mb-10 border border-blue-500/20 bg-[#0c1220]">
+    <div className="relative w-full overflow-hidden mb-4 sm:mb-6 md:mb-10 bg-[#0c1220]" style={{ height: 'clamp(240px, 38vh, 700px)' }}>'
       {/* ── Background layer ── */}
       {!videoError && (
         <div className="absolute inset-0 z-0 overflow-hidden">
