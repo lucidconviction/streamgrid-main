@@ -19,7 +19,6 @@ import {
 } from './services/tmdbService';
 import { getTrendingAnime, getPopularAnime, parseAnilistToStream } from './services/anilistService';
 import { fetchMovies, fetchTVShows, fetchAnime } from './services/moviesService';
-import { fetchReplays, getSportConfig } from './services/replaysService';
 import { ReplaysView } from './components/ReplaysView';
 import { MoviesView } from './components/MoviesView';
 import { SearchResultsView } from './components/SearchResultsView';
@@ -89,9 +88,6 @@ export default function App() {
   const [hoveredMediaId, setHoveredMediaId] = useState<string | null>(null);
   const [hoveredTrailerKey, setHoveredTrailerKey] = useState<string | null>(null);
   const [isHoveringMedia, setIsHoveringMedia] = useState(false);
-  const [replays, setReplays] = useState<any[]>([]);
-  const [replaysLoading, setReplaysLoading] = useState(true);
-
   // Saved YouTube channels (NewPipe-backed)
   const [savedChannels, setSavedChannels] = useState<string[]>(
     storageService.getSavedChannels(activeProfile.id)
@@ -408,17 +404,7 @@ export default function App() {
     getTrendingAnime().then((anilistResults) => {
       setTrendingAnime(anilistResults.map((a) => parseAnilistToStream(a)));
     }).catch(() => {});
-    setReplaysLoading(true);
-    Promise.all([
-      fetchReplays('nba'),
-      fetchReplays('nfl'),
-      fetchReplays('mlb'),
-      fetchReplays('nhl'),
-      fetchReplays('soccer'),
-    ]).then(([nba, nfl, mlb, nhl, soccer]) => {
-      setReplays([...nba, ...nfl, ...mlb, ...nhl, ...soccer]);
-      setReplaysLoading(false);
-    }).catch(() => setReplaysLoading(false));
+    // Sports replays are now served only via the /replays/ standalone page
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Profile Switching
@@ -1202,31 +1188,6 @@ export default function App() {
                 />
               )}
               </div>
-                          {/* Row 8: Sports Replays & Highlights */}
-              {replays.length > 0 && (
-                <StreamCarousel
-                  title="Sports Replays & Highlights"
-                  subtitle="Full game recaps, highlights, and top plays from NBA, NFL, MLB, NHL, and Soccer"
-                  streams={replays.map((r: any) => ({
-                    id: r.id,
-                    title: r.title,
-                    name: r.title,
-                    category: 'Replay Highlights',
-                    provider: 'sportsrc' as any,
-                    streamType: 'embed' as const,
-                    status: 'live' as const,
-                    poster: r.thumbnail,
-                    viewers: r.views,
-                    directEmbedUrl: `https://www.youtube.com/embed/${r.videoId}`,
-                  }))}
-                  onPlayStream={handlePlayStream}
-                  onAddToMultiview={handleAddToMultiview}
-                  onToggleWatchlist={handleToggleWatchlist}
-                  onTogglePiP={handleTogglePiP}
-                  watchlistIds={watchlistIds}
-                  multiviewStreamIds={multiviewStreamIds}
-                />
-              )}
 
             </div>
           )}
