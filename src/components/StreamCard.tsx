@@ -217,7 +217,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   return (
     <div className={`group relative flex flex-col bg-[#0f121a] transition-all duration-200 ${
-      hasPoster
+      isMovieOrTV
         ? 'overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40'
         : 'border border-slate-800/80 hover:border-slate-700 rounded-xl overflow-hidden'
     }`}>
@@ -230,7 +230,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       )}
       {/* Thumbnail Aspect Ratio 16:9 */}
       <div
-        className={`relative w-full overflow-hidden bg-slate-900 cursor-pointer ${hasPoster ? "aspect-[2/3]" : "aspect-video"}`}
+        className={`relative w-full overflow-hidden bg-slate-900 cursor-pointer ${isMovieOrTV ? "aspect-[9/16]" : "aspect-video"}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={() => onCardClick ? onCardClick(stream) : onPlay(stream)}
