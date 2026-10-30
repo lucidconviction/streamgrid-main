@@ -333,14 +333,15 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           </div>
         )}
 
-        {/* Trailer iframe overlay on hover (movies/TV) */}
+        {/* Trailer iframe overlay on hover (movies/TV) — full-bleed within 9:16 frame.
+            16:9 video is scaled to fill the portrait height; sides crop via overflow-hidden. */}
         {isHovered && isMovieOrTV && trailerKey && (
-          <div className="absolute inset-0 bg-black">
+          <div className="absolute inset-0 overflow-hidden bg-black">
             <iframe
               ref={trailerIframeRef}
               src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
               title={`${stream.title} trailer`}
-              className="w-full h-full border-0"
+              className="absolute top-0 left-1/2 h-full -translate-x-1/2 aspect-video border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
