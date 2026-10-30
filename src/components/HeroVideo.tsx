@@ -229,7 +229,7 @@ export const HeroVideo: React.FC<HeroVideoProps> = ({
       ref={sectionRef}
       aria-label={`${badge} hero — ${title}`}
       className="relative w-full overflow-hidden select-none"
-      style={{ height: 'clamp(280px, 65vh, 760px)', background: v.pageBg }}
+      style={{ height: 'clamp(360px, 75vh, 860px)', background: v.pageBg }}
     >
       <style>{HERO_VIDEO_CSS}</style>
 

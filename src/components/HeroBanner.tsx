@@ -118,16 +118,32 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   if (!featuredStream) {
     return (
-      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[520px] bg-slate-900 animate-pulse rounded-2xl mb-6 sm:mb-8" />
+      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[520px] bg-slate-900 animate-pulse" />
     );
   }
+
+
+  // ── Basic URL validation — never render a dead stream in the hero ──
+  const [streamValid, setStreamValid] = useState(false);
+  useEffect(() => {
+    if (!featuredStream) { setStreamValid(false); return; }
+    const url = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || '';
+    if (!url || !url.startsWith('http')) { setStreamValid(false); return; }
+    // Quick HEAD check (1.5s timeout) — skip if CORS opaque response
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1500);
+    fetch(url, { method: 'HEAD', signal: controller.signal, mode: 'no-cors' })
+      .then((res) => { setStreamValid(res.status === 0 || res.ok || res.status === 206); })
+      .catch(() => setStreamValid(true)) // network error ≠ dead stream for cross-origin
+      .finally(() => clearTimeout(timer));
+  }, [featuredStream?.id]);
 
   const displayPoster = posterSrc || '/src/assets/images/hero_championship_live_1792048678438.jpg';
 
   return (
-    <div className="relative w-full overflow-hidden mb-4 sm:mb-6 md:mb-10 bg-[#0c1220]" style={{ height: 'clamp(240px, 38vh, 700px)' }}>'
+    <div className="relative w-full overflow-hidden bg-[#0c1220]" style={{ height: 'clamp(360px, 75vh, 860px)' }}>'
       {/* ── Background layer ── */}
-      {!videoError && (
+      {!videoError && streamValid && (
         <div className="absolute inset-0 z-0 overflow-hidden">
           {/* Iframe embed for streams that provide an embed URL */}
           {streamData?.isEmbed && streamData?.url && (

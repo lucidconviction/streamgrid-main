@@ -216,7 +216,11 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   const showIframePreview = isHovered && isEmbedProvider && stream.directEmbedUrl && !trailerKey;
 
   return (
-    <div className="group relative flex flex-col bg-[#0f121a] border border-slate-800/80 hover:border-slate-700 rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40">
+    <div className={`group relative flex flex-col bg-[#0f121a] transition-all duration-200 ${
+      hasPoster
+        ? 'overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40'
+        : 'border border-slate-800/80 hover:border-slate-700 rounded-xl overflow-hidden'
+    }`}>
       {/* Hover-to-Listen badge */}
       {isHovered && stream.bgVideoUrl && (
         <div className="absolute top-2 right-2 z-20 flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-bold text-white/90 pointer-events-none">
@@ -226,7 +230,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       )}
       {/* Thumbnail Aspect Ratio 16:9 */}
       <div
-        className="relative aspect-video w-full overflow-hidden bg-slate-900 cursor-pointer"
+        className={`relative w-full overflow-hidden bg-slate-900 cursor-pointer ${hasPoster ? "aspect-[2/3]" : "aspect-video"}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={() => onCardClick ? onCardClick(stream) : onPlay(stream)}

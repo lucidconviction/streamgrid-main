@@ -54,7 +54,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [searchPanelQuery, setSearchPanelQuery] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedSportCategory, setSelectedSportCategory] = useState<string>('All');
 
   // Streams Data
