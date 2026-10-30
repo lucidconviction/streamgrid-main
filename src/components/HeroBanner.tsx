@@ -116,13 +116,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     }
   }, [featuredStream?.id, streamData]);
 
-  if (!featuredStream) {
-    return (
-      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[520px] bg-slate-900 animate-pulse" />
-    );
-  }
-
-
   // ── Basic URL validation — never render a dead stream in the hero ──
   const [streamValid, setStreamValid] = useState(false);
   useEffect(() => {
@@ -137,6 +130,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
       .catch(() => setStreamValid(true)) // network error ≠ dead stream for cross-origin
       .finally(() => clearTimeout(timer));
   }, [featuredStream?.id]);
+
+  if (!featuredStream) {
+    return (
+      <div className="relative w-full h-[40vh] sm:h-[50vh] lg:h-[520px] bg-slate-900 animate-pulse" />
+    );
+  }
 
   const displayPoster = posterSrc || '/src/assets/images/hero_championship_live_1792048678438.jpg';
 
