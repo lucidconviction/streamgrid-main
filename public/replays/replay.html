@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sports Replays &amp; Highlights — tvstreams.rdnutz.us</title>
+  <link rel="stylesheet" href="/css/replay.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">🎞️</span>
+        <span class="brand-text">Replays &amp; Highlights</span>
+      </div>
+      <div class="header-actions">
+        <input id="search-input" type="text" placeholder="Search YouTube fallback…" class="search-input" />
+        <input id="date-picker" type="date" class="date-input" />
+        <button id="refresh-btn" class="btn">↻ Refresh</button>
+      </div>
+    </header>
+
+    <!-- ── Sport tabs ─────────────────────────────────────────────────── -->
+    <nav id="sport-tabs" class="sport-tabs" aria-label="Sports"></nav>
+
+    <!-- ── Replay grid ────────────────────────────────────────────────── -->
+    <main id="replays-container" class="replays-grid" aria-live="polite">
+      <div class="loading"><span class="spinner"></span> Loading replays…</div>
+    </main>
+
+    <!-- ── Pagination ─────────────────────────────────────────────────── -->
+    <div id="pagination" class="pagination"></div>
+  </div>
+
+  <!-- ── Player modal ────────────────────────────────────────────────── -->
+  <div id="player-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-content">
+      <button class="modal-close" data-close aria-label="Close">✕</button>
+      <div class="player-stage">
+        <iframe id="player-iframe" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <div class="player-meta">
+        <h2 id="player-title">Replay</h2>
+        <div id="player-meta-line" class="player-meta-line"></div>
+      </div>
+      <div id="fallback-status" class="fallback-status"></div>
+    </div>
+  </div>
+
+  <script src="/js/replay.js"></script>
+</body>
+</html>

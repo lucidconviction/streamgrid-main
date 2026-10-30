@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 import {bintvProxyPlugin, watchPartyPlugin, localM3UPlugin, aiProxyPlugin} from './vite.plugins';
+import {replaysPlugin} from './vite.replays';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin(), localM3UPlugin(), aiProxyPlugin()],
+    plugins: [react(), tailwindcss(), bintvProxyPlugin(), watchPartyPlugin(), localM3UPlugin(), aiProxyPlugin(), replaysPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

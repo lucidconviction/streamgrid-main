@@ -1,0 +1,264 @@
+/* ── Replay page — dark theme matching tvstreams.rdnutz.us ─────────────── */
+:root {
+  --bg: #0a0c12;
+  --bg-2: #12151f;
+  --card: #161616;
+  --card-hover: #1c1c1c;
+  --border: #222;
+  --border-hover: #4f8ef7;
+  --text: #e0e0e0;
+  --text-dim: #9aa0aa;
+  --text-faint: #666;
+  --accent: #4f8ef7;
+  --accent-2: #3b82f6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon { font-size: 26px; }
+.brand-text { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.search-input, .date-input {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  min-width: 180px;
+}
+.search-input { min-width: 220px; }
+.search-input:focus, .date-input:focus { outline: none; border-color: var(--border-hover); }
+
+.btn {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.btn:hover { border-color: var(--border-hover); background: var(--card-hover); }
+
+/* ── Sport tabs ───────────────────────────────────────────────────────── */
+.sport-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.sport-tab {
+  flex: 0 0 auto;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.sport-tab:hover { border-color: var(--text-faint); color: var(--text); }
+.sport-tab.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+
+/* ── Grid ─────────────────────────────────────────────────────────────── */
+.replays-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.replay-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s;
+}
+.replay-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+
+.replay-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  overflow: hidden;
+}
+.replay-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.replay-thumb .replay-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: #fff;
+  opacity: 0;
+  background: rgba(0,0,0,.35);
+  transition: opacity .2s;
+}
+.replay-card:hover .replay-play { opacity: .9; }
+.replay-duration {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0,0,0,.8);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.replay-source {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(59,130,246,.85);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.replay-info { padding: 10px 12px; }
+.replay-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.replay-meta { display: flex; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--text-faint); }
+.replay-cat {
+  background: #2a2a2a;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: capitalize;
+}
+
+/* ── Empty / loading / fallback ───────────────────────────────────────── */
+.loading { grid-column: 1 / -1; text-align: center; padding: 60px 0; color: var(--text-dim); }
+.spinner {
+  display: inline-block;
+  width: 22px; height: 22px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin-bottom: 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.replay-fallback {
+  grid-column: 1 / -1;
+  margin-top: 20px;
+  padding: 16px;
+  background: #1a1a1a;
+  border: 1px dashed #333;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.replay-fallback code {
+  display: block;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #0d0d0d;
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+.page-btn {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.page-btn.active { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+
+/* ── Player modal ─────────────────────────────────────────────────────── */
+.modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal[hidden] { display: none; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.8); }
+.modal-content {
+  position: relative;
+  width: min(920px, 94vw);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.modal-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 5;
+  background: rgba(0,0,0,.6);
+  border: 1px solid var(--border);
+  color: #fff;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+}
+.player-stage { position: relative; aspect-ratio: 16/9; background: #000; }
+.player-stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.player-meta { padding: 16px 18px; }
+.player-meta h2 { font-size: 17px; margin-bottom: 4px; }
+.player-meta-line { font-size: 13px; color: var(--text-dim); }
+.fallback-status { padding: 0 18px 16px; font-size: 13px; }
+.fallback-status.success { color: #4ade80; }
+.fallback-status.error { color: #f87171; }
+.fallback-status.loading { color: var(--accent); }
+
+@media (max-width: 640px) {
+  .app { padding: 12px; }
+  .replays-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .brand-text { font-size: 18px; }
+}

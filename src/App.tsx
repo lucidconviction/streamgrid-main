@@ -389,6 +389,26 @@ export default function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load popular movies, TV shows, anime, and sports replays
+  useEffect(() => {
+    getTMDBPopularMovies().then(setPopularMovies).catch(() => {});
+    getTMDBPopularTV().then(setPopularTv).catch(() => {});
+    getTrendingAnime().then((anilistResults) => {
+      setTrendingAnime(anilistResults.map((a) => parseAnilistToStream(a)));
+    }).catch(() => {});
+    setReplaysLoading(true);
+    Promise.all([
+      fetchReplays('nba'),
+      fetchReplays('nfl'),
+      fetchReplays('mlb'),
+      fetchReplays('nhl'),
+      fetchReplays('soccer'),
+    ]).then(([nba, nfl, mlb, nhl, soccer]) => {
+      setReplays([...nba, ...nfl, ...mlb, ...nhl, ...soccer]);
+      setReplaysLoading(false);
+    }).catch(() => setReplaysLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Profile Switching
   const handleSelectProfile = (id: string) => {
     storageService.setActiveProfileId(id);
