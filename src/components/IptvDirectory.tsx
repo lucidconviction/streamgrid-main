@@ -1,7 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Layers, Search, RefreshCw, Globe, List, Play, Shuffle, Bookmark, Eye, LayoutGrid, Star, Radio } from 'lucide-react';
-import Hls from 'hls.js';
-import { isEmbedPlayerUrl } from '../services/embedUrls';
+import { HeroVideo } from './HeroVideo';
 import { StreamItem } from '../types/stream';
 import { StreamCard } from './StreamCard';
 import { COUNTRY_ORDER, COUNTRY_LABELS, GENRE_OPTIONS } from '../services/iptvService';
@@ -22,119 +21,6 @@ interface IptvDirectoryProps {
 const ITEMS_PER_PAGE = 60;
 const PAGE_SIZE_OPTIONS = [48, 60, 96, 144];
 
-// ── Stream validation cache (URL → bool) ──────────────────────────────────
-// Uses localStorage to persist across page reloads — saves ~5-10s on return visits
-const LS_KEY = 'sg_hero_validated_iptv';
-const HERO_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-interface HeroCacheEntry {
-  timestamp: number;
-  urls: Record<string, boolean>; // url → isAlive
-}
-
-function loadHeroCache(): HeroCacheEntry | null {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const entry = JSON.parse(raw) as HeroCacheEntry;
-    if (Date.now() - entry.timestamp > HERO_CACHE_TTL) {
-      localStorage.removeItem(LS_KEY);
-      return null;
-    }
-    return entry;
-  } catch { return null; }
-}
-
-function saveHeroCache(entry: HeroCacheEntry): void {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(entry)); } catch {}
-}
-
-// In-memory supplement for the current session
-const heroUrlCache = new Map<string, boolean>();
-const heroCacheTimes = new Map<string, number>();
-
-/**
- * Lightweight HEAD/fetch check to see if a stream URL is alive.
- * Returns true if the URL responded without fatal error within timeout.
- */
-async function testStreamAlive(url: string): Promise<boolean> {
-  if (!url || !url.startsWith('http')) return false;
-  // Check in-memory cache first
-  const memCached = heroUrlCache.get(url);
-  const memCachedAt = heroCacheTimes.get(url) ?? 0;
-  if (memCached !== undefined && Date.now() - memCachedAt < HERO_CACHE_TTL) return memCached;
-  // Check localStorage cache
-  const lsEntry = loadHeroCache();
-  if (lsEntry?.urls[url] !== undefined) {
-    heroUrlCache.set(url, lsEntry.urls[url]);
-    heroCacheTimes.set(url, lsEntry.timestamp);
-    return lsEntry.urls[url];
-  }
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const resp = await fetch(url, { method: 'HEAD', signal: controller.signal, mode: 'no-cors' });
-    clearTimeout(timer);
-    const alive = resp.ok || resp.status === 0;
-    heroUrlCache.set(url, alive);
-    heroCacheTimes.set(url, Date.now());
-    // Save to localStorage in background (non-blocking)
-    void saveHeroCache({ timestamp: Date.now(), urls: { [url]: alive, ...(lsEntry?.urls ?? {}) } });
-    return alive;
-  } catch {
-    heroUrlCache.set(url, false);
-    heroCacheTimes.set(url, Date.now());
-    void saveHeroCache({ timestamp: Date.now(), urls: { [url]: false, ...(lsEntry?.urls ?? {}) } });
-    return false;
-  }
-}
-
-/** Collect all candidate URLs from streams, deduplicated. */
-function collectCandidateUrls(streams: StreamItem[]): string[] {
-  const seen = new Set<string>();
-  const urls: string[] = [];
-  for (const s of streams) {
-    for (const key of ['directEmbedUrl', 'bgVideoUrl'] as const) {
-      const url = s[key];
-      if (!url || seen.has(url)) continue;
-      seen.add(url);
-      if (isEmbedPlayerUrl(url)) continue;
-      urls.push(url);
-    }
-  }
-  return urls;
-}
-
-/** Pre-validate a batch of URLs in the background; returns only working ones. */
-async function validateHeroStreams(streams: StreamItem[]): Promise<StreamItem[]> {
-  const candidateUrls = collectCandidateUrls(streams);
-  if (candidateUrls.length === 0) return [];
-  // Preload localStorage cache into memory
-  const lsEntry = loadHeroCache();
-  if (lsEntry) {
-    for (const [url, alive] of Object.entries(lsEntry.urls)) {
-      heroUrlCache.set(url, alive);
-      heroCacheTimes.set(url, lsEntry.timestamp);
-    }
-  }
-  // Only test URLs not already cached
-  const uncached = candidateUrls.filter(u => !heroUrlCache.has(u));
-  const tests = uncached.length > 0
-    ? await Promise.allSettled(uncached.map(url => testStreamAlive(url)))
-    : Array(uncached.length).fill({ status: 'fulfilled', value: true });
-  const aliveUrls = new Set<string>();
-  // Add results from cache + new tests
-  candidateUrls.forEach(url => {
-    if (heroUrlCache.get(url)) aliveUrls.add(url);
-  });
-  return streams.filter(s => {
-    for (const key of ['directEmbedUrl', 'bgVideoUrl'] as const) {
-      if (aliveUrls.has(s[key] ?? '')) return true;
-    }
-    return false;
-  });
-}
-
 export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
   iptvStreams,
   onPlayStream,
@@ -149,133 +35,33 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
 }) => {
   const [selectedCountries, setSelectedCountries] = useState<Set<string>>(new Set());
 
-  // Hero banner state for random IPTV stream
+  // Hero stream state — picked from IPTV candidates with playable URLs
   const [heroStream, setHeroStream] = useState<StreamItem | null>(null);
-  const [heroVideoError, setHeroVideoError] = useState(false);
-  const heroVideoRef = React.useRef<HTMLVideoElement>(null);
-  const heroHlsRef = React.useRef<Hls | null>(null);
-  const [heroPosterSrc, setHeroPosterSrc] = useState('');
 
   const pickRandomHero = useCallback(async () => {
-    // Only pick from FAST Combined playlist with validated working URLs
     const fastCombined = iptvStreams.filter((s) =>
       s.m3uPlaylistId === 'fast-combined' && (s.directEmbedUrl || s.bgVideoUrl)
     );
     const candidates = fastCombined.length > 0 ? fastCombined : iptvStreams;
     if (candidates.length === 0) return;
-    try {
-      const working = await validateHeroStreams(candidates);
-      if (working.length === 0) {
-        // Final fallback: pick first stream with any URL (no validation)
-        const fallback = candidates.find((s) => s.directEmbedUrl || s.bgVideoUrl);
-        if (fallback) { setHeroStream(fallback); setHeroVideoError(false); }
-        return;
-      }
-      const random = working[Math.floor(Math.random() * working.length)];
-      setHeroStream(random);
-      setHeroVideoError(false);
-    } catch {
-      // Validation failed — pick any available stream
-      const fallback = candidates.find((s) => s.directEmbedUrl || s.bgVideoUrl);
-      if (fallback) { setHeroStream(fallback); setHeroVideoError(false); }
-    }
-  }, [iptvStreams]);
-
-  // Pick hero immediately, validate in background for next visit
-  React.useEffect(() => {
-    if (!iptvStreams.length) return;
-    const fastCombined = iptvStreams.filter((s) =>
-      s.m3uPlaylistId === 'fast-combined' && (s.directEmbedUrl || s.bgVideoUrl)
-    );
-    const candidates = fastCombined.length > 0 ? fastCombined : iptvStreams;
-    if (candidates.length === 0) return;
-    const cachedEntry = loadHeroCache();
-    const cachedWorking = cachedEntry
-      ? candidates.filter(s => {
-          for (const key of ['directEmbedUrl', 'bgVideoUrl'] as const) {
-            if (cachedEntry.urls[s[key] ?? '']) return true;
-          }
-          return false;
-        })
-      : [];
-    if (cachedWorking.length > 0) {
-      const random = cachedWorking[Math.floor(Math.random() * cachedWorking.length)];
-      setHeroStream(random);
-      setHeroVideoError(false);
-      return;
-    }
     const random = candidates[Math.floor(Math.random() * candidates.length)];
     setHeroStream(random);
-    setHeroVideoError(false);
-    void validateHeroStreams(candidates);
-  }, [iptvStreams.length]);
+  }, [iptvStreams]);
 
-  React.useEffect(() => {
-    return () => {
-      if (heroHlsRef.current) {
-        heroHlsRef.current.destroy();
-        heroHlsRef.current = null;
-      }
-    };
-  }, []);
+  // Pick an initial hero stream once when streams load
+  useEffect(() => {
+    if (heroStream || iptvStreams.length === 0) return;
+    const fastCombined = iptvStreams.filter((s) =>
+      s.m3uPlaylistId === 'fast-combined' && (s.directEmbedUrl || s.bgVideoUrl)
+    );
+    const candidates = fastCombined.length > 0 ? fastCombined : iptvStreams.filter((s) => s.directEmbedUrl || s.bgVideoUrl);
+    if (candidates.length > 0) {
+      setHeroStream(candidates[Math.floor(Math.random() * candidates.length)]);
+    }
+  }, [iptvStreams.length, heroStream]);
 
-  React.useEffect(() => {
-    if (!heroStream || heroVideoError) {
-      setHeroVideoError(false);
-      return;
-    }
-    const url = heroStream.bgVideoUrl || heroStream.directEmbedUrl || '';
-    if (!url) {
-      setHeroPosterSrc(heroStream.poster || '');
-      return;
-    }
-    // For IPTV, only skip video if the URL is a known HTML embed page
-    // (not just because streamType === 'embed' — many IPTV M3U entries
-    //  point to direct HLS media URLs that just don't have .m3u8 in the path)
-    const embedMarkers = ['embed.st', 'westream.su/embed', 'adultembed.com', 'eporner.com/embed', 'pstream.cfd', 'ehgembxe.cfd', 'bintv-sources.pages.dev'];
-    const isEmbed = embedMarkers.some(m => url.includes(m)) || url.includes('/embed/');
-    if (isEmbed) {
-      setHeroPosterSrc(heroStream.poster || '');
-      return;
-    }
-    setHeroPosterSrc(heroStream.poster || '');
-    setHeroVideoError(false);
-    if (heroHlsRef.current) {
-      heroHlsRef.current.destroy();
-      heroHlsRef.current = null;
-    }
-    const video = heroVideoRef.current;
-    if (!video) return;
-    const isHls = url.includes('.m3u8') || url.includes('.ts');
-    if (isHls && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 30 });
-      heroHlsRef.current = hls;
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.muted = true;
-        video.play().catch(() => setHeroVideoError(true));
-      });
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) { setHeroVideoError(true); hls.destroy(); heroHlsRef.current = null; }
-      });
-    } else if (isHls && video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.addEventListener('loadedmetadata', () => {
-        video.muted = true;
-        video.play().catch(() => setHeroVideoError(true));
-      });
-    } else {
-      video.src = url;
-      video.addEventListener('loadeddata', () => {
-        video.muted = true;
-        video.play().catch(() => setHeroVideoError(true));
-      });
-      video.addEventListener('error', () => setHeroVideoError(true));
-    }
-  }, [heroStream?.id]);
 
-  const heroInWatchlist = heroStream ? watchlistIds.includes(heroStream.id) : false;
+
   const [selectedGenres, setSelectedGenres] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState<string>('');
   const [page, setPage] = useState<number>(1);
@@ -345,80 +131,27 @@ export const IptvDirectory: React.FC<IptvDirectoryProps> = ({
 
   return (
     <div className="w-full animate-in fade-in duration-200">
-      {/* Hero Banner — full-bleed video header, edge to edge */}
+      {/* Hero Video — full-bleed validated stream, edge to edge */}
       {showHero && heroStream && (
-        <div className="relative w-full overflow-hidden mb-4 sm:mb-6 bg-[#050810] select-none" style={{ height: 'clamp(240px, 38vh, 700px)' }}>
-          {/* Full-bleed video background */}
-          <div className="absolute inset-0 z-0">
-            <video
-              ref={heroVideoRef}
-              className="w-full h-full object-cover filter brightness-75"
-              muted
-              autoPlay
-              playsInline
-              loop
-              onError={() => setHeroVideoError(true)}
-            />
-            {(heroVideoError || !heroStream.bgVideoUrl) && (
-              <img
-                src={heroPosterSrc || heroStream.poster || ''}
-                alt={heroStream.title}
-                className="w-full h-full object-cover filter brightness-75"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = heroStream.poster || '';
-                }}
-              />
-            )}
+        <HeroVideo
+          candidates={[heroStream.bgVideoUrl || heroStream.directEmbedUrl ? { url: heroStream.bgVideoUrl || heroStream.directEmbedUrl || "", title: heroStream.title } : { url: "", title: "" }].filter(c => c.url)}
+          variant="iptv"
+          badge="17,000+ CHANNELS"
+          badgeIcon="📡"
+          title={heroStream.title}
+          subtitle="Samsung TV Plus, FAST, US/UK/Canada & premium feeds from around the world"
+          ctaLabel="Watch Now"
+          onCta={() => onPlayStream(heroStream)}
+          secondaryCtaLabel="Play Random"
+          onSecondaryCta={pickRandomHero}
+        >
+          <div className="flex items-center gap-2 mt-4">
+            <span className="text-xs text-slate-400 font-mono uppercase tracking-wider">Region:</span>
+            <span className="text-xs text-slate-300">{heroStream.iptvCountry || "World"}</span>
+            <span className="text-xs text-slate-500">·</span>
+            <span className="text-xs text-slate-300">{heroStream.category}</span>
           </div>
-          {/* Gradient overlays for text readability */}
-          <div className="absolute inset-0 z-[1] bg-gradient-to-t from-[#050810] via-[#050810]/30 to-transparent" />
-          <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#050810]/70 via-transparent to-transparent" />
-          {/* Content overlay */}
-          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 h-full flex flex-col justify-end pb-10 sm:pb-14">
-            <div className="flex items-end justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-300 mb-3">
-                  <span className="flex items-center gap-1.5 text-cyan-400 font-semibold uppercase tracking-wider">
-                    <Globe className="w-3.5 h-3.5" />
-                    FAST Channels
-                  </span>
-                  <span className="text-slate-500">·</span>
-                  <span className="text-slate-300">{heroStream.iptvCountry || 'World'}</span>
-                  <span className="text-slate-500">·</span>
-                  <span className="text-slate-300">{heroStream.category}</span>
-                </div>
-                <h2 className="text-3xl sm:text-5xl font-black text-white leading-none drop-shadow-lg">{heroStream.title}</h2>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => onPlayStream(heroStream)}
-                  className="flex items-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold text-sm transition-all shadow-xl shadow-cyan-600/40"
-                >
-                  <Play className="w-5 h-5 fill-white" />
-                  <span>Watch Now</span>
-                </button>
-                <button
-                  onClick={pickRandomHero}
-                  className="p-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-600 transition-colors"
-                  title="Play Random"
-                >
-                  <Shuffle className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onToggleWatchlist(heroStream)}
-                  className={`p-3 rounded-xl border transition-colors ${
-                    heroInWatchlist
-                      ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
-                      : 'bg-slate-800/80 border-slate-600 text-slate-300 hover:text-white'
-                  }`}
-                  title={heroInWatchlist ? 'Remove from favorites' : 'Add to favorites'}
-                >
-                  <Star className={`w-5 h-5 ${heroInWatchlist ? 'fill-amber-400' : ''}`} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </HeroVideo>
       )}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* ── Header ── */}
