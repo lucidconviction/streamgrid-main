@@ -8,7 +8,15 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { HeroBanner } from './components/HeroBanner';
 import { StreamCarousel } from './components/StreamCarousel';
-import { getTMDBPopularMovies, getTMDBPopularTV, getTMDBNowPlaying, getMovieTrailer, getTVTrailer } from './services/tmdbService';
+import {
+  getTMDBPopularMovies,
+  getTMDBPopularTV,
+  getTMDBNowPlaying,
+  getMovieTrailer,
+  getTVTrailer,
+  tmdbMovieToStream,
+  tmdbTVShowToStream,
+} from './services/tmdbService';
 import { getTrendingAnime, getPopularAnime, parseAnilistToStream } from './services/anilistService';
 import { fetchMovies, fetchTVShows, fetchAnime } from './services/moviesService';
 import { fetchReplays, getSportConfig } from './services/replaysService';
@@ -391,8 +399,12 @@ export default function App() {
 
   // Load popular movies, TV shows, anime, and sports replays
   useEffect(() => {
-    getTMDBPopularMovies().then(setPopularMovies).catch(() => {});
-    getTMDBPopularTV().then(setPopularTv).catch(() => {});
+    getTMDBPopularMovies().then((results) => {
+      setPopularMovies(results.map(tmdbMovieToStream));
+    }).catch(() => {});
+    getTMDBPopularTV().then((results) => {
+      setPopularTv(results.map(tmdbTVShowToStream));
+    }).catch(() => {});
     getTrendingAnime().then((anilistResults) => {
       setTrendingAnime(anilistResults.map((a) => parseAnilistToStream(a)));
     }).catch(() => {});
