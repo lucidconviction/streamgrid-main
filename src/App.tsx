@@ -12,8 +12,6 @@ import {
   getTMDBPopularMovies,
   getTMDBPopularTV,
   getTMDBNowPlaying,
-  getMovieTrailer,
-  getTVTrailer,
   tmdbMovieToStream,
   tmdbTVShowToStream,
 } from './services/tmdbService';
@@ -85,9 +83,6 @@ export default function App() {
   const [popularMovies, setPopularMovies] = useState<any[]>([]);
   const [popularTv, setPopularTv] = useState<any[]>([]);
   const [trendingAnime, setTrendingAnime] = useState<any[]>([]);
-  const [hoveredMediaId, setHoveredMediaId] = useState<string | null>(null);
-  const [hoveredTrailerKey, setHoveredTrailerKey] = useState<string | null>(null);
-  const [isHoveringMedia, setIsHoveringMedia] = useState(false);
   // Saved YouTube channels (NewPipe-backed)
   const [savedChannels, setSavedChannels] = useState<string[]>(
     storageService.getSavedChannels(activeProfile.id)

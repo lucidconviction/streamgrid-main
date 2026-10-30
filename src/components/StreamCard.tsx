@@ -3,7 +3,6 @@ import Hls from 'hls.js';
 import { Layers, Bookmark, Play, PictureInPicture2, Headphones, Star } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import { getCategoryGradient } from '../services/smuttThumbnailService';
-import { getMovieTrailer, getTVTrailer } from '../services/tmdbService';
 import { COUNTRY_LABELS } from '../services/iptvService';
 
 interface StreamCardProps {
@@ -31,10 +30,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [trailerKey, setTrailerKey] = useState<string | null>(null);
-  const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const trailerIframeRef = useRef<HTMLIFrameElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const hlsAudioRef = useRef<Hls | null>(null);
 
@@ -52,23 +48,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   // Extract TMDB ID from stream id
   const tmdbId = isMovieOrTV ? stream.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', '') : null;
   const parsedTmdbId = tmdbId ? parseInt(tmdbId, 10) : null;
-
-  // Fetch trailer on hover
-  useEffect(() => {
-    if (!isHovered || !parsedTmdbId) return;
-
-    setIsLoadingTrailer(true);
-    const fetchTrailer = async () => {
-      const trailer = stream.category === 'Movies'
-        ? await getMovieTrailer(parsedTmdbId)
-        : await getTVTrailer(parsedTmdbId);
-      if (trailer) {
-        setTrailerKey(trailer.key);
-      }
-      setIsLoadingTrailer(false);
-    };
-    fetchTrailer();
-  }, [isHovered, parsedTmdbId, stream.category]);
 
   // Hover preview for ALL stream types
   useEffect(() => {
@@ -204,7 +183,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setTrailerKey(null);
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.src = '';
@@ -213,7 +191,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   // Determine if we should show an iframe preview on hover for embed providers
   const isEmbedProvider = ['bintv', 'streamed', 'westream', 'daddylive'].includes(stream.provider);
-  const showIframePreview = isHovered && isEmbedProvider && stream.directEmbedUrl && !trailerKey;
+  const showIframePreview = isHovered && isEmbedProvider && stream.directEmbedUrl;
 
   return (
     <div className={`group relative flex flex-col bg-[#0f121a] transition-all duration-200 ${
@@ -330,40 +308,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 <span className="text-blue-400 uppercase tracking-wider font-mono">LIVE</span>
               </>
             ) : null}
-          </div>
-        )}
-
-        {/* Trailer iframe overlay on hover (movies/TV) — full-bleed within 9:16 frame.
-            16:9 video is scaled to fill the portrait height; sides crop via overflow-hidden. */}
-        {isHovered && isMovieOrTV && trailerKey && (
-          <div className="absolute inset-0 overflow-hidden bg-black">
-            <iframe
-              ref={trailerIframeRef}
-              src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
-              title={`${stream.title} trailer`}
-              className="absolute top-0 left-1/2 h-full -translate-x-1/2 aspect-video border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
-        {/* Embed preview overlay on hover for non-IPTV streams with embed URLs */}
-        {showIframePreview && isEmbedProvider && (
-          <div className="absolute inset-0 bg-black">
-            <iframe
-              src={stream.directEmbedUrl}
-              title={stream.title}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; camera; microphone"
-              allowFullScreen
-            />
-          </div>
-        )}
-
-        {/* Loading spinner while fetching trailer */}
-        {isHovered && isMovieOrTV && isLoadingTrailer && !trailerKey && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
