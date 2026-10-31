@@ -103,7 +103,7 @@ export const ReplaysRow: React.FC<ReplaysRowProps> = ({
         >
           {isLoading ? (
             Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[280px] sm:w-[320px] rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse">
+              <div key={i} className="flex-shrink-0 w-[350px] sm:w-[400px] rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse">
                 <div className="aspect-video bg-slate-800 rounded-t-xl" />
                 <div className="p-3 space-y-2">
                   <div className="h-4 bg-slate-800 rounded w-3/4" />
@@ -122,7 +122,7 @@ export const ReplaysRow: React.FC<ReplaysRowProps> = ({
               return (
                 <div
                   key={video.id}
-                  className="flex-shrink-0 w-[280px] sm:w-[320px] group/card relative rounded-xl bg-slate-900/60 border border-slate-800 hover:border-red-500/50 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                  className="flex-shrink-0 w-[350px] sm:w-[400px] group/card relative rounded-xl bg-slate-900/60 border border-slate-800 hover:border-red-500/50 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                   onClick={() => onPlayStream(stream)}
                 >
                   <div className="relative aspect-video bg-slate-800 overflow-hidden">
