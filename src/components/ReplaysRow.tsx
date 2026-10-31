@@ -29,7 +29,7 @@ export const ReplaysRow: React.FC<ReplaysRowProps> = ({
         const all: ReplayVideo[] = [];
         for (const r of results) {
           if (r.status === 'fulfilled') {
-            all.push(...r.value);
+            all.push(...r.value.slice(0, 5));
           }
         }
         const seen = new Set<string>();
