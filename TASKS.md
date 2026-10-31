@@ -14,6 +14,11 @@
 - [x] All other cards (Anime, IPTV, Sports, 24/7) stay 16:9 bordered
 - [x] Sidebar defaults to closed
 - [x] Trailer hover removed from thumbnail cards — live embed preview plays on hover instead
+- [x] Play button on movie/TV poster cards navigates to content description page (MovieDetailsView)
+- [x] Hover preview disabled on movie/TV poster cards
+- [x] Movies & Shows tab opens on 'Movies' by default
+- [x] MoviesView section tabs extended: Movies (21 genre sections), TV Shows (18 genre sections), Anime (15 genre sections)
+- [x] fetchMovies / fetchTVShows / fetchAnime support genre-based discover queries
 
 ## In Progress
 

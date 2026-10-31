@@ -162,6 +162,27 @@ export async function getTMDBOnTheAirTV(): Promise<TMDBTVShow[]> {
   });
 }
 
+
+export async function getTMDBDiscoverMovies(genreId: number): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  return cachedFetch(`tmdb-disc-mov-${genreId}`, async () => {
+    const res = await fetch(makeUrl('/discover/movie', { with_genres: String(genreId), sort_by: 'popularity.desc' }));
+    if (!res.ok) throw new Error(`TMDB discover movies failed: ${res.status}`);
+    const json = await res.json();
+    return (json.results || []) as TMDBMovie[];
+  });
+}
+
+export async function getTMDBDiscoverTV(genreId: number): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  return cachedFetch(`tmdb-disc-tv-${genreId}`, async () => {
+    const res = await fetch(makeUrl('/discover/tv', { with_genres: String(genreId), sort_by: 'popularity.desc' }));
+    if (!res.ok) throw new Error(`TMDB discover TV failed: ${res.status}`);
+    const json = await res.json();
+    return (json.results || []) as TMDBTVShow[];
+  });
+}
+
 // ── Trailers ───────────────────────────────────────────────────────────────────
 
 export interface TMDBTrailer {

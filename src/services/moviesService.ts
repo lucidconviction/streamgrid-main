@@ -120,7 +120,7 @@ function tvToItem(t: TMDBTVShow): MovieItem {
   };
 }
 
-export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming' | 'trending' = 'popular'): Promise<MovieItem[]> {
+export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming' | 'trending' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' = 'popular'): Promise<MovieItem[]> {
   const [primary, secondary] = section === 'popular'
     ? await Promise.allSettled([getTMDBPopularMovies(1), getTMDBNowPlaying(1)])
     : section === 'now'
@@ -129,7 +129,9 @@ export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming
         ? await Promise.allSettled([getTMDBUpcoming(1), getTMDBPopularMovies(1)])
         : section === 'trending'
           ? await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBNowPlaying(1)])
-          : await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBPopularMovies(1)]);
+          : MOVIE_GENRE_MAP[section as keyof typeof MOVIE_GENRE_MAP]
+            ? await Promise.allSettled([getTMDBDiscoverMovies(MOVIE_GENRE_MAP[section as keyof typeof MOVIE_GENRE_MAP]), getTMDBPopularMovies(1)])
+            : await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBPopularMovies(1)]);
 
   const primaryData = primary.status === 'fulfilled' ? primary.value : [];
   const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
@@ -144,7 +146,7 @@ export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming
   return out;
 }
 
-export async function fetchTVShows(section: 'popular' | 'onair' | 'top' | 'trending' | 'airing' = 'popular'): Promise<MovieItem[]> {
+export async function fetchTVShows(section: 'popular' | 'onair' | 'top' | 'trending' | 'airing' | 'action_adventure' | 'animation' | 'comedy' | 'crime' | 'documentary' | 'drama' | 'family' | 'kids' | 'mystery' | 'reality' | 'romance' | 'sci_fi_fantasy' | 'soap' | 'talk' | 'thriller' | 'war' = 'popular'): Promise<MovieItem[]> {
   const [primary, secondary] = section === 'popular'
     ? await Promise.allSettled([getTMDBPopularTV(1), getTMDBOnTheAirTV()])
     : section === 'onair'
@@ -153,7 +155,9 @@ export async function fetchTVShows(section: 'popular' | 'onair' | 'top' | 'trend
         ? await Promise.allSettled([getTMDBAiringTodayTV(), getTMDBOnTheAirTV()])
         : section === 'trending'
           ? await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)])
-          : await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)]);
+          : TV_GENRE_MAP[section as keyof typeof TV_GENRE_MAP]
+            ? await Promise.allSettled([getTMDBDiscoverTV(TV_GENRE_MAP[section as keyof typeof TV_GENRE_MAP]), getTMDBPopularTV(1)])
+            : await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)]);
 
   const primaryData = primary.status === 'fulfilled' ? primary.value : [];
   const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
@@ -181,6 +185,7 @@ interface AniListRaw {
   format: string;
   description?: string;
   nextAiringEpisode?: { episode: number; timeUntilAiring: number } | null;
+  genres?: string[];
 }
 
 const ANIME_QUERY = `query ($page: Int, $search: String) {
@@ -196,6 +201,7 @@ const ANIME_QUERY = `query ($page: Int, $search: String) {
       format
       description(asHtml: false)
       nextAiringEpisode { episode timeUntilAiring }
+      genres
     }
   }
 }`;
@@ -213,6 +219,7 @@ const ANIME_TRENDING_QUERY = `query ($page: Int) {
       format
       description(asHtml: false)
       nextAiringEpisode { episode timeUntilAiring }
+      genres
     }
   }
 }`;
@@ -251,12 +258,28 @@ function animeToItem(a: AniListRaw): MovieItem {
   };
 }
 
-export async function fetchAnime(section: 'trending' | 'popular' = 'trending'): Promise<MovieItem[]> {
+export async function fetchAnime(section: 'trending' | 'popular' | 'action' | 'adventure' | 'comedy' | 'drama' | 'fantasy' | 'horror' | 'romance' | 'sci_fi' | 'sports' | 'mystery' | 'thriller' | 'slice_of_life' | 'mecha' = 'trending'): Promise<MovieItem[]> {
   const query = section === 'trending' ? ANIME_TRENDING_QUERY : ANIME_QUERY;
   const variables = section === 'trending' ? { page: 1 } : { page: 1, search: '' };
   const data = await anilistFetch(query, variables);
-  return data.map(animeToItem);
+  if (section === 'trending' || section === 'popular') return data.map(animeToItem);
+  const filtered = data.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
+  return filtered.length > 0 ? filtered.map(animeToItem) : data.slice(0, 24).map(animeToItem);
 }
+
+
+const MOVIE_GENRE_MAP: Record<string, number> = {
+  action: 28, adventure: 12, animation: 16, comedy: 35, crime: 80,
+  documentary: 99, drama: 18, family: 10751, fantasy: 14, horror: 27,
+  mystery: 9648, romance: 10743, sci_fi: 878, thriller: 53, war: 37, western: 37,
+};
+
+const TV_GENRE_MAP: Record<string, number> = {
+  action_adventure: 10759, animation: 16, comedy: 35, crime: 80,
+  documentary: 99, drama: 18, family: 10751, kids: 10762,
+  mystery: 9648, reality: 10764, romance: 10743, sci_fi_fantasy: 10765,
+  soap: 10766, talk: 10767, thriller: 53, war: 37,
+};
 
 // ── Search ────────────────────────────────────────────────────────────────────
 

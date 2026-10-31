@@ -15,7 +15,7 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   onToggleWatchlist,
 }) => {
   const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('movies');
-  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'popular'>('popular');
+  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' | 'action_adventure' | 'kids' | 'reality' | 'soap' | 'talk' | 'slice_of_life' | 'mecha' | 'sports'>('popular');
   const [items, setItems] = useState<MovieItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,9 +136,9 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   }
 
   const tabConfig = {
-    movies: { label: 'Movies', icon: Film, sections: ['popular', 'now', 'top', 'upcoming', 'trending'] as const },
-    tv: { label: 'TV Shows', icon: Tv, sections: ['popular', 'onair', 'top', 'trending', 'airing'] as const },
-    anime: { label: 'Anime', icon: Sparkles, sections: ['trending', 'popular'] as const },
+    movies: { label: 'Movies', icon: Film, sections: ['popular', 'now', 'top', 'upcoming', 'trending', 'action', 'comedy', 'drama', 'horror', 'romance', 'sci_fi', 'thriller', 'animation', 'family', 'fantasy', 'adventure', 'crime', 'documentary', 'mystery', 'war', 'western'] as const },
+    tv: { label: 'TV Shows', icon: Tv, sections: ['popular', 'onair', 'top', 'trending', 'airing', 'action_adventure', 'animation', 'comedy', 'crime', 'drama', 'family', 'kids', 'mystery', 'romance', 'sci_fi_fantasy', 'thriller', 'war', 'reality', 'documentary'] as const },
+    anime: { label: 'Anime', icon: Sparkles, sections: ['trending', 'popular', 'action', 'adventure', 'comedy', 'drama', 'fantasy', 'horror', 'romance', 'sci_fi', 'slice_of_life', 'mecha', 'sports', 'mystery', 'thriller'] as const },
   };
 
   // Details page takes over when a title is opened
