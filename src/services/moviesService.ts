@@ -83,9 +83,13 @@ export function tvEmbedChain(tmdbId: number, imdbId?: string): string[] {
 export function animeEmbedChain(anilistId: number): string[] {
   const chain: string[] = [];
   chain.push(`https://vidrock.to/embed/anime/${anilistId}`);
+  chain.push(`https://vidsrc.sh/embed/anime?id=${anilistId}`);
   chain.push(`https://vidstorm.to/embed/anime/${anilistId}`);
-  chain.push(`https://anyembed.xyz/embed/anime-${anilistId}`);
-  chain.push(`https://embed.pstream.cfd/anime/${anilistId}`);
+  chain.push(`https://vidzee.tv/embed/anime/${anilistId}`);
+  chain.push(`https://vidnest.to/embed/anime/${anilistId}`);
+  chain.push(`https://vidlink.pro/anime/${anilistId}`);
+  chain.push(`https://vidfast.vc/embed/anime/${anilistId}`);
+  chain.push(`https://www.videasy.to/embed/anime/${anilistId}`);
   return chain;
 }
 

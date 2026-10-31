@@ -265,6 +265,12 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
                     (e.target as HTMLImageElement).src = `https://via.placeholder.com/300x450/1e293b/64748b?text=${encodeURIComponent(item.title.slice(0, 10))}`;
                   }}
                 />
+                {/* Play overlay — tap to open description page */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-200 pointer-events-none">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 scale-75 group-hover:scale-100">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                  </div>
+                </div>
                 {/* Rating badge */}
                 {item.rating && (
                   <div className="absolute top-2 left-2 bg-black/70 px-1.5 py-0.5 rounded text-[10px] font-bold text-yellow-400">
