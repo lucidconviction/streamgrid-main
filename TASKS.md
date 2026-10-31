@@ -81,6 +81,10 @@
 
 ## In Progress
 
+- [x] Sports Replays & Highlights row added to explore page (UFC, NFL, NBA, NHL, MLB)
+- [x] Fixed replay stream playback — youtube.com/embed not in EMBED_PLAYER_MARKERS
+- [x] ReplaysRow thumbnails enlarged 25%% (350px/400px)
+
 ## In Progress
 
 
