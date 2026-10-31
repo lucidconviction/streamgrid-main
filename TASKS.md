@@ -35,13 +35,59 @@
 - [x] Removed action buttons (Multi, Play, PiP, Fav) from movie/TV poster cards on explore page
 - [x] HeroBanner now validates stream and falls back to embed chain candidates if primary fails in MovieDetailsView (movie/TV/anime detail pages)
 
-## In Progress
-
 - [x] Added PStream to PROVIDERS array in MovieDetailsView (now appears in provider dropdown)
 - [x] Fixed "Try next source" button on description page — uses index counter instead of indexOf
 - [x] All sections pull 100+ items (5 TMDB pages x 20, 3 AniList pages x 50)
 - [x] Anime tab now passes genre section through correctly
 - [x] Search bar moved above section tabs in Movies & Shows page
 - [x] Hover stream preview works on all thumbnails except movie/TV/anime posters (by design)
+
+# StreamGrid — Feature Task List
+
+## Done ✅
+
+- [x] Full-bleed hero videos on Home, 24/7, IPTV — validated streams with gradient fallback
+- [x] Movie/TV/anime cards show real posters (TMDB + AniList, not placeholders)
+- [x] Fixed IPTV thumbnail flickering — logo.png centered as fallback, screenshot layered on top
+- [x] Sports replays API integrated (Highlightly primary + YouTube fallback)
+- [x] Mobile-friendly responsive design across all views
+- [x] Row order: Live Sports → 24/7 → IPTV → Popular Movies → Popular TV Shows → Trending Anime → Sports sub
+- [x] Hero videos bigger (clamp 360px–75vh–860px) and full-bleed on all pages
+- [x] Hero stream validation via HEAD check before rendering video
+- [x] Poster cards (Movies/TV) frameless with portrait 9:16 aspect ratio
+- [x] All other cards (Anime, IPTV, Sports, 24/7) stay 16:9 bordered
+- [x] Sidebar defaults to closed
+- [x] Trailer hover removed from thumbnail cards — live embed preview plays on hover instead
+- [x] Play button on movie/TV poster cards navigates to content description page (MovieDetailsView)
+- [x] Hover preview disabled on movie/TV poster cards
+- [x] Movies & Shows tab opens on 'Movies' by default
+- [x] Genre-based browse sections added to Movies & Shows page:
+  - Movies: 21 sections (popular, now playing, top rated, upcoming, trending + 14 genres)
+  - TV Shows: 18 sections (popular, on air, top rated, trending, airing today + 13 genres)
+  - Anime: 15 sections (trending, popular + 11 genres)
+- [x] TMDB discover functions added for genre filtering (getTMDBDiscoverMovies / getTMDBDiscoverTV)
+- [x] fetchMovies / fetchTVShows / fetchAnime extended with genre support
+- [x] AniList anime queries extended to include genre field for client-side filtering
+- [x] TASKS.md updated
+- [x] Renamed Quick Search button to Saved Search in header
+- [x] Converted provider grid to dropdown menu in MovieDetailsView (movie/TV/anime detail pages)
+- [x] Added PStream (pstream.cfd) to movie, TV, and anime embed chains
+- [x] Fixed war genre ID (was 37/Western, now 10752) in both MOVIE_GENRE_MAP and TV_GENRE_MAP
+- [x] Fixed fetchAnime to use ANIME_TRENDING_QUERY for all sections (was broken for genre filters)
+- [x] Added AniList genre-search fallback for anime genres with no trending results
+- [x] MoviesView now passes genre section through correctly for anime tab
+- [x] Removed action buttons (Multi, Play, PiP, Fav) from movie/TV poster cards on explore page
+- [x] HeroBanner now validates stream and falls back to embed chain candidates if primary fails in MovieDetailsView (movie/TV/anime detail pages)
+
+## In Progress
+
+## In Progress
+
+
+
+
+
+
+
 - [ ] Add "Watchlist" tab to MoviesView (currently only show/hide star on detail page)
 - [ ] Persist highlightly key in .env.production on server (currently only in .env.local)
