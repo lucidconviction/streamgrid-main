@@ -33,6 +33,16 @@ import {
   getTMDBDiscoverMovies,
   getTMDBDiscoverTV,
   searchTMDB,
+  fetchTMDBPopularMoviesAll,
+  fetchTMDBNowPlayingAll,
+  fetchTMDBTopRatedMoviesAll,
+  fetchTMDBUpcomingAll,
+  fetchTMDBDiscoverMoviesAll,
+  fetchTMDBPopularTVAll,
+  fetchTMDBOnTheAirTVAll,
+  fetchTMDBAiringTodayTVAll,
+  fetchTMDBTopRatedTVAll,
+  fetchTMDBDiscoverTVAll,
 } from './tmdbService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -130,24 +140,21 @@ function tvToItem(t: TMDBTVShow): MovieItem {
 }
 
 export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming' | 'trending' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' = 'popular'): Promise<MovieItem[]> {
-  const [primary, secondary] = section === 'popular'
-    ? await Promise.allSettled([getTMDBPopularMovies(1), getTMDBNowPlaying(1)])
-    : section === 'now'
-      ? await Promise.allSettled([getTMDBNowPlaying(1), getTMDBPopularMovies(1)])
-      : section === 'upcoming'
-        ? await Promise.allSettled([getTMDBUpcoming(1), getTMDBPopularMovies(1)])
-        : section === 'trending'
-          ? await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBNowPlaying(1)])
-          : MOVIE_GENRE_MAP[section as keyof typeof MOVIE_GENRE_MAP]
-            ? await Promise.allSettled([getTMDBDiscoverMovies(MOVIE_GENRE_MAP[section as keyof typeof MOVIE_GENRE_MAP]), getTMDBPopularMovies(1)])
-            : await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBPopularMovies(1)]);
-
-  const primaryData = primary.status === 'fulfilled' ? primary.value : [];
-  const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
-
+  let data: TMDBMovie[];
+  switch (section) {
+    case 'popular': data = await fetchTMDBPopularMoviesAll(); break;
+    case 'now': data = await fetchTMDBNowPlayingAll(); break;
+    case 'upcoming': data = await fetchTMDBUpcomingAll(); break;
+    case 'top': case 'trending': data = await fetchTMDBTopRatedMoviesAll(); break;
+    default: {
+      const gid = MOVIE_GENRE_MAP[section];
+      data = gid ? await fetchTMDBDiscoverMoviesAll(gid) : await fetchTMDBPopularMoviesAll();
+      break;
+    }
+  }
   const seen = new Set<number>();
   const out: MovieItem[] = [];
-  for (const m of [...primaryData, ...secondaryData]) {
+  for (const m of data) {
     if (!m.poster_path || seen.has(m.id)) continue;
     seen.add(m.id);
     out.push(movieToItem(m));
@@ -156,24 +163,21 @@ export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming
 }
 
 export async function fetchTVShows(section: 'popular' | 'onair' | 'top' | 'trending' | 'airing' | 'action_adventure' | 'animation' | 'comedy' | 'crime' | 'documentary' | 'drama' | 'family' | 'kids' | 'mystery' | 'reality' | 'romance' | 'sci_fi_fantasy' | 'soap' | 'talk' | 'thriller' | 'war' = 'popular'): Promise<MovieItem[]> {
-  const [primary, secondary] = section === 'popular'
-    ? await Promise.allSettled([getTMDBPopularTV(1), getTMDBOnTheAirTV()])
-    : section === 'onair'
-      ? await Promise.allSettled([getTMDBOnTheAirTV(), getTMDBPopularTV(1)])
-      : section === 'airing'
-        ? await Promise.allSettled([getTMDBAiringTodayTV(), getTMDBOnTheAirTV()])
-        : section === 'trending'
-          ? await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)])
-          : TV_GENRE_MAP[section as keyof typeof TV_GENRE_MAP]
-            ? await Promise.allSettled([getTMDBDiscoverTV(TV_GENRE_MAP[section as keyof typeof TV_GENRE_MAP]), getTMDBPopularTV(1)])
-            : await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)]);
-
-  const primaryData = primary.status === 'fulfilled' ? primary.value : [];
-  const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
-
+  let data: TMDBTVShow[];
+  switch (section) {
+    case 'popular': data = await fetchTMDBPopularTVAll(); break;
+    case 'onair': data = await fetchTMDBOnTheAirTVAll(); break;
+    case 'airing': data = await fetchTMDBAiringTodayTVAll(); break;
+    case 'top': case 'trending': data = await fetchTMDBTopRatedTVAll(); break;
+    default: {
+      const gid = TV_GENRE_MAP[section];
+      data = gid ? await fetchTMDBDiscoverTVAll(gid) : await fetchTMDBPopularTVAll();
+      break;
+    }
+  }
   const seen = new Set<number>();
   const out: MovieItem[] = [];
-  for (const t of [...primaryData, ...secondaryData]) {
+  for (const t of data) {
     if (!t.poster_path || seen.has(t.id)) continue;
     seen.add(t.id);
     out.push(tvToItem(t));
@@ -198,7 +202,7 @@ interface AniListRaw {
 }
 
 const ANIME_QUERY = `query ($page: Int, $search: String) {
-  Page(page: $page, perPage: 24) {
+  Page(page: $page, perPage: 50) {
     media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
       id
       idMal
@@ -216,7 +220,7 @@ const ANIME_QUERY = `query ($page: Int, $search: String) {
 }`;
 
 const ANIME_TRENDING_QUERY = `query ($page: Int) {
-  Page(page: $page, perPage: 24) {
+  Page(page: $page, perPage: 50) {
     media(type: ANIME, sort: TRENDING_DESC) {
       id
       idMal
@@ -268,24 +272,27 @@ function animeToItem(a: AniListRaw): MovieItem {
 }
 
 export async function fetchAnime(section: 'trending' | 'popular' | 'action' | 'adventure' | 'comedy' | 'drama' | 'fantasy' | 'horror' | 'romance' | 'sci_fi' | 'sports' | 'mystery' | 'thriller' | 'slice_of_life' | 'mecha' = 'trending'): Promise<MovieItem[]> {
-  // Always use ANIME_TRENDING_QUERY (sorted by popularity descending).
-  // ANIME_QUERY with empty search returns empty data from AniList.
-  const query = ANIME_TRENDING_QUERY;
-  const variables = { page: 1 };
-  const data = await anilistFetch(query, variables);
+  // Fetch 3 pages × 50 items = 150 total for filtering
+  const pages = await Promise.allSettled(
+    [1, 2, 3].map((pg) => anilistFetch(ANIME_TRENDING_QUERY, { page: pg }))
+  );
+  const data = pages.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+
   if (section === 'trending' || section === 'popular') return data.map(animeToItem);
+
   const filtered = data.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
-  if (filtered.length > 0) return filtered.map(animeToItem);
-  // Fallback: search by genre name for genres not in the trending top-24
-  const searchQuery = ANIME_QUERY;
-  const searchVars = { page: 1, search: section };
-  try {
-    const searchData = await anilistFetch(searchQuery, searchVars);
-    const filteredSearch = searchData.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
-    return filteredSearch.map(animeToItem);
-  } catch {
-    return [];
-  }
+  if (filtered.length >= 10) return filtered.map(animeToItem);
+
+  // Fallback: search by genre name (genre may not appear in trending pages)
+  const searchResults = await Promise.allSettled(
+    [1, 2].map((pg) => anilistFetch(ANIME_QUERY, { page: pg, search: section.replace(/_/g, ' ') }))
+  );
+  const searchData = searchResults.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  const filteredSearch = searchData.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
+  // Merge: combine trending-filtered with search results, deduplicate by id
+  const seen = new Set<number>(filtered.map((a) => a.id));
+  const merged = [...filtered, ...filteredSearch.filter((a) => !seen.has(a.id))];
+  return merged.map(animeToItem);
 }
 
 const MOVIE_GENRE_MAP: Record<string, number> = {

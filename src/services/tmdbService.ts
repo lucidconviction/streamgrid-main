@@ -183,6 +183,111 @@ export async function getTMDBDiscoverTV(genreId: number): Promise<TMDBTVShow[]> 
   });
 }
 
+
+// ── Multi-page helpers (100+ items per section) ───────────────────────────────
+
+const PAGES_PER_SECTION = 5; // 5 pages × 20 items = 100
+
+export async function fetchTMDBPopularMoviesAll(): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBPopularMovies(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBNowPlayingAll(): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBNowPlaying(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBTopRatedMoviesAll(): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBTopRatedMovies(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBUpcomingAll(): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBUpcoming(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBDiscoverMoviesAll(genreId: number): Promise<TMDBMovie[]> {
+  if (!apiKey()) return [];
+  return cachedFetch(`tmdb-disc-mov-all-${genreId}`, async () => {
+    const results = await Promise.allSettled(
+      Array.from({ length: PAGES_PER_SECTION }, (_, i) =>
+        fetch(makeUrl('/discover/movie', { with_genres: String(genreId), sort_by: 'popularity.desc', page: String(i + 1) }))
+          .then((r) => r.json().then((j) => (j.results || []) as TMDBMovie[]))
+      )
+    );
+    return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  });
+}
+
+export async function fetchTMDBPopularTVAll(): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBPopularTV(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBOnTheAirTVAll(): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  return cachedFetch('tmdb-on-air-all', async () => {
+    const results = await Promise.allSettled(
+      Array.from({ length: PAGES_PER_SECTION }, (_, i) =>
+        fetch(makeUrl('/tv/on_the_air', { page: String(i + 1) }))
+          .then((r) => r.json().then((j) => (j.results || []) as TMDBTVShow[]))
+      )
+    );
+    return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  });
+}
+
+export async function fetchTMDBAiringTodayTVAll(): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  return cachedFetch('tmdb-airing-today-all', async () => {
+    const results = await Promise.allSettled(
+      Array.from({ length: PAGES_PER_SECTION }, (_, i) =>
+        fetch(makeUrl('/tv/airing_today', { page: String(i + 1) }))
+          .then((r) => r.json().then((j) => (j.results || []) as TMDBTVShow[]))
+      )
+    );
+    return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  });
+}
+
+export async function fetchTMDBTopRatedTVAll(): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  const results = await Promise.allSettled(
+    Array.from({ length: PAGES_PER_SECTION }, (_, i) => getTMDBTopRatedTV(i + 1))
+  );
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
+export async function fetchTMDBDiscoverTVAll(genreId: number): Promise<TMDBTVShow[]> {
+  if (!apiKey()) return [];
+  return cachedFetch(`tmdb-disc-tv-all-${genreId}`, async () => {
+    const results = await Promise.allSettled(
+      Array.from({ length: PAGES_PER_SECTION }, (_, i) =>
+        fetch(makeUrl('/discover/tv', { with_genres: String(genreId), sort_by: 'popularity.desc', page: String(i + 1) }))
+          .then((r) => r.json().then((j) => (j.results || []) as TMDBTVShow[]))
+      )
+    );
+    return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  });
+}
+
 // ── Trailers ───────────────────────────────────────────────────────────────────
 
 export interface TMDBTrailer {

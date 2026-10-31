@@ -118,6 +118,16 @@ const PROVIDERS: ProviderDef[] = [
       return `https://www.videasy.to/embed/anime/${item.idMal}`;
     },
   },
+  {
+    id: 'pstream',
+    name: 'PStream',
+    color: 'from-teal-600 to-cyan-700',
+    build: (item) => {
+      if (item.type === 'movie') return `https://embed.pstream.cfd/movie/tmdb-${item.tmdbId}`;
+      if (item.type === 'tv') return `https://embed.pstream.cfd/media/tmdb-tv-${item.tmdbId}`;
+      return `https://embed.pstream.cfd/anime/anilist-${item.idMal}`;
+    },
+  },
 ];
 
 const providerNameMap: Record<string, string> = {};
@@ -160,6 +170,7 @@ export const MovieDetailsView: React.FC<MovieDetailsViewProps> = ({
   useEffect(() => {
     setActiveProvider(PROVIDERS[0].id);
     setFallbackUrl(null);
+    setFallbackIndex(-1);
     setShowFullOverview(false);
     setEmbedKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -270,15 +281,18 @@ export const MovieDetailsView: React.FC<MovieDetailsViewProps> = ({
     return [];
   }, [item, isAnime]);
 
+  const [fallbackIndex, setFallbackIndex] = useState(-1);
+
   function handleTryNextSource() {
-    if (!activeUrl) return;
-    const idx = fallbackChain.indexOf(activeUrl);
-    const nextUrl =
-      idx >= 0 && idx < fallbackChain.length - 1 ? fallbackChain[idx + 1] : fallbackChain[0];
-    if (nextUrl && nextUrl !== activeUrl) {
-      setFallbackUrl(nextUrl);
-      setEmbedKey((k) => k + 1);
-    }
+    if (fallbackChain.length === 0) return;
+    // If current URL is in the chain, advance from its position. Otherwise start from 0.
+    const currentIdx = fallbackIndex >= 0 && fallbackIndex < fallbackChain.length
+      ? fallbackIndex
+      : fallbackChain.indexOf(activeUrl!);
+    const nextIdx = (currentIdx + 1) % fallbackChain.length;
+    setFallbackIndex(nextIdx);
+    setFallbackUrl(fallbackChain[nextIdx]);
+    setEmbedKey((k) => k + 1);
   }
 
   const genres: string[] = useMemo(() => {
@@ -492,6 +506,7 @@ export const MovieDetailsView: React.FC<MovieDetailsViewProps> = ({
                       onClick={() => {
                         setActiveProvider(provider.id);
                         setFallbackUrl(null);
+                        setFallbackIndex(-1);
                         setEmbedKey((k) => k + 1);
                         setShowProviderDropdown(false);
                       }}

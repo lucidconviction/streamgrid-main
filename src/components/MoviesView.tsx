@@ -59,7 +59,7 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
       } else if (tab === 'tv') {
         setItems(await fetchTVShows(section as any));
       } else {
-        setItems(await fetchAnime(section === 'popular' ? 'popular' : 'trending'));
+        setItems(await fetchAnime(section as any));
       }
     } catch (err) {
       console.error('Failed to load content:', err);
@@ -174,6 +174,37 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
         })}
       </div>
 
+      {/* Search Bar — above sections */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1 max-w-lg">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            type="text"
+            placeholder={`Search ${tabConfig[tab].label}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50"
+          />
+        </div>
+        <button
+          onClick={() => handleSearch(searchQuery)}
+          disabled={isSearching}
+          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+        >
+          {isSearching ? '...' : 'Search'}
+        </button>
+        {searchQuery && (
+          <button
+            onClick={() => { setSearchQuery(''); setSection('popular'); loadContent(); }}
+            className="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors"
+            title="Clear search"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {/* Section Tabs */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
         {tabConfig[tab].sections.map((s) => (
@@ -189,36 +220,6 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
             {s.charAt(0).toUpperCase() + s.slice(1)}
           </button>
         ))}
-
-        {/* Search */}
-        <div className="ml-auto flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              placeholder={`Search ${tabConfig[tab].label}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-              className="w-48 sm:w-64 pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50"
-            />
-          </div>
-          <button
-            onClick={() => handleSearch(searchQuery)}
-            disabled={isSearching}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors disabled:opacity-50"
-          >
-            {isSearching ? '...' : 'Search'}
-          </button>
-          {searchQuery && (
-            <button
-              onClick={() => { setSearchQuery(''); setSection('popular'); loadContent(); }}
-              className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          )}
-        </div>
       </div>
 
       {isLoading && items.length === 0 ? (

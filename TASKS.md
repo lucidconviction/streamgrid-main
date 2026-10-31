@@ -37,5 +37,11 @@
 
 ## In Progress
 
+- [x] Added PStream to PROVIDERS array in MovieDetailsView (now appears in provider dropdown)
+- [x] Fixed "Try next source" button on description page — uses index counter instead of indexOf
+- [x] All sections pull 100+ items (5 TMDB pages x 20, 3 AniList pages x 50)
+- [x] Anime tab now passes genre section through correctly
+- [x] Search bar moved above section tabs in Movies & Shows page
+- [x] Hover stream preview works on all thumbnails except movie/TV/anime posters (by design)
 - [ ] Add "Watchlist" tab to MoviesView (currently only show/hide star on detail page)
 - [ ] Persist highlightly key in .env.production on server (currently only in .env.local)
