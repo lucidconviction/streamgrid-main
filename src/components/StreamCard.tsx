@@ -347,49 +347,53 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             {stream.title}
           </h3>
 
-          {/* Buttons row — Multiview | Play | PiP | Watch — compact on mobile */}
-          <div className="mt-2 grid grid-cols-4 gap-1">
-            <button
-              onClick={(e) => { e.stopPropagation(); onAddToMultiview(stream); }}
-              className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
-                isInMultiview
-                  ? 'bg-blue-600 text-white border border-blue-500'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-blue-500/60 hover:text-blue-300 hover:bg-blue-600/20'
-              }`}
-              title={isInMultiview ? 'Remove from multiview' : 'Add to multiview'}
-            >
-              <Layers className="w-3 h-3 shrink-0" />
-              <span className="truncate text-[9px] leading-none">{isInMultiview ? 'In View' : 'Multi'}</span>
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onPlay(stream); }}
-              className="flex items-center justify-center w-full h-full min-h-[30px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30"
-              title="Play stream"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" />
-            </button>
-            {onTogglePiP && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onTogglePiP(stream); }}
-                className="flex items-center justify-center w-full h-full min-h-[30px] rounded-lg bg-red-600 hover:bg-red-500 text-white transition-all shadow-md shadow-red-600/30"
-                title="Picture-in-Picture"
-              >
-                <PictureInPicture2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleWatchlist(stream); }}
-              className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
-                isInWatchlist
-                  ? 'bg-amber-500 text-black border border-amber-400'
-                  : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-amber-500/60 hover:text-amber-300 hover:bg-amber-500/20'
-              }`}
-              title={isInWatchlist ? 'Remove from favorites' : 'Add to favorites'}
-            >
-              <Star className={`w-3 h-3 shrink-0 ${isInWatchlist ? 'fill-black' : ''}`} />
-              <span className="truncate text-[9px] leading-none">{isInWatchlist ? 'Fav' : 'Fav'}</span>
-            </button>
-          </div>
+          {!isMovieOrTV && (
+            <>
+                        {/* Buttons row — Multiview | Play | PiP | Watch — compact on mobile */}
+                        <div className="mt-2 grid grid-cols-4 gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onAddToMultiview(stream); }}
+                            className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+                              isInMultiview
+                                ? 'bg-blue-600 text-white border border-blue-500'
+                                : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-blue-500/60 hover:text-blue-300 hover:bg-blue-600/20'
+                            }`}
+                            title={isInMultiview ? 'Remove from multiview' : 'Add to multiview'}
+                          >
+                            <Layers className="w-3 h-3 shrink-0" />
+                            <span className="truncate text-[9px] leading-none">{isInMultiview ? 'In View' : 'Multi'}</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onPlay(stream); }}
+                            className="flex items-center justify-center w-full h-full min-h-[30px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/30"
+                            title="Play stream"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-white" />
+                          </button>
+                          {onTogglePiP && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onTogglePiP(stream); }}
+                              className="flex items-center justify-center w-full h-full min-h-[30px] rounded-lg bg-red-600 hover:bg-red-500 text-white transition-all shadow-md shadow-red-600/30"
+                              title="Picture-in-Picture"
+                            >
+                              <PictureInPicture2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onToggleWatchlist(stream); }}
+                            className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+                              isInWatchlist
+                                ? 'bg-amber-500 text-black border border-amber-400'
+                                : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-amber-500/60 hover:text-amber-300 hover:bg-amber-500/20'
+                            }`}
+                            title={isInWatchlist ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            <Star className={`w-3 h-3 shrink-0 ${isInWatchlist ? 'fill-black' : ''}`} />
+                            <span className="truncate text-[9px] leading-none">{isInWatchlist ? 'Fav' : 'Fav'}</span>
+                          </button>
+              </div>
+            </>
+          )}
         </div>
 
       {/* Bottom subtle kicker */}

@@ -30,6 +30,8 @@ import {
   getTMDBOnTheAirTV,
   getMovieTrailer,
   getTVTrailer,
+  getTMDBDiscoverMovies,
+  getTMDBDiscoverTV,
   searchTMDB,
 } from './tmdbService';
 
@@ -65,6 +67,7 @@ export function movieEmbedChain(tmdbId: number, imdbId?: string): string[] {
   chain.push(`https://vidlink.pro/movie/${tmdbId}`);
   chain.push(`https://anyembed.xyz/embed/tmdb-movie-${tmdbId}`);
   chain.push(`https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`);
+  chain.push(`https://embed.pstream.cfd/movie/tmdb-${tmdbId}`);
   return chain;
 }
 
@@ -77,6 +80,7 @@ export function tvEmbedChain(tmdbId: number, imdbId?: string): string[] {
   chain.push(`https://www.2embed.cc/embed/tv/${tmdbId}`);
   chain.push(`https://vidlink.pro/tv/${tmdbId}/1/1`);
   chain.push(`https://anyembed.xyz/embed/tmdb-tv-${tmdbId}`);
+  chain.push(`https://embed.pstream.cfd/media/tmdb-tv-${tmdbId}`);
   return chain;
 }
 
@@ -90,6 +94,7 @@ export function animeEmbedChain(anilistId: number): string[] {
   chain.push(`https://vidlink.pro/anime/${anilistId}`);
   chain.push(`https://vidfast.vc/embed/anime/${anilistId}`);
   chain.push(`https://www.videasy.to/embed/anime/${anilistId}`);
+  chain.push(`https://embed.pstream.cfd/anime/anilist-${anilistId}`);
   return chain;
 }
 
@@ -263,26 +268,37 @@ function animeToItem(a: AniListRaw): MovieItem {
 }
 
 export async function fetchAnime(section: 'trending' | 'popular' | 'action' | 'adventure' | 'comedy' | 'drama' | 'fantasy' | 'horror' | 'romance' | 'sci_fi' | 'sports' | 'mystery' | 'thriller' | 'slice_of_life' | 'mecha' = 'trending'): Promise<MovieItem[]> {
-  const query = section === 'trending' ? ANIME_TRENDING_QUERY : ANIME_QUERY;
-  const variables = section === 'trending' ? { page: 1 } : { page: 1, search: '' };
+  // Always use ANIME_TRENDING_QUERY (sorted by popularity descending).
+  // ANIME_QUERY with empty search returns empty data from AniList.
+  const query = ANIME_TRENDING_QUERY;
+  const variables = { page: 1 };
   const data = await anilistFetch(query, variables);
   if (section === 'trending' || section === 'popular') return data.map(animeToItem);
   const filtered = data.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
-  return filtered.length > 0 ? filtered.map(animeToItem) : data.slice(0, 24).map(animeToItem);
+  if (filtered.length > 0) return filtered.map(animeToItem);
+  // Fallback: search by genre name for genres not in the trending top-24
+  const searchQuery = ANIME_QUERY;
+  const searchVars = { page: 1, search: section };
+  try {
+    const searchData = await anilistFetch(searchQuery, searchVars);
+    const filteredSearch = searchData.filter((a) => a.genres?.some((g) => g.toLowerCase() === section));
+    return filteredSearch.map(animeToItem);
+  } catch {
+    return [];
+  }
 }
-
 
 const MOVIE_GENRE_MAP: Record<string, number> = {
   action: 28, adventure: 12, animation: 16, comedy: 35, crime: 80,
   documentary: 99, drama: 18, family: 10751, fantasy: 14, horror: 27,
-  mystery: 9648, romance: 10743, sci_fi: 878, thriller: 53, war: 37, western: 37,
+  mystery: 9648, romance: 10743, sci_fi: 878, thriller: 53, war: 10752, western: 37,
 };
 
 const TV_GENRE_MAP: Record<string, number> = {
   action_adventure: 10759, animation: 16, comedy: 35, crime: 80,
   documentary: 99, drama: 18, family: 10751, kids: 10762,
   mystery: 9648, reality: 10764, romance: 10743, sci_fi_fantasy: 10765,
-  soap: 10766, talk: 10767, thriller: 53, war: 37,
+  soap: 10766, talk: 10767, thriller: 53, war: 10752,
 };
 
 // ── Search ────────────────────────────────────────────────────────────────────

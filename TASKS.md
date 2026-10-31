@@ -27,6 +27,13 @@
 - [x] TASKS.md updated
 - [x] Renamed Quick Search button to Saved Search in header
 - [x] Converted provider grid to dropdown menu in MovieDetailsView (movie/TV/anime detail pages)
+- [x] Added PStream (pstream.cfd) to movie, TV, and anime embed chains
+- [x] Fixed war genre ID (was 37/Western, now 10752) in both MOVIE_GENRE_MAP and TV_GENRE_MAP
+- [x] Fixed fetchAnime to use ANIME_TRENDING_QUERY for all sections (was broken for genre filters)
+- [x] Added AniList genre-search fallback for anime genres with no trending results
+- [x] MoviesView now passes genre section through correctly for anime tab
+- [x] Removed action buttons (Multi, Play, PiP, Fav) from movie/TV poster cards on explore page
+- [x] HeroBanner now validates stream and falls back to embed chain candidates if primary fails in MovieDetailsView (movie/TV/anime detail pages)
 
 ## In Progress
 

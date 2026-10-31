@@ -3,6 +3,7 @@ import { Play, LayoutGrid, Bookmark, Eye, Radio } from 'lucide-react';
 import { StreamItem } from '../types/stream';
 import Hls from 'hls.js';
 import { isEmbedPlayerUrl } from '../services/embedUrls';
+import { movieEmbedChain, tvEmbedChain, animeEmbedChain } from '../services/moviesService';
 
 interface HeroBannerProps {
   featuredStream: StreamItem | null;
@@ -116,20 +117,70 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     }
   }, [featuredStream?.id, streamData]);
 
-  // ── Basic URL validation — never render a dead stream in the hero ──
+  // ── Stream validation — try primary URL then generate embed chain fallbacks ──
   const [streamValid, setStreamValid] = useState(false);
+  const [validUrl, setValidUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!featuredStream) { setStreamValid(false); return; }
-    const url = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || '';
-    if (!url || !url.startsWith('http')) { setStreamValid(false); return; }
-    // Quick HEAD check (1.5s timeout) — skip if CORS opaque response
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 1500);
-    fetch(url, { method: 'HEAD', signal: controller.signal, mode: 'no-cors' })
-      .then((res) => { setStreamValid(res.status === 0 || res.ok || res.status === 206); })
-      .catch(() => setStreamValid(true)) // network error ≠ dead stream for cross-origin
-      .finally(() => clearTimeout(timer));
+    if (!featuredStream) { setStreamValid(false); setValidUrl(null); return; }
+    const primaryUrl = featuredStream.bgVideoUrl || featuredStream.directEmbedUrl || '';
+    if (primaryUrl && primaryUrl.startsWith('http')) {
+      // Try primary URL first via quick HEAD check
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      fetch(primaryUrl, { method: 'HEAD', signal: controller.signal, mode: 'no-cors' })
+        .then((res) => {
+          const ok = res.status === 0 || res.ok || res.status === 206;
+          setStreamValid(ok);
+          setValidUrl(ok ? primaryUrl : null);
+        })
+        .catch(() => {
+          // Cross-origin opaque response — assume valid (can't determine status)
+          setStreamValid(true);
+          setValidUrl(primaryUrl);
+        })
+        .finally(() => clearTimeout(timer));
+    } else {
+      setStreamValid(false);
+      setValidUrl(null);
+    }
   }, [featuredStream?.id]);
+  // ── Fallback: if primary is invalid, try generated embed chains ──
+  const [fallbackTried, setFallbackTried] = useState(false);
+  useEffect(() => {
+    if (streamValid || fallbackTried || !featuredStream) return;
+    setFallbackTried(true);
+    // Parse embed IDs from stream.id (StreamItem lacks typed fields)
+    const sid = featuredStream.id || '';
+    const tmdbMovie = sid.match(/^tmdb-movie-(\d+)/);
+    const tmdbTv = sid.match(/^tmdb-tv-(\d+)/);
+    const anid = sid.match(/^anime-(\d+)/);
+    let candidates: string[] = [];
+    if (tmdbMovie) candidates = movieEmbedChain(parseInt(tmdbMovie[1], 10));
+    else if (tmdbTv) candidates = tvEmbedChain(parseInt(tmdbTv[1], 10));
+    else if (anid) candidates = animeEmbedChain(parseInt(anid[1], 10));
+    else return;
+    (async () => {
+      for (const url of candidates.slice(0, 3)) {
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 2000);
+          const res = await fetch(url, { method: 'HEAD', signal: ctrl.signal, mode: 'no-cors' });
+          clearTimeout(t);
+          const ok = res.status === 0 || res.ok || res.status === 206;
+          if (ok) {
+            setStreamValid(true);
+            setValidUrl(url);
+            return;
+          }
+        } catch {
+          // opaque/cross-origin — treat as potentially valid
+          setStreamValid(true);
+          setValidUrl(url);
+          return;
+        }
+      }
+    })();
+  }, [streamValid, fallbackTried, featuredStream]);
 
   if (!featuredStream) {
     return (
@@ -148,7 +199,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           {streamData?.isEmbed && streamData?.url && (
             <iframe
               ref={iframeRef}
-              src={streamData.url}
+              src={validUrl || streamData.url}
               className="pointer-events-none w-full h-full object-cover filter brightness-105"
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
@@ -158,7 +209,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           )}
 
           {/* Native video for HLS/direct video URLs */}
-          {streamData && !streamData.isEmbed && streamData.url && !videoError && (
+          {streamData && !streamData.isEmbed && (validUrl || streamData.url) && !videoError && (
             <video
               ref={videoRef}
               className="w-full h-full object-cover object-center filter brightness-105"
@@ -170,7 +221,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           )}
 
           {/* Static poster fallback */}
-          {(videoError || !streamData?.url) && (
+          {(videoError || (!streamData?.url && !validUrl)) && (
             <img
               src={displayPoster}
               alt={featuredStream.title}
