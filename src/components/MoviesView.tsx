@@ -14,8 +14,8 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   watchlistIds,
   onToggleWatchlist,
 }) => {
-  const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('anime');
-  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending'>('trending');
+  const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('movies');
+  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'popular'>('popular');
   const [items, setItems] = useState<MovieItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,7 +74,7 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
       } else if (tab === 'tv') {
         setItems(await fetchTVShows(section as any));
       } else {
-        setItems(await fetchAnime(section === 'trending'));
+        setItems(await fetchAnime(section === 'popular' ? 'popular' : 'trending'));
       }
     } catch (err) {
       console.error('Failed to load content:', err);
@@ -136,9 +136,9 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   }
 
   const tabConfig = {
-    movies: { label: 'Movies', icon: Film, sections: ['popular', 'now', 'top'] as const },
-    tv: { label: 'TV Shows', icon: Tv, sections: ['popular', 'onair', 'top'] as const },
-    anime: { label: 'Anime', icon: Sparkles, sections: ['trending'] as const },
+    movies: { label: 'Movies', icon: Film, sections: ['popular', 'now', 'top', 'upcoming', 'trending'] as const },
+    tv: { label: 'TV Shows', icon: Tv, sections: ['popular', 'onair', 'top', 'trending', 'airing'] as const },
+    anime: { label: 'Anime', icon: Sparkles, sections: ['trending', 'popular'] as const },
   };
 
   // Details page takes over when a title is opened

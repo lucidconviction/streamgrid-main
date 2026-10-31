@@ -25,6 +25,8 @@ import {
   getTMDBTopRatedMovies,
   getTMDBPopularTV,
   getTMDBTopRatedTV,
+  getTMDBUpcoming,
+  getTMDBAiringTodayTV,
   getTMDBOnTheAirTV,
   getMovieTrailer,
   getTVTrailer,
@@ -118,12 +120,16 @@ function tvToItem(t: TMDBTVShow): MovieItem {
   };
 }
 
-export async function fetchMovies(section: 'popular' | 'now' | 'top' = 'popular'): Promise<MovieItem[]> {
+export async function fetchMovies(section: 'popular' | 'now' | 'top' | 'upcoming' | 'trending' = 'popular'): Promise<MovieItem[]> {
   const [primary, secondary] = section === 'popular'
     ? await Promise.allSettled([getTMDBPopularMovies(1), getTMDBNowPlaying(1)])
     : section === 'now'
       ? await Promise.allSettled([getTMDBNowPlaying(1), getTMDBPopularMovies(1)])
-      : await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBPopularMovies(1)]);
+      : section === 'upcoming'
+        ? await Promise.allSettled([getTMDBUpcoming(1), getTMDBPopularMovies(1)])
+        : section === 'trending'
+          ? await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBNowPlaying(1)])
+          : await Promise.allSettled([getTMDBTopRatedMovies(1), getTMDBPopularMovies(1)]);
 
   const primaryData = primary.status === 'fulfilled' ? primary.value : [];
   const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
@@ -138,12 +144,16 @@ export async function fetchMovies(section: 'popular' | 'now' | 'top' = 'popular'
   return out;
 }
 
-export async function fetchTVShows(section: 'popular' | 'onair' | 'top' = 'popular'): Promise<MovieItem[]> {
+export async function fetchTVShows(section: 'popular' | 'onair' | 'top' | 'trending' | 'airing' = 'popular'): Promise<MovieItem[]> {
   const [primary, secondary] = section === 'popular'
     ? await Promise.allSettled([getTMDBPopularTV(1), getTMDBOnTheAirTV()])
     : section === 'onair'
       ? await Promise.allSettled([getTMDBOnTheAirTV(), getTMDBPopularTV(1)])
-      : await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)]);
+      : section === 'airing'
+        ? await Promise.allSettled([getTMDBAiringTodayTV(), getTMDBOnTheAirTV()])
+        : section === 'trending'
+          ? await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)])
+          : await Promise.allSettled([getTMDBTopRatedTV(1), getTMDBPopularTV(1)]);
 
   const primaryData = primary.status === 'fulfilled' ? primary.value : [];
   const secondaryData = secondary.status === 'fulfilled' ? secondary.value : [];
@@ -241,9 +251,9 @@ function animeToItem(a: AniListRaw): MovieItem {
   };
 }
 
-export async function fetchAnime(trending = true): Promise<MovieItem[]> {
-  const query = trending ? ANIME_TRENDING_QUERY : ANIME_QUERY;
-  const variables = trending ? { page: 1 } : { page: 1, search: '' };
+export async function fetchAnime(section: 'trending' | 'popular' = 'trending'): Promise<MovieItem[]> {
+  const query = section === 'trending' ? ANIME_TRENDING_QUERY : ANIME_QUERY;
+  const variables = section === 'trending' ? { page: 1 } : { page: 1, search: '' };
   const data = await anilistFetch(query, variables);
   return data.map(animeToItem);
 }

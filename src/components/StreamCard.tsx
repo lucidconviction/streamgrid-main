@@ -49,9 +49,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   const tmdbId = isMovieOrTV ? stream.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', '') : null;
   const parsedTmdbId = tmdbId ? parseInt(tmdbId, 10) : null;
 
-  // Hover preview for ALL stream types
+  // Hover preview for ALL stream types (skipped for movie/TV — tap to navigate)
   useEffect(() => {
-    if (!isHovered || !videoRef.current) return;
+    if (!isHovered || !videoRef.current || isMovieOrTV) return;
     const video = videoRef.current;
 
     // Stop any existing playback
@@ -134,7 +134,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   // Hover-to-Listen: play audio-only from bgVideoUrl when hovering
   useEffect(() => {
-    if (!isHovered || !audioRef.current) return;
+    if (!isHovered || !audioRef.current || isMovieOrTV) return;
     const audio = audioRef.current;
     const url = stream.bgVideoUrl;
     if (!url) return;
@@ -214,7 +214,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         onClick={() => onCardClick ? onCardClick(stream) : onPlay(stream)}
       >
         {/* Live Video Preview — visible on hover for all stream types */}
-        {isHovered && stream.directEmbedUrl ? (
+        {isHovered && stream.directEmbedUrl && !isMovieOrTV ? (
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
