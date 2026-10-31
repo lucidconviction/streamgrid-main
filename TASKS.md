@@ -25,6 +25,8 @@
 - [x] fetchMovies / fetchTVShows / fetchAnime extended with genre support
 - [x] AniList anime queries extended to include genre field for client-side filtering
 - [x] TASKS.md updated
+- [x] Renamed Quick Search button to Saved Search in header
+- [x] Converted provider grid to dropdown menu in MovieDetailsView (movie/TV/anime detail pages)
 
 ## In Progress
 
