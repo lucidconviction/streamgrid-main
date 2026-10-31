@@ -296,15 +296,15 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
-            {/* Quick Search Dropdown (replaces Saved Searches) */}
+            {/* Saved Search Dropdown (replaces Saved Searches) */}
             <div className="relative" ref={qjRef}>
               <button
                 onClick={() => setQjOpen(!qjOpen)}
                 className="flex items-center gap-1 px-2 py-1.5 min-h-10 sm:min-h-11 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-medium border border-slate-700 transition-colors touch-manipulation"
-                title="Quick Jumps"
+                title="Saved Searches"
               >
                 <QuickJumpIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Quick Search</span>
+                <span className="hidden sm:inline">Saved Search</span>
                 {quickJumps.length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-blue-600/30 text-blue-400 text-[10px] font-black">
                     {quickJumps.length}
@@ -318,7 +318,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
                         <QuickJumpIcon className="w-3.5 h-3.5 text-blue-400" />
-                        <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">Quick Jumps</p>
+                        <p className="text-[9px] font-mono uppercase tracking-widest text-blue-300">Saved Searches</p>
                       </div>
                       {!qjAddMode && (
                         <button
