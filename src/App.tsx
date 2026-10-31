@@ -18,6 +18,7 @@ import {
 import { getTrendingAnime, getPopularAnime, parseAnilistToStream } from './services/anilistService';
 import { fetchMovies, fetchTVShows, fetchAnime } from './services/moviesService';
 import { ReplaysView } from './components/ReplaysView';
+import { ReplaysRow } from './components/ReplaysRow';
 import { MoviesView } from './components/MoviesView';
 import { SearchResultsView } from './components/SearchResultsView';
 import { PlayerView } from './components/PlayerView';
@@ -1186,6 +1187,14 @@ export default function App() {
                   multiviewStreamIds={multiviewStreamIds}
                 />
               )}
+
+              {/* Row 8: Sports Replays & Highlights */}
+              <ReplaysRow
+                onPlayStream={handlePlayStream}
+                watchlistIds={watchlistIds}
+                onToggleWatchlist={(videoId: string) => {}}
+                onViewAll={() => setCurrentView('replays')}
+              />
               </div>
 
             </div>
