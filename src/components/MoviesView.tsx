@@ -17,7 +17,7 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   preselectedItem,
 }) => {
   const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('movies');
-  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' | 'action_adventure' | 'kids' | 'reality' | 'soap' | 'talk' | 'slice_of_life' | 'mecha' | 'sports'>('popular');
+  const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' | 'action_adventure' | 'kids' | 'reality' | 'soap' | 'talk' | 'slice_of_life' | 'mecha' | 'sports' | 'sci_fi_fantasy'>('popular');
   const [items, setItems] = useState<MovieItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,33 +32,21 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   // Handle preselected item from App.tsx (clicked from explore/home page)
   useEffect(() => {
     if (!preselectedItem || !preselectedItem.id) return;
+    const category = preselectedItem.category || '';
+    const isMovie = category.includes('Movie');
+    const isTV = category.includes('TV');
+    const isAnime = preselectedItem.provider === 'anime' || category.includes('Anime');
     const movieItem: MovieItem = {
       id: preselectedItem.id,
-      title: preselectedItem.title,
-      name: preselectedItem.name,
-      type: preselectedItem.category === 'Movies' ? 'movie' : preselectedItem.category === 'TV Shows' ? 'tv' : 'anime',
-      category: preselectedItem.category,
-      provider: preselectedItem.provider,
-      streamType: preselectedItem.streamType,
-      status: preselectedItem.status,
-      tmdbId: preselectedItem.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', ''),
-      imdbId: undefined,
-      idMal: preselectedItem.provider === 'anime' ? preselectedItem.id : undefined,
+      title: preselectedItem.title || preselectedItem.name || 'Unknown',
+      type: isAnime ? 'anime' : isTV ? 'tv' : 'movie',
+      tmdbId: (isMovie || isTV) ? parseInt(preselectedItem.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', ''), 10) || undefined : undefined,
+      idMal: isAnime ? parseInt(preselectedItem.id.replace('anime-', ''), 10) || undefined : undefined,
       poster: preselectedItem.poster,
-      backdrop: undefined,
-      year: undefined,
-      rating: undefined,
-      overview: undefined,
-      sources: preselectedItem.sources,
-      directEmbedUrl: preselectedItem.directEmbedUrl,
-      viewers: preselectedItem.viewers,
     };
     setDetailItem(movieItem);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Clear after handling
-    // Clear handled by App state
   }, [preselectedItem]);
-
   useEffect(() => {
     loadContent();
   }, [tab, section]);
