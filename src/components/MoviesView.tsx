@@ -7,12 +7,14 @@ interface MoviesViewProps {
   activeProfileId: string;
   watchlistIds: string[];
   onToggleWatchlist: (id: string) => void;
+  preselectedItem?: any;
 }
 
 export const MoviesView: React.FC<MoviesViewProps> = ({
   activeProfileId,
   watchlistIds,
   onToggleWatchlist,
+  preselectedItem,
 }) => {
   const [tab, setTab] = useState<'movies' | 'tv' | 'anime'>('movies');
   const [section, setSection] = useState<'popular' | 'now' | 'top' | 'onair' | 'trending' | 'upcoming' | 'airing' | 'action' | 'comedy' | 'drama' | 'horror' | 'sci_fi' | 'thriller' | 'romance' | 'animation' | 'family' | 'fantasy' | 'adventure' | 'crime' | 'documentary' | 'mystery' | 'war' | 'western' | 'action_adventure' | 'kids' | 'reality' | 'soap' | 'talk' | 'slice_of_life' | 'mecha' | 'sports'>('popular');
@@ -27,40 +29,35 @@ export const MoviesView: React.FC<MoviesViewProps> = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Listen for selectMovie event dispatched from home page media cards
+  // Handle preselected item from App.tsx (clicked from explore/home page)
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail && detail.id) {
-        // Convert StreamItem to MovieItem and show detail page
-        const movieItem: MovieItem = {
-          id: detail.id,
-          title: detail.title,
-          name: detail.name,
-          type: detail.category === 'Movies' ? 'movie' : detail.category === 'TV Shows' ? 'tv' : 'anime',
-          category: detail.category,
-          provider: detail.provider,
-          streamType: detail.streamType,
-          status: detail.status,
-          tmdbId: detail.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', ''),
-          imdbId: undefined,
-          idMal: detail.provider === 'anime' ? detail.id : undefined,
-          poster: detail.poster,
-          backdrop: undefined,
-          year: undefined,
-          rating: undefined,
-          overview: undefined,
-          sources: detail.sources,
-          directEmbedUrl: detail.directEmbedUrl,
-          viewers: detail.viewers,
-        };
-        setDetailItem(movieItem);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+    if (!preselectedItem || !preselectedItem.id) return;
+    const movieItem: MovieItem = {
+      id: preselectedItem.id,
+      title: preselectedItem.title,
+      name: preselectedItem.name,
+      type: preselectedItem.category === 'Movies' ? 'movie' : preselectedItem.category === 'TV Shows' ? 'tv' : 'anime',
+      category: preselectedItem.category,
+      provider: preselectedItem.provider,
+      streamType: preselectedItem.streamType,
+      status: preselectedItem.status,
+      tmdbId: preselectedItem.id.replace('tmdb-', '').replace('-movie', '').replace('-tv', ''),
+      imdbId: undefined,
+      idMal: preselectedItem.provider === 'anime' ? preselectedItem.id : undefined,
+      poster: preselectedItem.poster,
+      backdrop: undefined,
+      year: undefined,
+      rating: undefined,
+      overview: undefined,
+      sources: preselectedItem.sources,
+      directEmbedUrl: preselectedItem.directEmbedUrl,
+      viewers: preselectedItem.viewers,
     };
-    window.addEventListener('selectMovie', handler);
-    return () => window.removeEventListener('selectMovie', handler);
-  }, []);
+    setDetailItem(movieItem);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Clear after handling
+    // Clear handled by App state
+  }, [preselectedItem]);
 
   useEffect(() => {
     loadContent();

@@ -47,6 +47,7 @@ export default function App() {
   const [showPopup, setShowPopup] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [movieDetailItem, setMovieDetailItem] = useState<any>(null);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [pipStreams, setPipStreams] = useState<Array<{ id: string; stream: StreamItem }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -907,6 +908,7 @@ export default function App() {
             <MoviesView
               activeProfileId={activeProfile.id}
               watchlistIds={watchlistIds}
+              preselectedItem={movieDetailItem}
               onToggleWatchlist={(id: string) => {
                 handleToggleWatchlist({ id, title: id, name: id, category: 'movie', provider: 'tmdb' as any, streamType: 'embed' as const, status: 'live' as const } as any);
               }}
@@ -1082,7 +1084,8 @@ export default function App() {
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                   onCardClick={(stream) => {
-                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                    setMovieDetailItem(stream);
+                    setCurrentView('movies');
                   }}
                 />
               )}
@@ -1100,7 +1103,8 @@ export default function App() {
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                   onCardClick={(stream) => {
-                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                    setMovieDetailItem(stream);
+                    setCurrentView('movies');
                   }}
                 />
               )}
@@ -1118,7 +1122,7 @@ export default function App() {
                   watchlistIds={watchlistIds}
                   multiviewStreamIds={multiviewStreamIds}
                   onCardClick={(stream) => {
-                    window.dispatchEvent(new CustomEvent('selectMovie', { detail: stream }));
+                    setMovieDetailItem(stream); setCurrentView('movies');
                   }}
                 />
               )}
