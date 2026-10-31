@@ -19,6 +19,7 @@ const EMBED_PLAYER_MARKERS = [
   'adultembed.com',
   'eporner.com/embed',
   'pstream.cfd',
+  'youtube.com/embed',
 ];
 
 /** Local proxy path used to bypass the BinTV player's Cloudflare checks. */
