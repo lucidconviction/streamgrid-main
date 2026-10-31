@@ -17,8 +17,14 @@
 - [x] Play button on movie/TV poster cards navigates to content description page (MovieDetailsView)
 - [x] Hover preview disabled on movie/TV poster cards
 - [x] Movies & Shows tab opens on 'Movies' by default
-- [x] MoviesView section tabs extended: Movies (21 genre sections), TV Shows (18 genre sections), Anime (15 genre sections)
-- [x] fetchMovies / fetchTVShows / fetchAnime support genre-based discover queries
+- [x] Genre-based browse sections added to Movies & Shows page:
+  - Movies: 21 sections (popular, now playing, top rated, upcoming, trending + 14 genres)
+  - TV Shows: 18 sections (popular, on air, top rated, trending, airing today + 13 genres)
+  - Anime: 15 sections (trending, popular + 11 genres)
+- [x] TMDB discover functions added for genre filtering (getTMDBDiscoverMovies / getTMDBDiscoverTV)
+- [x] fetchMovies / fetchTVShows / fetchAnime extended with genre support
+- [x] AniList anime queries extended to include genre field for client-side filtering
+- [x] TASKS.md updated
 
 ## In Progress
 
