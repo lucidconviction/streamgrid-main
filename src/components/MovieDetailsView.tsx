@@ -146,6 +146,7 @@ export const MovieDetailsView: React.FC<MovieDetailsViewProps> = ({
   const [activeProvider, setActiveProvider] = useState(PROVIDERS[0].id);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [embedKey, setEmbedKey] = useState(0);
+  const [showProviderDropdown, setShowProviderDropdown] = useState(false);
   const [showFullOverview, setShowFullOverview] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
   const [trailerLoading, setTrailerLoading] = useState(false);
@@ -468,37 +469,46 @@ export const MovieDetailsView: React.FC<MovieDetailsViewProps> = ({
           </div>
 
           {/* Provider picker */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-3">
-            {PROVIDERS.map((p) => {
-              const isActive = activeProvider === p.id && !fallbackUrl;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setActiveProvider(p.id);
-                    setFallbackUrl(null);
-                    setEmbedKey((k) => k + 1);
-                  }}
-                  className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 transition-all ${
-                    isActive
-                      ? `bg-gradient-to-br ${p.color} border-white/40 shadow-lg shadow-black/40 scale-[1.03]`
-                      : 'bg-slate-900/70 border-slate-800 hover:border-slate-600'
-                  }`}
-                >
-                  <span
-                    className={`text-xs sm:text-sm font-black tracking-wide ${
-                      isActive ? 'text-white' : 'text-slate-300'
-                    }`}
-                  >
-                    {p.name}
-                  </span>
-                  {isActive && <Check className="w-4 h-4 text-white" />}
-                </button>
-              );
-            })}
-          </div>
 
-          {/* Player */}
+          {/* Provider dropdown */}
+          <div className="relative mb-4">
+            <button
+              onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-sm font-semibold text-white transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span className={"w-2 h-2 rounded-full bg-gradient-to-r " + (PROVIDERS.find(pr => pr.id === activeProvider)?.color || 'from-slate-500 to-slate-600')}></span>
+                {fallbackUrl ? 'Auto Fallback' : PROVIDERS.find(pr => pr.id === activeProvider)?.name || 'Source'}
+              </span>
+              <ChevronDown className={"w-4 h-4 text-slate-400 transition-transform " + (showProviderDropdown ? 'rotate-180' : '')} />
+            </button>
+            {showProviderDropdown && (
+              <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl shadow-black/60 overflow-hidden">
+                {PROVIDERS.map((provider) => {
+                  const isActive = activeProvider === provider.id && !fallbackUrl;
+                  return (
+                    <button
+                      key={provider.id}
+                      onClick={() => {
+                        setActiveProvider(provider.id);
+                        setFallbackUrl(null);
+                        setEmbedKey((k) => k + 1);
+                        setShowProviderDropdown(false);
+                      }}
+                      className={"w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-800/80 " + (isActive ? 'bg-slate-800/60' : '')}
+                    >
+                      <span className={"w-3 h-3 rounded-full bg-gradient-to-r " + provider.color}></span>
+                      <span className={"flex-1 text-sm font-medium " + (isActive ? 'text-white' : 'text-slate-300')}>
+                        {provider.name}
+                      </span>
+                      {isActive && <Check className="w-4 h-4 text-white" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+{/* Player */}
           <div className="mt-4">
             {activeUrl ? (
               <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 shadow-2xl shadow-black/50">
